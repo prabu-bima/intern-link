@@ -19,3 +19,11 @@ from app.models.master import (
     Location
 )
 
+from app.models.identity import (
+    UserAccount,
+    FileAsset,
+    StudentProfile,
+    CompanyProfile
+)
+
+
