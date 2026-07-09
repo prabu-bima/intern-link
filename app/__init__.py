@@ -35,6 +35,9 @@ def create_app(config_name=None):
     app.register_blueprint(company.bp)
     app.register_blueprint(admin.bp)
 
+    # Import models so they are registered with SQLAlchemy
+    from app import models
+
     return app
 
 
