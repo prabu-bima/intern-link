@@ -1,0 +1,51 @@
+# ==============================================================
+# InternLink — .gitignore
+# ==============================================================
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flask
+instance/
+*.db
+*.sqlite3
+
+# Tailwind CSS (build output is committed, but node_modules is not)
+node_modules/
+
+# Logs
+*.log
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# Migrations (keep migrations/, ignore temp files)
+*.pyc
