@@ -29,3 +29,29 @@ class StudentRegistrationForm(FlaskForm):
         user = UserAccount.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('Email sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.')
+
+class CompanyRegistrationForm(FlaskForm):
+    company_name = StringField('Nama Perusahaan', validators=[DataRequired(message="Nama perusahaan wajib diisi.")])
+    
+    email = StringField('Email Perusahaan', validators=[
+        DataRequired(message="Email wajib diisi."),
+        Email(message="Format email tidak valid.")
+    ])
+    
+    password = PasswordField('Kata Sandi', validators=[
+        DataRequired(message="Kata sandi wajib diisi."),
+        Length(min=8, message="Kata sandi minimal 8 karakter.")
+    ])
+    
+    confirm_password = PasswordField('Konfirmasi Kata Sandi', validators=[
+        DataRequired(message="Konfirmasi kata sandi wajib diisi."),
+        EqualTo('password', message="Kata sandi tidak cocok.")
+    ])
+    
+    submit = SubmitField('Daftar sebagai Perusahaan')
+
+    def validate_email(self, email):
+        user = UserAccount.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Email sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.')
+
