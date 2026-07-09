@@ -80,3 +80,59 @@ def dashboard():
         latest_internships=latest_internships,
         notifications=notifications
     )
+
+@bp.route('/profile', methods=['GET'])
+@student_required
+def profile():
+    from app.forms.student import PersonalInformationForm
+    
+    # Initialize the form with current data
+    personal_form = PersonalInformationForm(
+        full_name=current_user.display_name,
+        email=current_user.email,
+        phone_number=current_user.student_profile.phone_number if current_user.student_profile else '',
+        date_of_birth=current_user.student_profile.date_of_birth if current_user.student_profile else None,
+        gender=current_user.student_profile.gender if current_user.student_profile else '',
+        bio=current_user.student_profile.bio if current_user.student_profile else ''
+    )
+    
+    return render_template(
+        'student/profile.html',
+        personal_form=personal_form
+    )
+
+@bp.route('/profile/personal', methods=['POST'])
+@student_required
+def update_personal_info():
+    from flask import redirect, url_for, flash, request
+    from app.forms.student import PersonalInformationForm
+    from app.models.identity import UserAccount
+    
+    form = PersonalInformationForm(request.form)
+    if form.validate_on_submit():
+        # Check if email is being changed and if it's already taken
+        if form.email.data != current_user.email:
+            existing_user = UserAccount.query.filter_by(email=form.email.data).first()
+            if existing_user:
+                flash('Email address is already in use by another account.', 'error')
+                return redirect(url_for('student.profile'))
+                
+        # Update UserAccount
+        current_user.display_name = form.full_name.data
+        current_user.email = form.email.data
+        
+        # Update StudentProfile
+        if current_user.student_profile:
+            current_user.student_profile.phone_number = form.phone_number.data
+            current_user.student_profile.date_of_birth = form.date_of_birth.data
+            current_user.student_profile.gender = form.gender.data
+            current_user.student_profile.bio = form.bio.data
+            
+        db.session.commit()
+        flash('Personal information updated successfully.', 'success')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{getattr(form, field).label.text}: {error}", 'error')
+                
+    return redirect(url_for('student.profile'))

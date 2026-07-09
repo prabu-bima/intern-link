@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "components/icons.html" as icon %}
 
 {% block title %}InternLink - Rekrutmen Talenta IT Terbaik{% endblock %}
 
@@ -48,21 +49,21 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                        {{ icon.code(class="w-6 h-6") }}
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Tech-Stack Matching</h3>
                     <p class="text-gray-500">Pencocokan profil cerdas berdasarkan teknologi yang dikuasai mahasiswa dengan kebutuhan proyek perusahaan.</p>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-xl bg-accent-100 text-accent-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        {{ icon.shield_check(class="w-6 h-6") }}
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Terverifikasi</h3>
                     <p class="text-gray-500">Semua perusahaan yang bergabung melewati tahap verifikasi, memastikan keamanan dan kenyamanan program magang.</p>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-6">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        {{ icon.lightning(class="w-6 h-6") }}
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Proses Instan</h3>
                     <p class="text-gray-500">Alur rekrutmen terpusat dengan pelacakan status aplikasi secara real-time dari pendaftaran hingga offering.</p>
@@ -232,7 +233,7 @@
                 <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
                     <span>Apakah platform ini gratis untuk mahasiswa?</span>
                     <span class="transition group-open:rotate-180">
-                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        {{ icon.chevron_down(class="w-6 h-6") }}
                     </span>
                 </summary>
                 <div class="text-gray-500 mt-3 group-open:animate-fadeIn px-6 pb-6">
@@ -245,7 +246,7 @@
                 <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
                     <span>Bagaimana proses verifikasi perusahaan?</span>
                     <span class="transition group-open:rotate-180">
-                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        {{ icon.chevron_down(class="w-6 h-6") }}
                     </span>
                 </summary>
                 <div class="text-gray-500 mt-3 group-open:animate-fadeIn px-6 pb-6">
@@ -258,7 +259,7 @@
                 <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
                     <span>Apakah ada fitur untuk magang Remote/WFH?</span>
                     <span class="transition group-open:rotate-180">
-                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        {{ icon.chevron_down(class="w-6 h-6") }}
                     </span>
                 </summary>
                 <div class="text-gray-500 mt-3 group-open:animate-fadeIn px-6 pb-6">

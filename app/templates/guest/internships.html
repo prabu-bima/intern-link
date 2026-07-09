@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "components/icons.html" as icon %}
 
 {% block title %}Cari Lowongan Magang - InternLink{% endblock %}
 
@@ -15,8 +16,8 @@
             
             <!-- Search Input -->
             <div class="relative flex-grow">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    {{ icon.search(class="h-5 w-5 text-gray-400") }}
                 </div>
                 <input type="text" name="q" id="search" value="{{ current_q }}" class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-colors sm:text-sm" placeholder="Cari posisi, perusahaan, atau deskripsi...">
             </div>
@@ -58,8 +59,8 @@
             {% if current_q %}
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200">
                 "{{ current_q }}"
-                <a href="{{ url_for('guest.internships', category_id=current_category, location_id=current_location) }}" class="ml-2 text-primary-400 hover:text-primary-600">
-                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <a href="{{ url_for('guest.internships', q=current_q) }}" class="ml-2 inline-flex items-center p-0.5 rounded-full text-primary-400 hover:bg-primary-200 hover:text-primary-600 focus:outline-none">
+                    {{ icon.x_mark(class="h-4 w-4") }}
                 </a>
             </span>
             {% endif %}
@@ -96,15 +97,15 @@
                         {{ job.company_profile.company_name }}
                     </p>
                     
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="inline-flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                            <svg class="mr-1.5 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            {{ job.location.city }}
-                        </span>
-                        <span class="inline-flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                            <svg class="mr-1.5 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                            {{ job.technology_category.category_name }}
-                        </span>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <div class="flex items-center text-sm text-gray-500">
+                            {{ icon.map_pin(class="mr-1.5 h-3.5 w-3.5 text-gray-400") }}
+                            {{ job.location.city }}, {{ job.location.province }}
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500">
+                            {{ icon.briefcase(class="mr-1.5 h-3.5 w-3.5 text-gray-400") }}
+                            {{ job.work_type }}
+                        </div>
                     </div>
 
                     <p class="text-sm text-gray-600 line-clamp-2">
@@ -147,12 +148,12 @@
                 {% if pagination.has_prev %}
                 <a href="{{ url_for('guest.internships', page=pagination.prev_num, q=current_q, category_id=current_category, location_id=current_location) }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                     <span class="sr-only">Previous</span>
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    {{ icon.chevron_left_solid(class="h-5 w-5") }}
                 </a>
                 {% else %}
                 <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
                     <span class="sr-only">Previous</span>
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    {{ icon.chevron_left_solid(class="h-5 w-5") }}
                 </span>
                 {% endif %}
                 
@@ -179,12 +180,12 @@
                 {% if pagination.has_next %}
                 <a href="{{ url_for('guest.internships', page=pagination.next_num, q=current_q, category_id=current_category, location_id=current_location) }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                     <span class="sr-only">Next</span>
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    {{ icon.chevron_right_solid(class="h-5 w-5") }}
                 </a>
                 {% else %}
                 <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
                     <span class="sr-only">Next</span>
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    {{ icon.chevron_right_solid(class="h-5 w-5") }}
                 </span>
                 {% endif %}
             </nav>
@@ -194,8 +195,8 @@
         {% else %}
         <!-- Empty State -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-            <div class="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-gray-50 mb-6 border border-gray-100">
+                {{ icon.emoji_sad(class="w-12 h-12 text-gray-400") }}
             </div>
             <h3 class="text-lg font-bold text-gray-900 mb-2">Tidak ada lowongan magang</h3>
             <p class="text-gray-500 mb-6">Kami tidak dapat menemukan lowongan magang yang cocok dengan kriteria pencarian Anda.</p>
