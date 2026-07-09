@@ -54,6 +54,15 @@ from app.models.internship import (
     InternshipModerationEvent
 )
 
+from app.models.ai import (
+    AISkillMatchRun,
+    AISkillMatchSkillItem,
+    AISkillMatchTechStackItem,
+    AIJobRecommendationRun,
+    AIJobRecommendationItem
+)
+
+
 
 
 
