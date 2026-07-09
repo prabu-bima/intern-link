@@ -44,6 +44,17 @@ from app.models.company import (
     CompanyVerification
 )
 
+from app.models.internship import (
+    Internship,
+    InternshipRequiredSkill,
+    InternshipRequiredTechStackItem,
+    InternshipApplication,
+    ApplicationInterview,
+    SavedInternship,
+    InternshipModerationEvent
+)
+
+
 
 
 
