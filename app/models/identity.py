@@ -1,7 +1,8 @@
-from app.extensions import db
+from app.extensions import db, login_manager
+from flask_login import UserMixin
 from datetime import datetime
 
-class UserAccount(db.Model):
+class UserAccount(db.Model, UserMixin):
     __tablename__ = 'user_account'
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String(50), nullable=False) # 'student', 'company', 'admin'
@@ -16,6 +17,10 @@ class UserAccount(db.Model):
     student_profile = db.relationship('StudentProfile', back_populates='user', uselist=False)
     company_profile = db.relationship('CompanyProfile', back_populates='user', uselist=False)
     file_assets = db.relationship('FileAsset', back_populates='owner')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return UserAccount.query.get(int(user_id))
 
 class FileAsset(db.Model):
     __tablename__ = 'file_asset'

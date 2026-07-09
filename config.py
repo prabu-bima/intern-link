@@ -11,6 +11,10 @@ class Config:
 
     SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 
+    # Session & Security
+    SESSION_PROTECTION = 'strong'
+    REMEMBER_COOKIE_HTTPONLY = True
+
     # SQLAlchemy
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///dev.db')
