@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Student Sidebar -->
+    <aside class="w-full md:w-64 flex-shrink-0">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-6">
+            
+            <div class="flex items-center space-x-4 mb-6 px-2">
+                <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-lg overflow-hidden">
+                    {% if current_user.student_profile and current_user.student_profile.profile_photo %}
+                        <!-- TODO: show profile photo -->
+                        {{ current_user.display_name[:1].upper() }}
+                    {% else %}
+                        {{ current_user.display_name[:1].upper() }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-900 text-sm truncate w-32">{{ current_user.display_name }}</h2>
+                    <p class="text-xs text-gray-500 truncate w-32">Mahasiswa</p>
+                </div>
+            </div>
+
+            <nav class="space-y-1">
+                <!-- Dashboard -->
+                <a href="{{ url_for('student.dashboard') }}" class="{% if request.endpoint == 'student.dashboard' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    <svg class="mr-3 flex-shrink-0 h-5 w-5 {% if request.endpoint == 'student.dashboard' %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </a>
+                
+                <!-- Profile -->
+                <a href="#" class="{% if request.endpoint == 'student.profile' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    <svg class="mr-3 flex-shrink-0 h-5 w-5 {% if request.endpoint == 'student.profile' %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    Profil Saya
+                </a>
+                
+                <!-- My Applications -->
+                <a href="#" class="{% if request.endpoint == 'student.applications' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    <svg class="mr-3 flex-shrink-0 h-5 w-5 {% if request.endpoint == 'student.applications' %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Lamaran Saya
+                </a>
+                
+                <!-- Saved Internships -->
+                <a href="#" class="{% if request.endpoint == 'student.saved' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    <svg class="mr-3 flex-shrink-0 h-5 w-5 {% if request.endpoint == 'student.saved' %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    Disimpan
+                </a>
+                
+                <!-- Notifications -->
+                <a href="#" class="{% if request.endpoint == 'student.notifications' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    <svg class="mr-3 flex-shrink-0 h-5 w-5 {% if request.endpoint == 'student.notifications' %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    Notifikasi
+                </a>
+                
+                <hr class="my-4 border-gray-100">
+                
+                <a href="{{ url_for('auth.logout') }}" class="text-red-600 hover:bg-red-50 group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    <svg class="mr-3 flex-shrink-0 h-5 w-5 text-red-500 group-hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Keluar
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow min-w-0">
+        {% block student_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

@@ -42,6 +42,12 @@ class StudentProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_account_id = db.Column(db.Integer, db.ForeignKey('user_account.id'), unique=True, nullable=False)
     profile_photo_file_id = db.Column(db.Integer, db.ForeignKey('file_asset.id'), nullable=True)
+    
+    bio = db.Column(db.Text, nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    gender = db.Column(db.String(20), nullable=True)
+    
     deleted_at = db.Column(db.DateTime, nullable=True)
 
     # Relationships
