@@ -1,0 +1,41 @@
+{% macro button_primary(text, type='submit', href='', icon='') %}
+    {% if href %}
+        <a href="{{ href }}" class="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 text-sm font-medium text-canvas hover:bg-body shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink transition-colors">
+            {% if icon %}{{ icon|safe }}{% endif %}
+            {{ text }}
+        </a>
+    {% else %}
+        <button type="{{ type }}" class="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 text-sm font-medium text-canvas hover:bg-body shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink transition-colors">
+            {% if icon %}{{ icon|safe }}{% endif %}
+            {{ text }}
+        </button>
+    {% endif %}
+{% endmacro %}
+
+{% macro button_secondary(text, type='button', href='', icon='') %}
+    {% if href %}
+        <a href="{{ href }}" class="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-medium text-ink ring-1 ring-inset ring-hairline hover:bg-canvas shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hairline transition-colors">
+            {% if icon %}{{ icon|safe }}{% endif %}
+            {{ text }}
+        </a>
+    {% else %}
+        <button type="{{ type }}" class="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-medium text-ink ring-1 ring-inset ring-hairline hover:bg-canvas shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hairline transition-colors">
+            {% if icon %}{{ icon|safe }}{% endif %}
+            {{ text }}
+        </button>
+    {% endif %}
+{% endmacro %}
+
+{% macro button_ghost(text, type='button', href='', icon='') %}
+    {% if href %}
+        <a href="{{ href }}" class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-mute hover:text-ink hover:bg-hairline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hairline transition-colors">
+            {% if icon %}{{ icon|safe }}{% endif %}
+            {{ text }}
+        </a>
+    {% else %}
+        <button type="{{ type }}" class="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-mute hover:text-ink hover:bg-hairline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hairline transition-colors">
+            {% if icon %}{{ icon|safe }}{% endif %}
+            {{ text }}
+        </button>
+    {% endif %}
+{% endmacro %}

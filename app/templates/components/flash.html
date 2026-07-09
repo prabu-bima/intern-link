@@ -1,0 +1,50 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 z-40 relative">
+            {% for category, message in messages %}
+                <!-- Categories: success, error, info, warning -->
+                {% set border_color = 'border-hairline' %}
+                {% set text_color = 'text-ink' %}
+                {% set bg_color = 'bg-white' %}
+                
+                {% if category == 'success' %}
+                    {% set border_color = 'border-green-500' %}
+                    {% set text_color = 'text-green-800' %}
+                    {% set bg_color = 'bg-green-50' %}
+                {% elif category == 'error' %}
+                    {% set border_color = 'border-red-500' %}
+                    {% set text_color = 'text-red-800' %}
+                    {% set bg_color = 'bg-red-50' %}
+                {% elif category == 'warning' %}
+                    {% set border_color = 'border-yellow-500' %}
+                    {% set text_color = 'text-yellow-800' %}
+                    {% set bg_color = 'bg-yellow-50' %}
+                {% elif category == 'info' %}
+                    {% set border_color = 'border-link' %}
+                    {% set text_color = 'text-blue-800' %}
+                    {% set bg_color = 'bg-blue-50' %}
+                {% endif %}
+                
+                <div class="rounded-md {{ bg_color }} border-l-4 {{ border_color }} p-4 mb-4 shadow-sm" role="alert">
+                    <div class="flex">
+                        <div class="ml-3">
+                            <p class="text-body-sm font-medium {{ text_color }}">
+                                {{ message }}
+                            </p>
+                        </div>
+                        <div class="ml-auto pl-3">
+                            <div class="-mx-1.5 -my-1.5">
+                                <button type="button" class="inline-flex rounded-md p-1.5 {{ text_color }} hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-{{ bg_color }} focus:ring-{{ text_color }}" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">
+                                    <span class="sr-only">Dismiss</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}

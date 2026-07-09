@@ -1,0 +1,48 @@
+{% macro render_text_input(name, label, value='', type='text', placeholder='', required=False, error='') %}
+<div class="mb-4">
+    <label for="{{ name }}" class="block text-body-sm font-medium text-ink mb-1">{{ label }} {% if required %}<span class="text-red-500">*</span>{% endif %}</label>
+    <input type="{{ type }}" name="{{ name }}" id="{{ name }}" value="{{ value }}" placeholder="{{ placeholder }}" {% if required %}required{% endif %}
+           class="block w-full rounded-md border-0 py-2 px-3 text-ink shadow-sm ring-1 ring-inset {% if error %}ring-red-500 focus:ring-red-500{% else %}ring-hairline focus:ring-ink{% endif %} placeholder:text-mute focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6">
+    {% if error %}
+        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_textarea(name, label, value='', rows=3, placeholder='', required=False, error='') %}
+<div class="mb-4">
+    <label for="{{ name }}" class="block text-body-sm font-medium text-ink mb-1">{{ label }} {% if required %}<span class="text-red-500">*</span>{% endif %}</label>
+    <textarea name="{{ name }}" id="{{ name }}" rows="{{ rows }}" placeholder="{{ placeholder }}" {% if required %}required{% endif %}
+              class="block w-full rounded-md border-0 py-2 px-3 text-ink shadow-sm ring-1 ring-inset {% if error %}ring-red-500 focus:ring-red-500{% else %}ring-hairline focus:ring-ink{% endif %} placeholder:text-mute focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6">{{ value }}</textarea>
+    {% if error %}
+        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_select(name, label, options, selected_value='', required=False, error='') %}
+<div class="mb-4">
+    <label for="{{ name }}" class="block text-body-sm font-medium text-ink mb-1">{{ label }} {% if required %}<span class="text-red-500">*</span>{% endif %}</label>
+    <select name="{{ name }}" id="{{ name }}" {% if required %}required{% endif %}
+            class="block w-full rounded-md border-0 py-2 px-3 text-ink shadow-sm ring-1 ring-inset {% if error %}ring-red-500 focus:ring-red-500{% else %}ring-hairline focus:ring-ink{% endif %} focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6">
+        <option value="" disabled {% if not selected_value %}selected{% endif %}>Select an option</option>
+        {% for value, text in options %}
+            <option value="{{ value }}" {% if value|string == selected_value|string %}selected{% endif %}>{{ text }}</option>
+        {% endfor %}
+    </select>
+    {% if error %}
+        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_file_upload(name, label, accept='', required=False, error='') %}
+<div class="mb-4">
+    <label for="{{ name }}" class="block text-body-sm font-medium text-ink mb-1">{{ label }} {% if required %}<span class="text-red-500">*</span>{% endif %}</label>
+    <input type="file" name="{{ name }}" id="{{ name }}" accept="{{ accept }}" {% if required %}required{% endif %}
+           class="block w-full text-sm text-mute file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-hairline file:text-ink hover:file:bg-canvas">
+    {% if error %}
+        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}

@@ -27,10 +27,13 @@ def create_app(config_name=None):
     # Register error handlers
     register_error_handlers(app)
 
-    # Root route (temporary, will be replaced by guest blueprint)
-    @app.route('/')
-    def index():
-        return '<h1>InternLink</h1><p>Platform is running.</p>'
+    # Register blueprints
+    from app.routes import guest, auth, student, company, admin
+    app.register_blueprint(guest.bp)
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(student.bp)
+    app.register_blueprint(company.bp)
+    app.register_blueprint(admin.bp)
 
     return app
 

@@ -1,0 +1,43 @@
+<nav class="bg-white border-b border-hairline sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/" class="text-heading-md text-ink font-bold font-mono tracking-tight">
+                        InternLink<span class="text-link">.</span>
+                    </a>
+                </div>
+                <!-- Desktop Nav Links -->
+                <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+                    <a href="/internships" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
+                        Browse Internships
+                    </a>
+                    <a href="/companies" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
+                        Companies
+                    </a>
+                </div>
+            </div>
+            <!-- Auth Buttons -->
+            <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+                <a href="/auth/login" class="text-body-md text-mute hover:text-ink font-medium transition-colors">
+                    Log in
+                </a>
+                <a href="/auth/register" class="bg-ink text-canvas hover:bg-body px-4 py-2 rounded-md text-body-md font-medium transition-colors">
+                    Sign up
+                </a>
+            </div>
+            
+            <!-- Mobile menu button -->
+            <div class="-mr-2 flex items-center sm:hidden">
+                <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-mute hover:text-ink hover:bg-hairline focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ink" aria-controls="mobile-menu" aria-expanded="false">
+                    <span class="sr-only">Open main menu</span>
+                    <!-- Icon when menu is closed. -->
+                    <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
