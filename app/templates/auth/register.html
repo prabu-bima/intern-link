@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Pilih Jenis Akun - InternLink{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-64px)] bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-inter">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <h2 class="mt-6 text-3xl font-extrabold text-gray-900 tracking-tight">
+            Bergabung dengan InternLink
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+            Pilih jenis akun yang sesuai dengan kebutuhan Anda
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <!-- Student Option -->
+            <a href="{{ url_for('auth.register_student') }}" class="relative block bg-white p-8 border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg hover:border-primary-500 transition-all transform hover:-translate-y-1 group">
+                <div class="flex items-center justify-center h-16 w-16 bg-primary-100 rounded-xl mb-6 group-hover:scale-110 transition-transform">
+                    <svg class="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Mahasiswa</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Buat profil, cari lowongan magang, dan bangun karier Anda bersama ratusan perusahaan mitra kami.
+                </p>
+                <div class="mt-6 flex items-center text-primary-600 font-medium text-sm">
+                    Daftar sebagai Mahasiswa
+                    <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </a>
+
+            <!-- Company Option -->
+            <a href="#" class="relative block bg-white p-8 border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg hover:border-blue-500 transition-all transform hover:-translate-y-1 group">
+                <div class="flex items-center justify-center h-16 w-16 bg-blue-100 rounded-xl mb-6 group-hover:scale-110 transition-transform">
+                    <svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Perusahaan</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Temukan talenta terbaik, kelola lowongan magang, dan bangun tim yang solid dengan mahasiswa bertalenta.
+                </p>
+                <div class="mt-6 flex items-center text-blue-600 font-medium text-sm">
+                    Daftar sebagai Perusahaan
+                    <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </a>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <p class="text-sm text-gray-600">
+                Sudah punya akun? 
+                <a href="#" class="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+                    Masuk di sini
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
