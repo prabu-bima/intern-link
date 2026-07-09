@@ -26,4 +26,18 @@ from app.models.identity import (
     CompanyProfile
 )
 
+from app.models.student import (
+    StudentEducationRecord,
+    StudentSkill,
+    StudentTechStackItem,
+    StudentExperience,
+    StudentOrganization,
+    StudentCertificate,
+    StudentPortfolio,
+    StudentGithubProfile,
+    StudentLinkedinProfile,
+    StudentCvVersion
+)
+
+
 
