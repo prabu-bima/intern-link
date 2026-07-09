@@ -19,6 +19,11 @@ def create_app(config_name=None):
     }
     app.config.from_object(config_map.get(config_name, 'config.DevelopmentConfig'))
 
+    # Initialize extensions
+    from app.extensions import db, migrate
+    db.init_app(app)
+    migrate.init_app(app, db)
+
     # Register error handlers
     register_error_handlers(app)
 
