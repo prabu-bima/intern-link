@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Cari Lowongan Magang - InternLink{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight font-outfit mb-2">Jelajahi Peluang Magang</h1>
+    <p class="text-gray-500 text-lg">Temukan lowongan magang teknologi yang sesuai dengan keahlian dan minat Anda.</p>
+</div>
+
+<div class="flex flex-col gap-8">
+    <!-- Top Search & Filter Card -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-2">
+        <form id="filter-form" action="{{ url_for('guest.internships') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+            
+            <!-- Search Input -->
+            <div class="relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" name="q" id="search" value="{{ current_q }}" class="block w-full pl-11 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-colors sm:text-sm" placeholder="Cari posisi, perusahaan, atau deskripsi...">
+            </div>
+            
+            <!-- Category Filter -->
+            <div class="md:w-48 flex-shrink-0">
+                <select id="category_id" name="category_id" class="block w-full pl-3 pr-10 py-3 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white rounded-xl transition-colors" onchange="this.form.submit()">
+                    <option value="">Semua Kategori</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if current_category == cat.id|string %}selected{% endif %}>{{ cat.category_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Location Filter -->
+            <div class="md:w-48 flex-shrink-0">
+                <select id="location_id" name="location_id" class="block w-full pl-3 pr-10 py-3 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white rounded-xl transition-colors" onchange="this.form.submit()">
+                    <option value="">Semua Lokasi</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if current_location == loc.id|string %}selected{% endif %}>{{ loc.city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Submit Button (Hidden on desktop since dropdowns auto-submit, but kept for search/mobile) -->
+            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm md:w-auto w-full">
+                Cari
+            </button>
+        </form>
+    </div>
+
+    <!-- Main Content -->
+    <div class="w-full">
+
+        <!-- Active Filters Display -->
+        {% if current_q or current_category or current_location %}
+        <div class="flex items-center flex-wrap gap-2 mb-6">
+            <span class="text-sm text-gray-500 mr-2">Menampilkan hasil untuk:</span>
+            {% if current_q %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                "{{ current_q }}"
+                <a href="{{ url_for('guest.internships', category_id=current_category, location_id=current_location) }}" class="ml-2 text-primary-400 hover:text-primary-600">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                </a>
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Internship Grid -->
+        {% if internships %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {% for job in internships %}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group flex flex-col h-full relative overflow-hidden">
+                <!-- Card Header -->
+                <div class="p-6 flex-grow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-bold text-gray-400 overflow-hidden">
+                            {% if job.company_profile.logo_asset %}
+                                <!-- TODO: Add Logo support -->
+                                {{ job.company_profile.company_name[:1].upper() }}
+                            {% else %}
+                                {{ job.company_profile.company_name[:1].upper() }}
+                            {% endif %}
+                        </div>
+                        <div class="flex space-x-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                Aktif
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors line-clamp-1">
+                        {{ job.internship_title }}
+                    </h3>
+                    <p class="text-gray-500 font-medium text-sm mb-4">
+                        {{ job.company_profile.company_name }}
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="inline-flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                            <svg class="mr-1.5 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            {{ job.location.city }}
+                        </span>
+                        <span class="inline-flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                            <svg class="mr-1.5 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            {{ job.technology_category.category_name }}
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-gray-600 line-clamp-2">
+                        {{ job.internship_description | striptags }}
+                    </p>
+                </div>
+                
+                <!-- Card Footer (Skills) -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center mt-auto">
+                    <div class="flex flex-wrap gap-1">
+                        {% if job.required_skills %}
+                            {% for skill_req in job.required_skills[:2] %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-gray-200 text-gray-600 shadow-sm">
+                                {{ skill_req.skill.skill_name }}
+                            </span>
+                            {% endfor %}
+                            {% if job.required_skills|length > 2 %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-gray-200 text-gray-400 shadow-sm">
+                                +{{ job.required_skills|length - 2 }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-xs text-gray-400 italic">No specific skills listed</span>
+                        {% endif %}
+                    </div>
+                    <!-- Action Link Overlay -->
+                    <a href="{{ url_for('guest.internship_detail', id=job.id) }}" class="absolute inset-0 z-10">
+                        <span class="sr-only">Lihat detail lowongan {{ job.internship_title }}</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="mt-12 flex items-center justify-center border-t border-gray-200 pt-8">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <!-- Prev -->
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('guest.internships', page=pagination.prev_num, q=current_q, category_id=current_category, location_id=current_location) }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Previous</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <span class="sr-only">Previous</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                </span>
+                {% endif %}
+                
+                <!-- Page Numbers -->
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-primary-500 bg-primary-50 text-sm font-medium text-primary-600 z-10">
+                            {{ page_num }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('guest.internships', page=page_num, q=current_q, category_id=current_category, location_id=current_location) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        ...
+                    </span>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Next -->
+                {% if pagination.has_next %}
+                <a href="{{ url_for('guest.internships', page=pagination.next_num, q=current_q, category_id=current_category, location_id=current_location) }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Next</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <span class="sr-only">Next</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                </span>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div class="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Tidak ada lowongan magang</h3>
+            <p class="text-gray-500 mb-6">Kami tidak dapat menemukan lowongan magang yang cocok dengan kriteria pencarian Anda.</p>
+            {% if current_q or current_category or current_location %}
+            <a href="{{ url_for('guest.internships') }}" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-primary-700 bg-primary-100 hover:bg-primary-200 transition-colors">
+                Hapus Semua Filter
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
