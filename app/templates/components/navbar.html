@@ -20,12 +20,25 @@
             </div>
             <!-- Auth Buttons -->
             <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-                <a href="/auth/login" class="text-body-md text-mute hover:text-ink font-medium transition-colors">
-                    Log in
-                </a>
-                <a href="/auth/register" class="bg-ink text-canvas hover:bg-body px-4 py-2 rounded-md text-body-md font-medium transition-colors">
-                    Sign up
-                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'student' %}
+                        <a href="{{ url_for('student.dashboard') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">Dashboard</a>
+                    {% elif current_user.role == 'company' %}
+                        <a href="{{ url_for('company.dashboard') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">Dashboard</a>
+                    {% elif current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">Dashboard</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-md text-body-md font-medium transition-colors">
+                        Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">
+                        Log in
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="bg-ink text-canvas hover:bg-body px-4 py-2 rounded-md text-body-md font-medium transition-colors">
+                        Sign up
+                    </a>
+                {% endif %}
             </div>
             
             <!-- Mobile menu button -->
