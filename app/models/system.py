@@ -4,11 +4,11 @@ from datetime import datetime
 class Notification(db.Model):
     __tablename__ = 'notification'
     id = db.Column(db.Integer, primary_key=True)
-    recipient_user_id = db.Column(db.Integer, db.ForeignKey('user_account.id'), nullable=False)
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey('user_account.id'), nullable=False, index=True)
     notification_type_id = db.Column(db.Integer, db.ForeignKey('notification_type.id'), nullable=False)
     payload_json = db.Column(db.JSON, nullable=False)
     event_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    is_read = db.Column(db.Boolean, default=False, nullable=False, index=True)
     read_at = db.Column(db.DateTime, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 

@@ -4,8 +4,8 @@ from datetime import datetime
 class AISkillMatchRun(db.Model):
     __tablename__ = 'ai_skill_match_run'
     id = db.Column(db.Integer, primary_key=True)
-    student_profile_id = db.Column(db.Integer, db.ForeignKey('student_profile.id'), nullable=False)
-    internship_id = db.Column(db.Integer, db.ForeignKey('internship.id'), nullable=False)
+    student_profile_id = db.Column(db.Integer, db.ForeignKey('student_profile.id'), nullable=False, index=True)
+    internship_id = db.Column(db.Integer, db.ForeignKey('internship.id'), nullable=False, index=True)
     match_percentage = db.Column(db.Float, nullable=True)
     ai_explanation = db.Column(db.Text, nullable=True)
     suggested_skills_summary = db.Column(db.Text, nullable=True)
@@ -49,7 +49,7 @@ class AISkillMatchTechStackItem(db.Model):
 class AIJobRecommendationRun(db.Model):
     __tablename__ = 'ai_job_recommendation_run'
     id = db.Column(db.Integer, primary_key=True)
-    student_profile_id = db.Column(db.Integer, db.ForeignKey('student_profile.id'), nullable=False)
+    student_profile_id = db.Column(db.Integer, db.ForeignKey('student_profile.id'), nullable=False, index=True)
     model_name = db.Column(db.String(100), nullable=False)
     model_version = db.Column(db.String(50), nullable=True)
     input_snapshot_hash = db.Column(db.String(255), nullable=True)

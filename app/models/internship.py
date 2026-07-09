@@ -5,12 +5,12 @@ class Internship(db.Model):
     __tablename__ = 'internship'
     id = db.Column(db.Integer, primary_key=True)
     company_profile_id = db.Column(db.Integer, db.ForeignKey('company_profile.id'), nullable=False)
-    technology_category_id = db.Column(db.Integer, db.ForeignKey('technology_category.id'), nullable=False)
-    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False)
+    technology_category_id = db.Column(db.Integer, db.ForeignKey('technology_category.id'), nullable=False, index=True)
+    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False, index=True)
     internship_title = db.Column(db.String(255), nullable=False)
     internship_description = db.Column(db.Text, nullable=False)
-    lifecycle_status_id = db.Column(db.Integer, db.ForeignKey('internship_lifecycle_status.id'), nullable=False)
-    moderation_status_id = db.Column(db.Integer, db.ForeignKey('internship_moderation_status.id'), nullable=False)
+    lifecycle_status_id = db.Column(db.Integer, db.ForeignKey('internship_lifecycle_status.id'), nullable=False, index=True)
+    moderation_status_id = db.Column(db.Integer, db.ForeignKey('internship_moderation_status.id'), nullable=False, index=True)
     closing_at = db.Column(db.DateTime, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
@@ -48,8 +48,8 @@ class InternshipRequiredTechStackItem(db.Model):
 class InternshipApplication(db.Model):
     __tablename__ = 'internship_application'
     id = db.Column(db.Integer, primary_key=True)
-    student_profile_id = db.Column(db.Integer, db.ForeignKey('student_profile.id'), nullable=False)
-    internship_id = db.Column(db.Integer, db.ForeignKey('internship.id'), nullable=False)
+    student_profile_id = db.Column(db.Integer, db.ForeignKey('student_profile.id'), nullable=False, index=True)
+    internship_id = db.Column(db.Integer, db.ForeignKey('internship.id'), nullable=False, index=True)
     application_status_id = db.Column(db.Integer, db.ForeignKey('application_status.id'), nullable=False)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     canceled_at = db.Column(db.DateTime, nullable=True)
