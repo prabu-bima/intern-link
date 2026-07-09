@@ -11,3 +11,11 @@ from app.models.lookups import (
     ReportType,
     AISkillMatchItemRole
 )
+
+from app.models.master import (
+    TechnologyCategory,
+    Skill,
+    TechStackItem,
+    Location
+)
+
