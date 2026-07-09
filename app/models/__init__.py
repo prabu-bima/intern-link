@@ -39,5 +39,11 @@ from app.models.student import (
     StudentCvVersion
 )
 
+from app.models.company import (
+    CompanySocialLink,
+    CompanyVerification
+)
+
+
 
 
