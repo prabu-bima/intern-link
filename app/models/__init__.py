@@ -62,6 +62,13 @@ from app.models.ai import (
     AIJobRecommendationItem
 )
 
+from app.models.system import (
+    Notification,
+    AdminAuditLog,
+    AdminReport
+)
+
+
 
 
 
