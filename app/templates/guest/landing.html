@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}InternLink - Rekrutmen Talenta IT Terbaik{% endblock %}
+
+{% block full_width_content %}
+<!-- Hero Section -->
+<div class="relative overflow-hidden bg-white">
+    <!-- Mesh Gradient Background -->
+    <div class="absolute inset-0 z-0">
+        <div class="absolute top-0 -left-4 w-72 h-72 bg-primary-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob"></div>
+        <div class="absolute top-0 -right-4 w-72 h-72 bg-accent-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-8 left-20 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32 lg:pb-32 text-center">
+        <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl font-outfit">
+            <span class="block">Bangun Karir IT Anda Bersama</span>
+            <span class="block text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-500">InternLink</span>
+        </h1>
+        <p class="mt-6 max-w-2xl mx-auto text-lg text-gray-500 sm:text-xl md:mt-8">
+            Platform rekrutmen magang spesialis teknologi. Menghubungkan mahasiswa bertalenta dengan startup dan perusahaan teknologi terkemuka di Indonesia.
+        </p>
+        <div class="mt-10 max-w-2xl mx-auto sm:flex sm:justify-center md:mt-12 space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="{{ url_for('auth.register_student') }}" class="w-full sm:w-auto flex items-center justify-center px-10 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 md:text-lg transition-transform transform hover:-translate-y-1 shadow-lg hover:shadow-primary-500/30 whitespace-nowrap">
+                Mulai sebagai Mahasiswa
+            </a>
+            <a href="{{ url_for('auth.register_company') }}" class="w-full sm:w-auto flex items-center justify-center px-10 py-3 border-2 border-primary-100 text-base font-medium rounded-xl text-primary-700 bg-white hover:bg-primary-50 md:text-lg transition-transform transform hover:-translate-y-1 shadow-sm whitespace-nowrap">
+                Rekrut Talenta
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div class="py-16 bg-gray-50 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-base text-primary-600 font-semibold tracking-wide uppercase">Mengapa InternLink?</h2>
+            <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Fokus Pada Kualitas, Bukan Kuantitas
+            </p>
+            <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
+                Berbeda dengan portal lowongan kerja umum, InternLink dirancang khusus untuk ekosistem teknologi, memastikan relevansi keahlian (tech stack) dengan kebutuhan industri.
+            </p>
+        </div>
+
+        <div class="mt-16">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Tech-Stack Matching</h3>
+                    <p class="text-gray-500">Pencocokan profil cerdas berdasarkan teknologi yang dikuasai mahasiswa dengan kebutuhan proyek perusahaan.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-xl bg-accent-100 text-accent-600 flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Terverifikasi</h3>
+                    <p class="text-gray-500">Semua perusahaan yang bergabung melewati tahap verifikasi, memastikan keamanan dan kenyamanan program magang.</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Proses Instan</h3>
+                    <p class="text-gray-500">Alur rekrutmen terpusat dengan pelacakan status aplikasi secara real-time dari pendaftaran hingga offering.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="bg-primary-900 relative">
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-1/2 -left-1/4 w-full h-full bg-gradient-to-r from-primary-800 to-transparent transform -skew-y-12"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 sm:grid-cols-3 text-center">
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+                <p class="text-5xl font-extrabold text-white">{{ stats.students }}+</p>
+                <p class="mt-2 text-lg font-medium text-primary-100">Mahasiswa Aktif</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+                <p class="text-5xl font-extrabold text-white">{{ stats.companies }}+</p>
+                <p class="mt-2 text-lg font-medium text-primary-100">Perusahaan Mitra</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+                <p class="text-5xl font-extrabold text-white">{{ stats.internships }}+</p>
+                <p class="mt-2 text-lg font-medium text-primary-100">Lowongan Magang</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-extrabold text-gray-900">Cara Kerja</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+            <!-- For Students -->
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-8">
+                    Untuk Mahasiswa
+                </h3>
+                <div class="space-y-8">
+                    <div class="flex md:min-h-[120px]">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600 text-white font-bold">1</div>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold text-gray-900">Buat Profil Tech</h4>
+                            <p class="mt-2 text-gray-500">Lengkapi profil Anda dengan keahlian, portofolio GitHub, dan CV.</p>
+                        </div>
+                    </div>
+                    <div class="flex md:min-h-[120px]">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600 text-white font-bold">2</div>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold text-gray-900">Cari Lowongan</h4>
+                            <p class="mt-2 text-gray-500">Temukan posisi magang yang sesuai dengan minat dan teknologi yang Anda kuasai.</p>
+                        </div>
+                    </div>
+                    <div class="flex md:min-h-[120px]">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600 text-white font-bold">3</div>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold text-gray-900">Lamar 1 Klik</h4>
+                            <p class="mt-2 text-gray-500">Kirim lamaran secara instan dan pantau statusnya lewat dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- For Companies -->
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-8">
+                    Untuk Perusahaan
+                </h3>
+                <div class="space-y-8">
+                    <div class="flex md:min-h-[120px]">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-accent-600 text-white font-bold">1</div>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold text-gray-900">Posting Lowongan</h4>
+                            <p class="mt-2 text-gray-500">Tentukan kriteria teknis spesifik untuk posisi magang yang dibutuhkan.</p>
+                        </div>
+                    </div>
+                    <div class="flex md:min-h-[120px]">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-accent-600 text-white font-bold">2</div>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold text-gray-900">Seleksi Talenta</h4>
+                            <p class="mt-2 text-gray-500">Review profil kandidat dan portofolio mereka melalui dashboard manajemen.</p>
+                        </div>
+                    </div>
+                    <div class="flex md:min-h-[120px]">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-accent-600 text-white font-bold">3</div>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold text-gray-900">Hire Kandidat</h4>
+                            <p class="mt-2 text-gray-500">Pilih talenta terbaik untuk bergabung dan memberikan kontribusi nyata.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Testimonials Section -->
+<div class="bg-gray-50 py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-extrabold text-gray-900">Apa Kata Mereka</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-900">Ahmad Rizky</h4>
+                        <p class="text-xs text-gray-500">Frontend Intern @ TechStartup</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">"Sangat mudah mencari tempat magang yang menggunakan React. UI-nya clean dan proses lamarnya cepat sekali."</p>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-900">Sarah Wijaya</h4>
+                        <p class="text-xs text-gray-500">HR Manager @ DevCorp</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">"Kualitas kandidat dari InternLink jauh lebih baik karena fokus pada tech-stack. Sangat menghemat waktu screening kami."</p>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hidden md:block">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-900">Budi Santoso</h4>
+                        <p class="text-xs text-gray-500">Backend Intern @ FinTech</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 italic">"Fitur status tracking lamaran sangat membantu. Saya tidak perlu lagi deg-degan menunggu tanpa kabar."</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="py-20 bg-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-extrabold text-gray-900">Pertanyaan Umum</h2>
+        </div>
+        
+        <div class="space-y-4">
+            <!-- FAQ Item 1 -->
+            <details class="group bg-gray-50 rounded-xl">
+                <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                    <span>Apakah platform ini gratis untuk mahasiswa?</span>
+                    <span class="transition group-open:rotate-180">
+                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                    </span>
+                </summary>
+                <div class="text-gray-500 mt-3 group-open:animate-fadeIn px-6 pb-6">
+                    Ya, InternLink 100% gratis untuk seluruh mahasiswa yang sedang mencari peluang magang.
+                </div>
+            </details>
+            
+            <!-- FAQ Item 2 -->
+            <details class="group bg-gray-50 rounded-xl">
+                <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                    <span>Bagaimana proses verifikasi perusahaan?</span>
+                    <span class="transition group-open:rotate-180">
+                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                    </span>
+                </summary>
+                <div class="text-gray-500 mt-3 group-open:animate-fadeIn px-6 pb-6">
+                    Setiap perusahaan yang mendaftar akan ditinjau oleh tim admin kami untuk memastikan keabsahan entitas bisnis sebelum mereka dapat memposting lowongan magang.
+                </div>
+            </details>
+            
+            <!-- FAQ Item 3 -->
+            <details class="group bg-gray-50 rounded-xl">
+                <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900">
+                    <span>Apakah ada fitur untuk magang Remote/WFH?</span>
+                    <span class="transition group-open:rotate-180">
+                        <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                    </span>
+                </summary>
+                <div class="text-gray-500 mt-3 group-open:animate-fadeIn px-6 pb-6">
+                    Tentu saja! Pada halaman pencarian, Anda dapat memfilter posisi magang berdasarkan tipe kehadiran: On-site, Hybrid, atau Remote.
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+{% endblock %}
