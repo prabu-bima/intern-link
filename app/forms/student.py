@@ -63,3 +63,10 @@ class PortfolioForm(FlaskForm):
     portfolio_title = StringField('Judul Portofolio / Proyek', validators=[DataRequired(), Length(max=200)])
     portfolio_url = URLField('Tautan Portofolio', validators=[Optional(), URL(), Length(max=255)])
     description = TextAreaField('Deskripsi Proyek', validators=[Optional(), Length(max=1000)])
+
+class GithubProfileForm(FlaskForm):
+    github_username = StringField('Username GitHub', validators=[DataRequired(), Length(max=100)])
+    github_url = URLField('URL Profil GitHub', validators=[DataRequired(), URL(), Length(max=255)])
+
+class LinkedinProfileForm(FlaskForm):
+    linkedin_url = URLField('URL Profil LinkedIn', validators=[DataRequired(), URL(), Length(max=255)])

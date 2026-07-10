@@ -84,21 +84,34 @@ def dashboard():
 @bp.route('/profile', methods=['GET'])
 @student_required
 def profile():
-    from app.forms.student import PersonalInformationForm
+    from app.forms.student import PersonalInformationForm, GithubProfileForm, LinkedinProfileForm
+    
+    profile = current_user.student_profile
     
     # Initialize the form with current data
     personal_form = PersonalInformationForm(
         full_name=current_user.display_name,
         email=current_user.email,
-        phone_number=current_user.student_profile.phone_number if current_user.student_profile else '',
-        date_of_birth=current_user.student_profile.date_of_birth if current_user.student_profile else None,
-        gender=current_user.student_profile.gender if current_user.student_profile else '',
-        bio=current_user.student_profile.bio if current_user.student_profile else ''
+        phone_number=profile.phone_number if profile else '',
+        date_of_birth=profile.date_of_birth if profile else None,
+        gender=profile.gender if profile else '',
+        bio=profile.bio if profile else ''
+    )
+    
+    github_form = GithubProfileForm(
+        github_username=profile.github_profile.github_username if profile and profile.github_profile else '',
+        github_url=profile.github_profile.github_url if profile and profile.github_profile else ''
+    )
+    
+    linkedin_form = LinkedinProfileForm(
+        linkedin_url=profile.linkedin_profile.linkedin_url if profile and profile.linkedin_profile else ''
     )
     
     return render_template(
         'student/profile.html',
-        personal_form=personal_form
+        personal_form=personal_form,
+        github_form=github_form,
+        linkedin_form=linkedin_form
     )
 
 @bp.route('/profile/personal', methods=['POST'])
@@ -1031,3 +1044,64 @@ def delete_portfolio(id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Portofolio berhasil dihapus.'})
+
+@bp.route('/profile/github', methods=['POST'])
+@student_required
+def save_github_profile():
+    from flask import request, jsonify, flash, redirect, url_for
+    from app.forms.student import GithubProfileForm
+    from app.models.student import StudentGithubProfile
+    
+    profile = current_user.student_profile
+    if not profile:
+        flash('Silakan lengkapi profil personal terlebih dahulu.', 'error')
+        return redirect(url_for('student.profile') + '#personal')
+        
+    form = GithubProfileForm(request.form)
+    if form.validate_on_submit():
+        record = profile.github_profile
+        if not record:
+            record = StudentGithubProfile(student_profile_id=profile.id)
+            db.session.add(record)
+            
+        record.github_username = form.github_username.data
+        record.github_url = form.github_url.data
+        
+        db.session.commit()
+        flash('Profil GitHub berhasil disimpan.', 'success')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'Error pada {getattr(form, field).label.text}: {error}', 'error')
+                
+    return redirect(url_for('student.profile') + '#personal')
+
+@bp.route('/profile/linkedin', methods=['POST'])
+@student_required
+def save_linkedin_profile():
+    from flask import request, jsonify, flash, redirect, url_for
+    from app.forms.student import LinkedinProfileForm
+    from app.models.student import StudentLinkedinProfile
+    
+    profile = current_user.student_profile
+    if not profile:
+        flash('Silakan lengkapi profil personal terlebih dahulu.', 'error')
+        return redirect(url_for('student.profile') + '#personal')
+        
+    form = LinkedinProfileForm(request.form)
+    if form.validate_on_submit():
+        record = profile.linkedin_profile
+        if not record:
+            record = StudentLinkedinProfile(student_profile_id=profile.id)
+            db.session.add(record)
+            
+        record.linkedin_url = form.linkedin_url.data
+        
+        db.session.commit()
+        flash('Profil LinkedIn berhasil disimpan.', 'success')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'Error pada {getattr(form, field).label.text}: {error}', 'error')
+                
+    return redirect(url_for('student.profile') + '#personal')
