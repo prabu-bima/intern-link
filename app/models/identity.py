@@ -34,6 +34,13 @@ class FileAsset(db.Model):
     file_size_bytes = db.Column(db.Integer, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    @property
+    def url(self):
+        from app.services.storage import get_file_url
+        if not self.storage_bucket or not self.object_key:
+            return None
+        return get_file_url(self.storage_bucket, self.object_key, public=True)
+
     # Relationships
     owner = db.relationship('UserAccount', back_populates='file_assets')
 

@@ -31,11 +31,24 @@ def upload_file(bucket_name: str, file_stream, file_name: str, content_type: str
     
     # Upload to Supabase
     file_bytes = file_stream.read()
-    res = supabase.storage.from_(bucket_name).upload(
-        file=file_bytes,
-        path=unique_filename,
-        file_options={"content-type": content_type}
-    )
+    try:
+        res = supabase.storage.from_(bucket_name).upload(
+            file=file_bytes,
+            path=unique_filename,
+            file_options={"content-type": content_type}
+        )
+    except Exception as e:
+        if "Bucket not found" in str(e) or "bucket not found" in str(e).lower():
+            # Create the bucket automatically and make it public
+            supabase.storage.create_bucket(bucket_name, options={"public": True})
+            # Retry upload
+            res = supabase.storage.from_(bucket_name).upload(
+                file=file_bytes,
+                path=unique_filename,
+                file_options={"content-type": content_type}
+            )
+        else:
+            raise e
     
     return unique_filename
 

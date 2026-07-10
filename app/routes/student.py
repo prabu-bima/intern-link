@@ -136,3 +136,80 @@ def update_personal_info():
                 flash(f"{getattr(form, field).label.text}: {error}", 'error')
                 
     return redirect(url_for('student.profile'))
+
+@bp.route('/profile/photo', methods=['POST'])
+@student_required
+def upload_profile_photo():
+    from flask import request, jsonify, current_app
+    from werkzeug.utils import secure_filename
+    from app.services.storage import upload_file, delete_file
+    from app.models.identity import FileAsset
+    
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+        
+    file = request.files['photo']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    if file:
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+        
+        if ext not in ['jpg', 'jpeg', 'png']:
+            return jsonify({'error': 'Invalid file type. Only JPG and PNG are allowed.'}), 400
+            
+        # File size check (e.g., 2MB)
+        file.seek(0, 2)
+        size = file.tell()
+        file.seek(0)
+        if size > 2 * 1024 * 1024:
+            return jsonify({'error': 'File too large. Maximum size is 2MB.'}), 400
+            
+        bucket_name = current_app.config.get('SUPABASE_STORAGE_BUCKET', 'internlink')
+        
+        try:
+            # Upload to Supabase
+            object_key = upload_file(
+                bucket_name=bucket_name,
+                file_stream=file,
+                file_name=filename,
+                content_type=file.content_type
+            )
+            
+            profile = current_user.student_profile
+            if not profile:
+                return jsonify({'error': 'Student profile not found.'}), 404
+            
+            # If user already has a photo, delete the old one from storage and db
+            if profile.profile_photo:
+                old_photo = profile.profile_photo
+                delete_file(bucket_name, old_photo.object_key)
+                db.session.delete(old_photo)
+                
+            # Create new FileAsset
+            new_photo = FileAsset(
+                owner_user_id=current_user.id,
+                file_purpose='profile_photo',
+                storage_bucket=bucket_name,
+                object_key=object_key,
+                file_name=filename,
+                content_type=file.content_type,
+                file_size_bytes=size
+            )
+            db.session.add(new_photo)
+            db.session.flush() # To get the ID
+            
+            profile.profile_photo_file_id = new_photo.id
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Profile photo updated successfully',
+                'url': new_photo.url
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error uploading profile photo: {e}")
+            return jsonify({'error': 'Failed to upload photo due to a server error.'}), 500
