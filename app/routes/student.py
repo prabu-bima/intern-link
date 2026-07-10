@@ -951,3 +951,83 @@ def fetch_certificate_metadata():
 
     except Exception as e:
         return jsonify({'error': f'Gagal menarik data dari URL: {str(e)}'}), 500
+
+@bp.route('/profile/portfolio', methods=['GET'])
+@student_required
+def get_portfolios():
+    from flask import request, jsonify
+    from app.models.student import StudentPortfolio
+
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+
+    portfolio_id = request.args.get('id', type=int)
+    if portfolio_id:
+        record = StudentPortfolio.query.filter_by(id=portfolio_id, student_profile_id=profile.id).first()
+        if not record:
+            return jsonify({'error': 'Portfolio not found.'}), 404
+        return jsonify({
+            'id': record.id,
+            'portfolio_title': record.portfolio_title,
+            'portfolio_url': record.portfolio_url,
+            'description': record.description
+        })
+
+    records = StudentPortfolio.query.filter_by(student_profile_id=profile.id).order_by(StudentPortfolio.id.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'portfolio_title': r.portfolio_title,
+        'portfolio_url': r.portfolio_url,
+        'description': r.description
+    } for r in records])
+
+@bp.route('/profile/portfolio', methods=['POST'])
+@bp.route('/profile/portfolio/<int:id>', methods=['POST'])
+@student_required
+def save_portfolio(id=None):
+    from flask import request, jsonify
+    from app.forms.student import PortfolioForm
+    from app.models.student import StudentPortfolio
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    form = PortfolioForm(request.form)
+    if form.validate_on_submit():
+        if id:
+            record = StudentPortfolio.query.filter_by(id=id, student_profile_id=profile.id).first()
+            if not record:
+                return jsonify({'error': 'Portfolio not found.'}), 404
+        else:
+            record = StudentPortfolio(student_profile_id=profile.id)
+            db.session.add(record)
+            
+        record.portfolio_title = form.portfolio_title.data
+        record.portfolio_url = form.portfolio_url.data
+        record.description = form.description.data
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Portofolio berhasil disimpan.'})
+        
+    return jsonify({'error': 'Validation failed', 'errors': form.errors}), 400
+
+@bp.route('/profile/portfolio/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_portfolio(id):
+    from flask import jsonify
+    from app.models.student import StudentPortfolio
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    record = StudentPortfolio.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Portfolio not found.'}), 404
+        
+    db.session.delete(record)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Portofolio berhasil dihapus.'})

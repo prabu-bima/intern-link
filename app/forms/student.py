@@ -58,3 +58,8 @@ class CertificateForm(FlaskForm):
         Optional(),
         FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'Hanya file PDF, JPG, atau PNG yang diizinkan.')
     ])
+
+class PortfolioForm(FlaskForm):
+    portfolio_title = StringField('Judul Portofolio / Proyek', validators=[DataRequired(), Length(max=200)])
+    portfolio_url = URLField('Tautan Portofolio', validators=[Optional(), URL(), Length(max=255)])
+    description = TextAreaField('Deskripsi Proyek', validators=[Optional(), Length(max=1000)])
