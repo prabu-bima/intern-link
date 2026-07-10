@@ -10,6 +10,41 @@ def get_supabase_client() -> Client:
     key = current_app.config.get("SUPABASE_KEY")
     return create_client(url, key)
 
+BUCKET_MAPPING = {
+    'profile_photo': 'photos',
+    'company_logo': 'logos',
+    'resume': 'cvs',
+    'certificate': 'certificates',
+    'report': 'reports'
+}
+
+def get_bucket_for_purpose(purpose: str) -> str:
+    """Get the appropriate Supabase bucket name based on file purpose."""
+    return BUCKET_MAPPING.get(purpose, 'internlink')
+
+def validate_file(file_stream, allowed_extensions: list, max_size_mb: int = 2) -> tuple[bool, str]:
+    """
+    Validate file extension and size.
+    Returns (is_valid, error_message).
+    """
+    if not file_stream or file_stream.filename == '':
+        return False, "Tidak ada file yang dipilih."
+        
+    filename = file_stream.filename
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    
+    if ext not in allowed_extensions:
+        return False, f"Format file tidak valid. Format yang diizinkan: {', '.join(allowed_extensions).upper()}."
+        
+    file_stream.seek(0, 2)
+    size = file_stream.tell()
+    file_stream.seek(0)
+    
+    if size > max_size_mb * 1024 * 1024:
+        return False, f"Ukuran file terlalu besar. Maksimal {max_size_mb}MB."
+        
+    return True, ""
+
 def upload_file(bucket_name: str, file_stream, file_name: str, content_type: str) -> str:
     """
     Upload a file to Supabase Storage.

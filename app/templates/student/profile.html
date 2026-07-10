@@ -38,6 +38,10 @@
                 <p class="text-sm text-gray-500">{{ current_user.email }}</p>
             </div>
         </div>
+        
+        <button type="button" id="btnDeletePhoto" class="{% if not current_user.student_profile or not current_user.student_profile.profile_photo %}hidden{% endif %} px-4 py-4 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl font-medium transition-colors">
+            Hapus Foto
+        </button>
     </div>
 
     <!-- Main Content with Tabs -->
@@ -160,6 +164,7 @@
         const photoImg = document.getElementById('profilePhotoImg');
         const photoInitials = document.getElementById('profilePhotoInitials');
         const photoLoading = document.getElementById('profilePhotoLoading');
+        const btnDeletePhoto = document.getElementById('btnDeletePhoto');
         
         if (photoInput) {
             photoInput.addEventListener('change', async (e) => {
@@ -198,6 +203,7 @@
                         photoImg.src = result.url;
                         photoImg.classList.remove('hidden');
                         if (photoInitials) photoInitials.classList.add('hidden');
+                        if (btnDeletePhoto) btnDeletePhoto.classList.remove('hidden');
                         
                         // Show success message briefly
                         const successMsg = document.createElement('div');
@@ -216,6 +222,51 @@
                     photoLoading.classList.add('hidden');
                     photoLoading.classList.remove('flex');
                     photoInput.value = ''; // Reset input
+                }
+            });
+        }
+
+        // Delete Photo Logic
+        if (btnDeletePhoto) {
+            btnDeletePhoto.addEventListener('click', async () => {
+                if (!confirm('Apakah Anda yakin ingin menghapus foto profil?')) return;
+                
+                // Show loading
+                photoLoading.classList.remove('hidden');
+                photoLoading.classList.add('flex');
+                
+                try {
+                    const csrfToken = "{{ csrf_token() }}";
+                    const response = await fetch("{{ url_for('student.delete_profile_photo') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        // Update UI
+                        photoImg.src = '';
+                        photoImg.classList.add('hidden');
+                        if (photoInitials) photoInitials.classList.remove('hidden');
+                        btnDeletePhoto.classList.add('hidden');
+                        
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                        successMsg.textContent = 'Foto profil berhasil dihapus';
+                        document.body.appendChild(successMsg);
+                        setTimeout(() => successMsg.remove(), 3000);
+                    } else {
+                        alert(result.error || 'Terjadi kesalahan saat menghapus foto.');
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    alert('Terjadi kesalahan koneksi.');
+                } finally {
+                    photoLoading.classList.add('hidden');
+                    photoLoading.classList.remove('flex');
                 }
             });
         }

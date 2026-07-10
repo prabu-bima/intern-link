@@ -142,74 +142,99 @@ def update_personal_info():
 def upload_profile_photo():
     from flask import request, jsonify, current_app
     from werkzeug.utils import secure_filename
-    from app.services.storage import upload_file, delete_file
+    from app.services.storage import upload_file, delete_file, get_bucket_for_purpose, validate_file
     from app.models.identity import FileAsset
     
     if 'photo' not in request.files:
         return jsonify({'error': 'No file part'}), 400
         
     file = request.files['photo']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+    
+    is_valid, error_msg = validate_file(file, allowed_extensions=['jpg', 'jpeg', 'png'], max_size_mb=2)
+    if not is_valid:
+        return jsonify({'error': error_msg}), 400
         
-    if file:
-        filename = secure_filename(file.filename)
-        ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    filename = secure_filename(file.filename)
+    bucket_name = get_bucket_for_purpose('profile_photo')
+    
+    # Get file size
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    
+    try:
+        # Upload to Supabase
+        object_key = upload_file(
+            bucket_name=bucket_name,
+            file_stream=file,
+            file_name=filename,
+            content_type=file.content_type
+        )
         
-        if ext not in ['jpg', 'jpeg', 'png']:
-            return jsonify({'error': 'Invalid file type. Only JPG and PNG are allowed.'}), 400
-            
-        # File size check (e.g., 2MB)
-        file.seek(0, 2)
-        size = file.tell()
-        file.seek(0)
-        if size > 2 * 1024 * 1024:
-            return jsonify({'error': 'File too large. Maximum size is 2MB.'}), 400
-            
-        bucket_name = current_app.config.get('SUPABASE_STORAGE_BUCKET', 'internlink')
+        profile = current_user.student_profile
+        if not profile:
+            return jsonify({'error': 'Student profile not found.'}), 404
         
-        try:
-            # Upload to Supabase
-            object_key = upload_file(
-                bucket_name=bucket_name,
-                file_stream=file,
-                file_name=filename,
-                content_type=file.content_type
-            )
+        # If user already has a photo, delete the old one from storage and db
+        if profile.profile_photo:
+            old_photo = profile.profile_photo
+            profile.profile_photo_file_id = None
+            db.session.flush() # Clear foreign key reference before deleting
             
-            profile = current_user.student_profile
-            if not profile:
-                return jsonify({'error': 'Student profile not found.'}), 404
+            delete_file(bucket_name, old_photo.object_key)
+            db.session.delete(old_photo)
             
-            # If user already has a photo, delete the old one from storage and db
-            if profile.profile_photo:
-                old_photo = profile.profile_photo
-                delete_file(bucket_name, old_photo.object_key)
-                db.session.delete(old_photo)
-                
-            # Create new FileAsset
-            new_photo = FileAsset(
-                owner_user_id=current_user.id,
-                file_purpose='profile_photo',
-                storage_bucket=bucket_name,
-                object_key=object_key,
-                file_name=filename,
-                content_type=file.content_type,
-                file_size_bytes=size
-            )
-            db.session.add(new_photo)
-            db.session.flush() # To get the ID
-            
-            profile.profile_photo_file_id = new_photo.id
-            db.session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Profile photo updated successfully',
-                'url': new_photo.url
-            })
-            
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error uploading profile photo: {e}")
-            return jsonify({'error': 'Failed to upload photo due to a server error.'}), 500
+        # Create new FileAsset
+        new_photo = FileAsset(
+            owner_user_id=current_user.id,
+            file_purpose='profile_photo',
+            storage_bucket=bucket_name,
+            object_key=object_key,
+            file_name=filename,
+            content_type=file.content_type,
+            file_size_bytes=size
+        )
+        db.session.add(new_photo)
+        db.session.flush() # To get the ID
+        
+        profile.profile_photo_file_id = new_photo.id
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile photo updated successfully',
+            'url': new_photo.url
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error uploading profile photo: {e}")
+        return jsonify({'error': 'Failed to upload photo due to a server error.'}), 500
+
+@bp.route('/profile/photo/delete', methods=['POST'])
+@student_required
+def delete_profile_photo():
+    from flask import jsonify, current_app
+    from app.services.storage import delete_file, get_bucket_for_purpose
+    
+    profile = current_user.student_profile
+    if not profile or not profile.profile_photo:
+        return jsonify({'error': 'No profile photo found.'}), 404
+        
+    try:
+        old_photo = profile.profile_photo
+        bucket_name = get_bucket_for_purpose('profile_photo')
+        
+        # Clear foreign key reference
+        profile.profile_photo_file_id = None
+        db.session.flush()
+        
+        delete_file(bucket_name, old_photo.object_key)
+        db.session.delete(old_photo)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Profile photo deleted successfully.'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting profile photo: {e}")
+        return jsonify({'error': 'Failed to delete photo due to a server error.'}), 500
