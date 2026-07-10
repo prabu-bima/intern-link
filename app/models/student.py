@@ -91,6 +91,7 @@ class StudentCertificate(db.Model):
     certificate_title = db.Column(db.String(200), nullable=False)
     issuer = db.Column(db.String(200), nullable=False)
     issue_date = db.Column(db.Date, nullable=False)
+    credential_url = db.Column(db.String(500), nullable=True)
     certificate_file_id = db.Column(db.Integer, db.ForeignKey('file_asset.id'), nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 

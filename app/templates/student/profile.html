@@ -384,6 +384,15 @@
             <input type="hidden" id="cert_id" name="cert_id" value="">
 
             <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL Kredensial <span class="text-gray-400">(Opsional, untuk auto-fill)</span></label>
+                <div class="flex gap-2">
+                    <input type="url" id="cert_credential_url" name="credential_url" placeholder="https://www.hackerrank.com/certificates/..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <button type="button" onclick="fetchCertificateMetadata()" id="btnFetchMetadata" class="px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 border border-gray-200 transition-colors text-sm whitespace-nowrap">Tarik Data</button>
+                </div>
+                <p id="certFetchError" class="text-red-500 text-xs mt-1 hidden"></p>
+            </div>
+
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Sertifikat *</label>
                 <input type="text" id="cert_title" name="certificate_title" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
@@ -1274,29 +1283,51 @@
                     ? new Date(cert.issue_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
                     : '-';
                 const fileBtn = cert.has_file && cert.file_url
-                    ? `<a href="${cert.file_url}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                    ? `<a href="${cert.file_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            Unduh
+                            Unduh File
                        </a>`
                     : '';
+                const credentialBtn = cert.credential_url
+                    ? `<a href="${cert.credential_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            Lihat Kredensial
+                       </a>`
+                    : '';
+
+                const defaultSvg = `<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>`;
+                let logoContent = defaultSvg;
+                try {
+                    let domain = '';
+                    if (cert.credential_url) {
+                        domain = new URL(cert.credential_url).hostname;
+                    } else if (cert.issuer) {
+                        // Fallback: guess domain from issuer (e.g. "HackerRank" -> "hackerrank.com")
+                        domain = cert.issuer.toLowerCase().replace(/\s+/g, '') + '.com';
+                    }
+                    
+                    if (domain) {
+                        const escapedSvg = defaultSvg.replace(/"/g, '&quot;');
+                        logoContent = `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=128" onerror="this.outerHTML='${escapedSvg}'" class="w-full h-full object-contain rounded-xl p-1" alt="Logo">`;
+                    }
+                } catch(e) {}
+
                 return `
-                    <div class="flex items-start justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-gray-200 transition-colors">
+                    <div onclick="openCertificateModal(${cert.id})" class="flex items-start justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-primary-200 hover:shadow-sm transition-all cursor-pointer">
                         <div class="flex items-start gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                                </svg>
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
+                                ${logoContent}
                             </div>
                             <div>
                                 <p class="font-semibold text-gray-900 text-sm">${cert.certificate_title}</p>
                                 <p class="text-sm text-gray-500">${cert.issuer}</p>
                                 <p class="text-xs text-gray-400 mt-1">${dateStr}</p>
-                                <div class="mt-2">${fileBtn}</div>
+                                <div class="mt-2 flex gap-2 flex-wrap">
+                                    ${fileBtn}
+                                    ${credentialBtn}
+                                </div>
                             </div>
                         </div>
-                        <button type="button" onclick="openCertificateModal(${cert.id})" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        </button>
                     </div>`;
             }).join('');
         });
@@ -1321,6 +1352,7 @@
             .then(data => {
                 if (data.error) { alert(data.error); return; }
                 document.getElementById('cert_id').value = data.id;
+                document.getElementById('cert_credential_url').value = data.credential_url || '';
                 document.getElementById('cert_title').value = data.certificate_title;
                 document.getElementById('cert_issuer').value = data.issuer;
                 document.getElementById('cert_date').value = data.issue_date;
@@ -1345,6 +1377,52 @@
     window.closeCertificateModal = function() {
         certificateModal.classList.add('hidden');
         certificateModal.classList.remove('flex');
+    };
+
+    window.fetchCertificateMetadata = function() {
+        const urlInput = document.getElementById('cert_credential_url');
+        const url = urlInput.value.trim();
+        const errorEl = document.getElementById('certFetchError');
+        const btn = document.getElementById('btnFetchMetadata');
+        
+        errorEl.classList.add('hidden');
+        
+        if (!url) {
+            errorEl.textContent = 'Masukkan URL kredensial terlebih dahulu.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.textContent = 'Menarik...';
+        
+        const csrfToken = "{{ csrf_token() }}";
+        fetch("{{ url_for('student.fetch_certificate_metadata') }}", {
+            method: 'POST',
+            headers: { 
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: url })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (data.title) document.getElementById('cert_title').value = data.title;
+                if (data.issuer) document.getElementById('cert_issuer').value = data.issuer;
+            } else {
+                errorEl.textContent = data.error || 'Gagal menarik data.';
+                errorEl.classList.remove('hidden');
+            }
+        })
+        .catch(err => {
+            errorEl.textContent = 'Terjadi kesalahan jaringan.';
+            errorEl.classList.remove('hidden');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Tarik Data';
+        });
     };
 
     window.deleteCertificateFromModal = function() {

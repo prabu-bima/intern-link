@@ -708,6 +708,7 @@ def get_certificates():
             'certificate_title': record.certificate_title,
             'issuer': record.issuer,
             'issue_date': record.issue_date.strftime('%Y-%m-%d') if record.issue_date else '',
+            'credential_url': record.credential_url,
             'has_file': record.certificate_file_id is not None,
             'file_url': record.certificate_file.url if record.certificate_file else None
         })
@@ -718,6 +719,7 @@ def get_certificates():
         'certificate_title': r.certificate_title,
         'issuer': r.issuer,
         'issue_date': r.issue_date.strftime('%Y-%m-%d') if r.issue_date else '',
+        'credential_url': r.credential_url,
         'has_file': r.certificate_file_id is not None,
         'file_url': r.certificate_file.url if r.certificate_file else None
     } for r in records])
@@ -742,6 +744,7 @@ def save_certificate(id=None):
     certificate_title = request.form.get('certificate_title', '').strip()
     issuer = request.form.get('issuer', '').strip()
     issue_date_str = request.form.get('issue_date', '').strip()
+    credential_url = request.form.get('credential_url', '').strip()
 
     errors = {}
     if not certificate_title:
@@ -763,6 +766,24 @@ def save_certificate(id=None):
         except ValueError:
             errors['issue_date'] = ['Format tanggal tidak valid (YYYY-MM-DD).']
 
+    if credential_url and len(credential_url) > 500:
+        errors['credential_url'] = ['URL maksimal 500 karakter.']
+
+    # Must provide either file or credential URL
+    uploaded_file = request.files.get('certificate_file')
+    has_file = uploaded_file and uploaded_file.filename
+    # If editing, maybe it already has a file
+    record_exists = False
+    existing_file = False
+    if id:
+        record_exists_check = StudentCertificate.query.filter_by(id=id, student_profile_id=profile.id).first()
+        if record_exists_check:
+            record_exists = True
+            existing_file = record_exists_check.certificate_file_id is not None
+
+    if not credential_url and not has_file and not existing_file:
+        errors['certificate_file'] = ['Anda harus mengunggah file sertifikat atau memberikan URL kredensial.']
+
     if errors:
         return jsonify({'error': 'Validation failed', 'errors': errors}), 400
 
@@ -778,6 +799,7 @@ def save_certificate(id=None):
     record.certificate_title = certificate_title
     record.issuer = issuer
     record.issue_date = issue_date
+    record.credential_url = credential_url if credential_url else None
 
     # --- Handle optional file upload ---
     uploaded_file = request.files.get('certificate_file')
@@ -868,3 +890,64 @@ def delete_certificate(id):
         db.session.rollback()
         current_app.logger.error(f"Error deleting certificate: {e}")
         return jsonify({'error': 'Gagal menghapus sertifikat.'}), 500
+
+@bp.route('/profile/certificates/fetch-metadata', methods=['POST'])
+@student_required
+def fetch_certificate_metadata():
+    from flask import request, jsonify
+    import urllib.request
+    import html.parser
+    import re
+    from urllib.parse import urlparse
+
+    url = request.json.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'URL tidak valid.'}), 400
+
+    try:
+        # Validate URL format basic
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return jsonify({'error': 'URL tidak valid.'}), 400
+
+        # Build request with standard user-agent to prevent blocks
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html_content = response.read().decode('utf-8', errors='ignore')
+
+        title_match = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']', html_content, re.IGNORECASE)
+        desc_match = re.search(r'<meta\s+property=["\']og:description["\']\s+content=["\']([^"\']+)["\']', html_content, re.IGNORECASE)
+
+        title = title_match.group(1) if title_match else ''
+        description = desc_match.group(1) if desc_match else ''
+        
+        # Try to infer issuer from the domain or description
+        issuer = parsed.netloc.replace('www.', '').split('.')[0].capitalize()
+        if 'hackerrank' in parsed.netloc.lower():
+            issuer = 'HackerRank'
+        elif 'coursera' in parsed.netloc.lower():
+            issuer = 'Coursera'
+        elif 'udemy' in parsed.netloc.lower():
+            issuer = 'Udemy'
+        elif 'dicoding' in parsed.netloc.lower():
+            issuer = 'Dicoding'
+
+        # Special handling for HackerRank title like "Prabu Bima is now a verified Software Engineer"
+        # and description like "Click here to see my certificate for React (Basic) on HackerRank"
+        if issuer == 'HackerRank' and description:
+            cert_name_match = re.search(r'certificate for\s+(.+?)\s+on', description, re.IGNORECASE)
+            if cert_name_match:
+                title = cert_name_match.group(1).strip()
+            
+        return jsonify({
+            'success': True,
+            'title': title,
+            'issuer': issuer
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Gagal menarik data dari URL: {str(e)}'}), 500
