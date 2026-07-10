@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, SelectField, DateField
 from wtforms.validators import DataRequired, Email, Length, Optional
 
@@ -47,3 +48,12 @@ class OrganizationForm(FlaskForm):
     start_date = DateField('Tanggal Mulai', validators=[DataRequired()])
     end_date = DateField('Tanggal Selesai', validators=[Optional()])
     description = TextAreaField('Deskripsi Kegiatan', validators=[Optional(), Length(max=1000)])
+
+class CertificateForm(FlaskForm):
+    certificate_title = StringField('Nama Sertifikat', validators=[DataRequired(), Length(max=200)])
+    issuer = StringField('Lembaga Penerbit', validators=[DataRequired(), Length(max=200)])
+    issue_date = DateField('Tanggal Diterbitkan', validators=[DataRequired()])
+    certificate_file = FileField('File Sertifikat (PDF/Gambar)', validators=[
+        Optional(),
+        FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'Hanya file PDF, JPG, atau PNG yang diizinkan.')
+    ])

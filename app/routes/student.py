@@ -686,3 +686,185 @@ def delete_organization(id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Organization deleted successfully.'})
+
+
+@bp.route('/profile/certificates', methods=['GET'])
+@student_required
+def get_certificates():
+    from flask import request, jsonify
+    from app.models.student import StudentCertificate
+
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+
+    cert_id = request.args.get('id', type=int)
+    if cert_id:
+        record = StudentCertificate.query.filter_by(id=cert_id, student_profile_id=profile.id).first()
+        if not record:
+            return jsonify({'error': 'Certificate not found.'}), 404
+        return jsonify({
+            'id': record.id,
+            'certificate_title': record.certificate_title,
+            'issuer': record.issuer,
+            'issue_date': record.issue_date.strftime('%Y-%m-%d') if record.issue_date else '',
+            'has_file': record.certificate_file_id is not None,
+            'file_url': record.certificate_file.url if record.certificate_file else None
+        })
+
+    records = StudentCertificate.query.filter_by(student_profile_id=profile.id).order_by(StudentCertificate.issue_date.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'certificate_title': r.certificate_title,
+        'issuer': r.issuer,
+        'issue_date': r.issue_date.strftime('%Y-%m-%d') if r.issue_date else '',
+        'has_file': r.certificate_file_id is not None,
+        'file_url': r.certificate_file.url if r.certificate_file else None
+    } for r in records])
+
+
+@bp.route('/profile/certificates', methods=['POST'])
+@bp.route('/profile/certificates/<int:id>', methods=['POST'])
+@student_required
+def save_certificate(id=None):
+    from flask import request, jsonify, current_app
+    from werkzeug.utils import secure_filename
+    from app.models.student import StudentCertificate
+    from app.models.identity import FileAsset
+    from app.services.storage import upload_file, delete_file, get_bucket_for_purpose, validate_file
+    from datetime import date
+
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+
+    # --- Manual validation (no WTForms FileField needed) ---
+    certificate_title = request.form.get('certificate_title', '').strip()
+    issuer = request.form.get('issuer', '').strip()
+    issue_date_str = request.form.get('issue_date', '').strip()
+
+    errors = {}
+    if not certificate_title:
+        errors['certificate_title'] = ['Nama sertifikat wajib diisi.']
+    elif len(certificate_title) > 200:
+        errors['certificate_title'] = ['Maksimal 200 karakter.']
+
+    if not issuer:
+        errors['issuer'] = ['Lembaga penerbit wajib diisi.']
+    elif len(issuer) > 200:
+        errors['issuer'] = ['Maksimal 200 karakter.']
+
+    issue_date = None
+    if not issue_date_str:
+        errors['issue_date'] = ['Tanggal diterbitkan wajib diisi.']
+    else:
+        try:
+            issue_date = date.fromisoformat(issue_date_str)
+        except ValueError:
+            errors['issue_date'] = ['Format tanggal tidak valid (YYYY-MM-DD).']
+
+    if errors:
+        return jsonify({'error': 'Validation failed', 'errors': errors}), 400
+
+    # --- Resolve record ---
+    if id:
+        record = StudentCertificate.query.filter_by(id=id, student_profile_id=profile.id).first()
+        if not record:
+            return jsonify({'error': 'Certificate not found.'}), 404
+    else:
+        record = StudentCertificate(student_profile_id=profile.id)
+        db.session.add(record)
+
+    record.certificate_title = certificate_title
+    record.issuer = issuer
+    record.issue_date = issue_date
+
+    # --- Handle optional file upload ---
+    uploaded_file = request.files.get('certificate_file')
+    if uploaded_file and uploaded_file.filename:
+        is_valid, error_msg = validate_file(
+            uploaded_file,
+            allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'],
+            max_size_mb=5
+        )
+        if not is_valid:
+            return jsonify({'error': error_msg}), 400
+
+        filename = secure_filename(uploaded_file.filename)
+        bucket_name = get_bucket_for_purpose('certificate')
+
+        uploaded_file.seek(0, 2)
+        size = uploaded_file.tell()
+        uploaded_file.seek(0)
+
+        try:
+            object_key = upload_file(
+                bucket_name=bucket_name,
+                file_stream=uploaded_file,
+                file_name=filename,
+                content_type=uploaded_file.content_type
+            )
+
+            # Delete old file if replacing
+            if record.certificate_file_id:
+                old_file = record.certificate_file
+                old_bucket = old_file.storage_bucket
+                old_key = old_file.object_key
+                record.certificate_file_id = None
+                db.session.flush()
+                delete_file(old_bucket, old_key)
+                db.session.delete(old_file)
+
+            new_file = FileAsset(
+                owner_user_id=current_user.id,
+                file_purpose='certificate',
+                storage_bucket=bucket_name,
+                object_key=object_key,
+                file_name=filename,
+                content_type=uploaded_file.content_type,
+                file_size_bytes=size
+            )
+            db.session.add(new_file)
+            db.session.flush()
+            record.certificate_file_id = new_file.id
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error uploading certificate file: {e}")
+            return jsonify({'error': 'Gagal mengunggah file sertifikat.'}), 500
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Sertifikat berhasil disimpan.'})
+
+
+@bp.route('/profile/certificates/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_certificate(id):
+    from flask import jsonify, current_app
+    from app.models.student import StudentCertificate
+    from app.services.storage import delete_file
+
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+
+    record = StudentCertificate.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Certificate not found.'}), 404
+
+    try:
+        # Delete associated file from storage if exists
+        if record.certificate_file_id:
+            old_file = record.certificate_file
+            record.certificate_file_id = None
+            db.session.flush()
+            delete_file(old_file.storage_bucket, old_file.object_key)
+            db.session.delete(old_file)
+
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Sertifikat berhasil dihapus.'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting certificate: {e}")
+        return jsonify({'error': 'Gagal menghapus sertifikat.'}), 500

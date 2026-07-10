@@ -198,8 +198,16 @@
                 </div>
             </div>
             <div id="portfolio" class="tab-content hidden">
-                <div class="text-center py-12">
-                    <p class="text-gray-500">Fitur Portofolio & Sertifikat akan segera hadir.</p>
+                <!-- Sertifikat -->
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 font-outfit">Sertifikat</h3>
+                    <button type="button" onclick="openCertificateModal()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                        + Tambah Sertifikat
+                    </button>
+                </div>
+
+                <div id="certificateList" class="space-y-4">
+                    <div class="text-center py-12 text-gray-500">Memuat data...</div>
                 </div>
             </div>
         </div>
@@ -361,6 +369,72 @@
         </form>
     </div>
 </div>
+
+<!-- Certificate Modal -->
+<div id="certificateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 m-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900 font-outfit" id="certificateModalTitle">Tambah Sertifikat</h3>
+            <button type="button" onclick="closeCertificateModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form id="certificateForm" class="space-y-5">
+            <input type="hidden" id="cert_id" name="cert_id" value="">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Sertifikat *</label>
+                <input type="text" id="cert_title" name="certificate_title" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Lembaga Penerbit *</label>
+                <input type="text" id="cert_issuer" name="issuer" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Diterbitkan *</label>
+                <input type="date" id="cert_date" name="issue_date" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">File Sertifikat <span class="text-gray-400">(Opsional, PDF/JPG/PNG, maks. 5MB)</span></label>
+                <div id="certFileDropzone" class="relative border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-primary-400 transition-colors cursor-pointer bg-gray-50">
+                    <input type="file" id="cert_file" name="certificate_file" accept=".pdf,.jpg,.jpeg,.png" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <div id="certFileDefaultMsg">
+                        <svg class="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p class="text-sm text-gray-500">Klik atau drag & drop file di sini</p>
+                        <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG hingga 5MB</p>
+                    </div>
+                    <div id="certFileSelectedMsg" class="hidden">
+                        <svg class="mx-auto h-8 w-8 text-primary-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p id="certFileName" class="text-sm font-medium text-gray-700"></p>
+                        <p class="text-xs text-gray-400 mt-1">Klik untuk ganti file</p>
+                    </div>
+                </div>
+                <div id="certExistingFile" class="hidden mt-2 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    <span>File sertifikat sudah ada. Upload file baru untuk mengganti.</span>
+                    <a id="certExistingFileLink" href="#" target="_blank" class="ml-auto text-blue-600 hover:underline font-medium whitespace-nowrap">Lihat File</a>
+                </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-between">
+                <button type="button" id="btnDeleteCertModal" onclick="deleteCertificateFromModal()" class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
+                <div class="flex space-x-3 ml-auto">
+                    <button type="button" onclick="closeCertificateModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                    <button type="submit" id="btnSaveCertificate" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1154,6 +1228,192 @@
     }
 
     loadOrganizations();
+
+    // ==================== CERTIFICATES ====================
+    const certificateModal = document.getElementById('certificateModal');
+    const certificateForm = document.getElementById('certificateForm');
+    const certFileInput = document.getElementById('cert_file');
+
+    // File input display
+    if (certFileInput) {
+        certFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                document.getElementById('certFileDefaultMsg').classList.add('hidden');
+                document.getElementById('certFileSelectedMsg').classList.remove('hidden');
+                document.getElementById('certFileName').textContent = file.name;
+            } else {
+                document.getElementById('certFileDefaultMsg').classList.remove('hidden');
+                document.getElementById('certFileSelectedMsg').classList.add('hidden');
+            }
+        });
+    }
+
+    window.loadCertificates = function() {
+        const csrfToken = "{{ csrf_token() }}";
+        fetch("{{ url_for('student.get_certificates') }}", {
+            headers: { 'X-CSRFToken': csrfToken }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('certificateList');
+            if (!list) return;
+            if (!data.length) {
+                list.innerHTML = `
+                    <div class="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                        </svg>
+                        <p class="text-gray-500 font-medium">Belum ada sertifikat</p>
+                        <p class="text-sm text-gray-400 mt-1">Tambahkan sertifikat profesional atau kursus online Anda.</p>
+                    </div>`;
+                return;
+            }
+            list.innerHTML = data.map(cert => {
+                const dateStr = cert.issue_date
+                    ? new Date(cert.issue_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
+                    : '-';
+                const fileBtn = cert.has_file && cert.file_url
+                    ? `<a href="${cert.file_url}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Unduh
+                       </a>`
+                    : '';
+                return `
+                    <div class="flex items-start justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-gray-200 transition-colors">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900 text-sm">${cert.certificate_title}</p>
+                                <p class="text-sm text-gray-500">${cert.issuer}</p>
+                                <p class="text-xs text-gray-400 mt-1">${dateStr}</p>
+                                <div class="mt-2">${fileBtn}</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="openCertificateModal(${cert.id})" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </button>
+                    </div>`;
+            }).join('');
+        });
+    };
+
+    window.openCertificateModal = function(id = null) {
+        // Reset form
+        if (certificateForm) certificateForm.reset();
+        document.getElementById('cert_id').value = '';
+        document.getElementById('certFileDefaultMsg').classList.remove('hidden');
+        document.getElementById('certFileSelectedMsg').classList.add('hidden');
+        document.getElementById('certExistingFile').classList.add('hidden');
+        document.getElementById('btnDeleteCertModal').classList.add('hidden');
+        document.getElementById('certificateModalTitle').textContent = 'Tambah Sertifikat';
+
+        if (id) {
+            const csrfToken = "{{ csrf_token() }}";
+            fetch(`{{ url_for('student.get_certificates') }}?id=${id}`, {
+                headers: { 'X-CSRFToken': csrfToken }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) { alert(data.error); return; }
+                document.getElementById('cert_id').value = data.id;
+                document.getElementById('cert_title').value = data.certificate_title;
+                document.getElementById('cert_issuer').value = data.issuer;
+                document.getElementById('cert_date').value = data.issue_date;
+                document.getElementById('certificateModalTitle').textContent = 'Ubah Sertifikat';
+                document.getElementById('btnDeleteCertModal').classList.remove('hidden');
+
+                if (data.has_file && data.file_url) {
+                    const existingDiv = document.getElementById('certExistingFile');
+                    existingDiv.classList.remove('hidden');
+                    document.getElementById('certExistingFileLink').href = data.file_url;
+                }
+
+                certificateModal.classList.remove('hidden');
+                certificateModal.classList.add('flex');
+            });
+        } else {
+            certificateModal.classList.remove('hidden');
+            certificateModal.classList.add('flex');
+        }
+    };
+
+    window.closeCertificateModal = function() {
+        certificateModal.classList.add('hidden');
+        certificateModal.classList.remove('flex');
+    };
+
+    window.deleteCertificateFromModal = function() {
+        const id = document.getElementById('cert_id').value;
+        if (!id) return;
+        if (!confirm('Hapus sertifikat ini?')) return;
+
+        const csrfToken = "{{ csrf_token() }}";
+        fetch(`/student/profile/certificates/${id}/delete`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                closeCertificateModal();
+                loadCertificates();
+            } else {
+                alert(data.error || 'Gagal menghapus sertifikat.');
+            }
+        });
+    };
+
+    if (certificateForm) {
+        certificateForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btnSave = document.getElementById('btnSaveCertificate');
+            btnSave.disabled = true;
+            btnSave.textContent = 'Menyimpan...';
+
+            const id = document.getElementById('cert_id').value;
+            const url = id
+                ? `/student/profile/certificates/${id}`
+                : "{{ url_for('student.save_certificate') }}";
+
+            const formData = new FormData(certificateForm);
+            // Include the file if selected
+            const fileInput = document.getElementById('cert_file');
+            if (fileInput && fileInput.files[0]) {
+                formData.set('certificate_file', fileInput.files[0]);
+            }
+
+            const csrfToken = "{{ csrf_token() }}";
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeCertificateModal();
+                    loadCertificates();
+                } else {
+                    alert(data.error || 'Terjadi kesalahan saat menyimpan.');
+                }
+            })
+            .finally(() => {
+                btnSave.disabled = false;
+                btnSave.textContent = 'Simpan';
+            });
+        });
+    }
+
+    // Load certificates when portfolio tab is clicked
+    document.querySelectorAll('.tab-btn[data-target="portfolio"]').forEach(btn => {
+        btn.addEventListener('click', loadCertificates);
+    });
 
 </script>
 {% endblock %}

@@ -8,6 +8,8 @@ def get_supabase_client() -> Client:
     """Initialize and return a Supabase client using current app configuration."""
     url = current_app.config.get("SUPABASE_URL")
     key = current_app.config.get("SUPABASE_KEY")
+    if not url or not key:
+        raise ValueError("Supabase belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_KEY di file .env.")
     return create_client(url, key)
 
 BUCKET_MAPPING = {
