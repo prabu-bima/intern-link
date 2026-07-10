@@ -1076,6 +1076,146 @@ def save_github_profile():
                 
     return redirect(url_for('student.profile') + '#personal')
 
+# --- CV MANAGEMENT ---
+
+@bp.route('/cv', methods=['GET'])
+@student_required
+def cv_management():
+    from flask import render_template
+    from app.forms.student import StudentCvUploadForm
+    from app.models.student import StudentCvVersion
+    
+    profile = current_user.student_profile
+    if not profile:
+        flash('Silakan lengkapi profil Anda terlebih dahulu.', 'warning')
+        return redirect(url_for('student.profile'))
+        
+    cv_form = StudentCvUploadForm()
+    
+    # Get all non-deleted CV versions ordered by version_no desc
+    cv_versions = StudentCvVersion.query.filter_by(
+        student_profile_id=profile.id, 
+        deleted_at=None
+    ).order_by(StudentCvVersion.version_no.desc()).all()
+    
+    current_cv = next((cv for cv in cv_versions if cv.is_current), None)
+    
+    return render_template('student/cv.html', 
+                           cv_form=cv_form, 
+                           cv_versions=cv_versions,
+                           current_cv=current_cv)
+
+@bp.route('/cv/upload', methods=['POST'])
+@student_required
+def upload_cv():
+    from flask import request, current_app, redirect, url_for, flash
+    from werkzeug.utils import secure_filename
+    from app.services.storage import upload_file, get_bucket_for_purpose, validate_file
+    from app.models.identity import FileAsset
+    from app.models.student import StudentCvVersion
+    from app.forms.student import StudentCvUploadForm
+    
+    form = StudentCvUploadForm()
+    
+    if form.validate_on_submit():
+        file = form.cv_file.data
+        
+        is_valid, error_msg = validate_file(file, allowed_extensions=['pdf'], max_size_mb=5)
+        if not is_valid:
+            flash(error_msg, 'error')
+            return redirect(url_for('student.cv_management'))
+            
+        filename = secure_filename(file.filename)
+        bucket_name = get_bucket_for_purpose('student_cv')
+        
+        # Get file size
+        file.seek(0, 2)
+        size = file.tell()
+        file.seek(0)
+        
+        profile = current_user.student_profile
+        
+        try:
+            # Upload to Supabase
+            object_key = upload_file(
+                bucket_name=bucket_name,
+                file_stream=file,
+                file_name=filename,
+                content_type=file.content_type
+            )
+            
+            # Create FileAsset
+            new_file_asset = FileAsset(
+                owner_user_id=current_user.id,
+                file_purpose='student_cv',
+                storage_bucket=bucket_name,
+                object_key=object_key,
+                file_name=filename,
+                content_type=file.content_type,
+                file_size_bytes=size
+            )
+            db.session.add(new_file_asset)
+            db.session.flush() # Get the new file asset ID
+            
+            # Determine new version number
+            latest_cv = StudentCvVersion.query.filter_by(student_profile_id=profile.id).order_by(StudentCvVersion.version_no.desc()).first()
+            new_version_no = (latest_cv.version_no + 1) if latest_cv else 1
+            
+            # Set all existing CVs to is_current=False
+            StudentCvVersion.query.filter_by(student_profile_id=profile.id, is_current=True).update({'is_current': False})
+            
+            # Create new StudentCvVersion
+            new_cv_version = StudentCvVersion(
+                student_profile_id=profile.id,
+                file_asset_id=new_file_asset.id,
+                version_no=new_version_no,
+                is_current=True
+            )
+            db.session.add(new_cv_version)
+            
+            db.session.commit()
+            flash('CV berhasil diunggah dan diatur sebagai CV utama.', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error uploading student CV: {e}")
+            flash('Gagal mengunggah CV karena kesalahan server.', 'error')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{error}', 'error')
+                
+    return redirect(url_for('student.cv_management'))
+
+@bp.route('/cv/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_cv(id):
+    from flask import current_app, redirect, url_for, flash
+    from datetime import datetime
+    from app.models.student import StudentCvVersion
+    
+    cv_version = StudentCvVersion.query.get_or_404(id)
+    
+    # Security check: Ensure it belongs to the current user
+    if cv_version.student_profile_id != current_user.student_profile.id:
+        flash('Anda tidak memiliki akses ke CV ini.', 'error')
+        return redirect(url_for('student.cv_management'))
+        
+    try:
+        cv_version.deleted_at = datetime.utcnow()
+        
+        if cv_version.is_current:
+            cv_version.is_current = False
+            # We decided in the plan to leave them with NO current CV (Option B)
+            
+        db.session.commit()
+        flash('CV berhasil dihapus.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting student CV: {e}")
+        flash('Terjadi kesalahan saat menghapus CV.', 'error')
+        
+    return redirect(url_for('student.cv_management'))
 @bp.route('/profile/linkedin', methods=['POST'])
 @student_required
 def save_linkedin_profile():

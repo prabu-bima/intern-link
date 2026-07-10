@@ -70,3 +70,9 @@ class GithubProfileForm(FlaskForm):
 
 class LinkedinProfileForm(FlaskForm):
     linkedin_url = URLField('URL Profil LinkedIn', validators=[DataRequired(), URL(), Length(max=255)])
+
+class StudentCvUploadForm(FlaskForm):
+    cv_file = FileField('File CV / Resume (PDF)', validators=[
+        DataRequired(message="Silakan pilih file CV Anda."),
+        FileAllowed(['pdf'], 'Hanya file PDF yang diizinkan.')
+    ])
