@@ -17,3 +17,19 @@ class EducationForm(FlaskForm):
     start_date = DateField('Tanggal Mulai', validators=[DataRequired()])
     end_date = DateField('Tanggal Lulus (Atau Perkiraan)', validators=[Optional()])
     grade = StringField('IPK / Nilai', validators=[Optional(), Length(max=20)])
+
+class StudentSkillForm(FlaskForm):
+    skill_id = SelectField('Keahlian', coerce=int, validators=[DataRequired()])
+    proficiency_level = SelectField('Tingkat Penguasaan', choices=[
+        ('Beginner', 'Beginner'),
+        ('Intermediate', 'Intermediate'),
+        ('Advanced', 'Advanced')
+    ], validators=[DataRequired()])
+
+class StudentTechStackItemForm(FlaskForm):
+    tech_stack_item_id = SelectField('Tech Stack', coerce=int, validators=[DataRequired()])
+    proficiency_level = SelectField('Tingkat Penguasaan', choices=[
+        ('Beginner', 'Beginner'),
+        ('Intermediate', 'Intermediate'),
+        ('Advanced', 'Advanced')
+    ], validators=[DataRequired()])

@@ -350,3 +350,167 @@ def delete_education(id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Education record deleted successfully.'})
+
+@bp.route('/profile/skills/options', methods=['GET'])
+@student_required
+def get_skills_options():
+    from flask import jsonify
+    from app.models.master import Skill
+    
+    skills = Skill.query.order_by(Skill.skill_name.asc()).all()
+    return jsonify([{
+        'id': s.id,
+        'skill_name': s.skill_name
+    } for s in skills])
+
+@bp.route('/profile/skills', methods=['GET'])
+@student_required
+def get_student_skills():
+    from flask import jsonify
+    from app.models.student import StudentSkill
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    records = StudentSkill.query.filter_by(student_profile_id=profile.id).all()
+    return jsonify([{
+        'id': r.id,
+        'skill_id': r.skill_id,
+        'skill_name': r.skill.skill_name if r.skill else '',
+        'proficiency_level': r.proficiency_level
+    } for r in records])
+
+@bp.route('/profile/skills', methods=['POST'])
+@student_required
+def add_student_skill():
+    from flask import request, jsonify
+    from app.forms.student import StudentSkillForm
+    from app.models.student import StudentSkill
+    from app.models.master import Skill
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    form = StudentSkillForm(request.form)
+    # Populate choices for validation
+    form.skill_id.choices = [(s.id, s.skill_name) for s in Skill.query.all()]
+    
+    if form.validate_on_submit():
+        # Check if already exists
+        existing = StudentSkill.query.filter_by(student_profile_id=profile.id, skill_id=form.skill_id.data).first()
+        if existing:
+            return jsonify({'error': 'Keahlian ini sudah ditambahkan sebelumnya.'}), 400
+            
+        new_record = StudentSkill(
+            student_profile_id=profile.id,
+            skill_id=form.skill_id.data,
+            proficiency_level=form.proficiency_level.data
+        )
+        db.session.add(new_record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Skill added successfully.'})
+    
+    return jsonify({'error': 'Validation failed.', 'errors': form.errors}), 400
+
+@bp.route('/profile/skills/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_student_skill(id):
+    from flask import jsonify
+    from app.models.student import StudentSkill
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    record = StudentSkill.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Skill record not found.'}), 404
+        
+    db.session.delete(record)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Skill deleted successfully.'})
+
+@bp.route('/profile/tech-stack/options', methods=['GET'])
+@student_required
+def get_tech_stack_options():
+    from flask import jsonify
+    from app.models.master import TechStackItem
+    
+    items = TechStackItem.query.order_by(TechStackItem.tech_stack_name.asc()).all()
+    return jsonify([{
+        'id': i.id,
+        'tech_stack_name': i.tech_stack_name
+    } for i in items])
+
+@bp.route('/profile/tech-stack', methods=['GET'])
+@student_required
+def get_student_tech_stack():
+    from flask import jsonify
+    from app.models.student import StudentTechStackItem
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    records = StudentTechStackItem.query.filter_by(student_profile_id=profile.id).all()
+    return jsonify([{
+        'id': r.id,
+        'tech_stack_item_id': r.tech_stack_item_id,
+        'tech_stack_name': r.tech_stack_item.tech_stack_name if r.tech_stack_item else '',
+        'proficiency_level': r.proficiency_level
+    } for r in records])
+
+@bp.route('/profile/tech-stack', methods=['POST'])
+@student_required
+def add_student_tech_stack():
+    from flask import request, jsonify
+    from app.forms.student import StudentTechStackItemForm
+    from app.models.student import StudentTechStackItem
+    from app.models.master import TechStackItem
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    form = StudentTechStackItemForm(request.form)
+    # Populate choices for validation
+    form.tech_stack_item_id.choices = [(i.id, i.tech_stack_name) for i in TechStackItem.query.all()]
+    
+    if form.validate_on_submit():
+        # Check if already exists
+        existing = StudentTechStackItem.query.filter_by(student_profile_id=profile.id, tech_stack_item_id=form.tech_stack_item_id.data).first()
+        if existing:
+            return jsonify({'error': 'Tech stack ini sudah ditambahkan sebelumnya.'}), 400
+            
+        new_record = StudentTechStackItem(
+            student_profile_id=profile.id,
+            tech_stack_item_id=form.tech_stack_item_id.data,
+            proficiency_level=form.proficiency_level.data
+        )
+        db.session.add(new_record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Tech stack added successfully.'})
+    
+    return jsonify({'error': 'Validation failed.', 'errors': form.errors}), 400
+
+@bp.route('/profile/tech-stack/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_student_tech_stack(id):
+    from flask import jsonify
+    from app.models.student import StudentTechStackItem
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    record = StudentTechStackItem.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Tech stack record not found.'}), 404
+        
+    db.session.delete(record)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Tech stack deleted successfully.'})

@@ -113,8 +113,63 @@
                 </div>
             </div>
             <div id="skills" class="tab-content hidden">
-                <div class="text-center py-12">
-                    <p class="text-gray-500">Fitur Keahlian akan segera hadir.</p>
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 font-outfit mb-4">Keahlian & Tech Stack</h3>
+                    
+                    <form id="skillForm" class="flex flex-col md:flex-row gap-3">
+                        <div class="flex-grow">
+                            <select id="skillSelect" name="skill_id" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                                <option value="">-- Pilih Keahlian --</option>
+                            </select>
+                        </div>
+                        <div class="w-full md:w-48">
+                            <select id="proficiencySelect" name="proficiency_level" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                                <option value="">-- Tingkat --</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="btnSaveSkill" class="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap">
+                            + Tambah
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="bg-white border border-gray-100 rounded-2xl p-5 min-h-[120px]">
+                    <div id="skillsList" class="flex flex-wrap gap-2">
+                        <div class="w-full text-center py-6 text-gray-500 text-sm">Memuat data...</div>
+                    </div>
+                </div>
+
+                <!-- Tech Stack Section -->
+                <div class="mt-8 mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 font-outfit mb-4">Tech Stack & Tools</h3>
+                    
+                    <form id="techStackForm" class="flex flex-col md:flex-row gap-3">
+                        <div class="flex-grow">
+                            <select id="techStackSelect" name="tech_stack_item_id" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                                <option value="">-- Pilih Tech Stack --</option>
+                            </select>
+                        </div>
+                        <div class="w-full md:w-48">
+                            <select id="techProficiencySelect" name="proficiency_level" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                                <option value="">-- Tingkat --</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="btnSaveTechStack" class="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap">
+                            + Tambah
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="bg-white border border-gray-100 rounded-2xl p-5 min-h-[120px]">
+                    <div id="techStackList" class="flex flex-wrap gap-2">
+                        <div class="w-full text-center py-6 text-gray-500 text-sm">Memuat data...</div>
+                    </div>
                 </div>
             </div>
             <div id="experience" class="tab-content hidden">
@@ -476,6 +531,222 @@
 
     // Load initial data
     loadEducations();
+
+    // Skills Logic
+    function loadSkillOptions() {
+        fetch("{{ url_for('student.get_skills_options') }}")
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('skillSelect');
+                data.forEach(skill => {
+                    const option = document.createElement('option');
+                    option.value = skill.id;
+                    option.textContent = skill.skill_name;
+                    select.appendChild(option);
+                });
+            });
+    }
+    
+    function loadSkills() {
+        fetch("{{ url_for('student.get_student_skills') }}")
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('skillsList');
+                list.innerHTML = '';
+                
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="w-full text-center py-6 text-gray-500 text-sm">Belum ada keahlian yang ditambahkan.</div>';
+                    return;
+                }
+                
+                data.forEach(item => {
+                    let levelColor = 'bg-gray-100 text-gray-700';
+                    if (item.proficiency_level === 'Beginner') levelColor = 'bg-blue-100 text-blue-700';
+                    if (item.proficiency_level === 'Intermediate') levelColor = 'bg-green-100 text-green-700';
+                    if (item.proficiency_level === 'Advanced') levelColor = 'bg-purple-100 text-purple-700';
+                    
+                    const div = document.createElement('div');
+                    div.className = `inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium ${levelColor}`;
+                    div.innerHTML = `
+                        <span>${item.skill_name}</span>
+                        <span class="mx-2 opacity-50 text-xs">•</span>
+                        <span class="text-xs opacity-75 mr-2">${item.proficiency_level}</span>
+                        <button type="button" onclick="deleteSkill(${item.id})" class="ml-1 opacity-50 hover:opacity-100 focus:outline-none transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    `;
+                    list.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching skills:', error);
+            });
+    }
+    
+    window.deleteSkill = function(id) {
+        if (!confirm('Hapus keahlian ini?')) return;
+        
+        const csrfToken = "{{ csrf_token() }}";
+        fetch(`/student/profile/skills/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        }).then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadSkills();
+            } else {
+                alert(data.error || 'Gagal menghapus keahlian.');
+            }
+        });
+    };
+    
+    const skillForm = document.getElementById('skillForm');
+    if (skillForm) {
+        skillForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btnSave = document.getElementById('btnSaveSkill');
+            btnSave.disabled = true;
+            btnSave.textContent = '...';
+            
+            const formData = new FormData(skillForm);
+            const csrfToken = "{{ csrf_token() }}";
+            
+            fetch("{{ url_for('student.add_student_skill') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    skillForm.reset();
+                    loadSkills();
+                } else {
+                    alert(data.error || 'Terjadi kesalahan.');
+                }
+            })
+            .finally(() => {
+                btnSave.disabled = false;
+                btnSave.textContent = '+ Tambah';
+            });
+        });
+    }
+    
+    loadSkillOptions();
+    loadSkills();
+
+    // Tech Stack Logic
+    function loadTechStackOptions() {
+        fetch("{{ url_for('student.get_tech_stack_options') }}")
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('techStackSelect');
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.tech_stack_name;
+                    select.appendChild(option);
+                });
+            });
+    }
+    
+    function loadTechStack() {
+        fetch("{{ url_for('student.get_student_tech_stack') }}")
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('techStackList');
+                list.innerHTML = '';
+                
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="w-full text-center py-6 text-gray-500 text-sm">Belum ada tech stack yang ditambahkan.</div>';
+                    return;
+                }
+                
+                data.forEach(item => {
+                    let levelColor = 'bg-gray-100 text-gray-700';
+                    if (item.proficiency_level === 'Beginner') levelColor = 'bg-blue-100 text-blue-700';
+                    if (item.proficiency_level === 'Intermediate') levelColor = 'bg-green-100 text-green-700';
+                    if (item.proficiency_level === 'Advanced') levelColor = 'bg-purple-100 text-purple-700';
+                    
+                    const div = document.createElement('div');
+                    div.className = `inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium ${levelColor}`;
+                    div.innerHTML = `
+                        <span>${item.tech_stack_name}</span>
+                        <span class="mx-2 opacity-50 text-xs">•</span>
+                        <span class="text-xs opacity-75 mr-2">${item.proficiency_level}</span>
+                        <button type="button" onclick="deleteTechStack(${item.id})" class="ml-1 opacity-50 hover:opacity-100 focus:outline-none transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    `;
+                    list.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching tech stack:', error);
+            });
+    }
+    
+    window.deleteTechStack = function(id) {
+        if (!confirm('Hapus tech stack ini?')) return;
+        
+        const csrfToken = "{{ csrf_token() }}";
+        fetch(`/student/profile/tech-stack/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        }).then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadTechStack();
+            } else {
+                alert(data.error || 'Gagal menghapus tech stack.');
+            }
+        });
+    };
+    
+    const techStackForm = document.getElementById('techStackForm');
+    if (techStackForm) {
+        techStackForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btnSave = document.getElementById('btnSaveTechStack');
+            btnSave.disabled = true;
+            btnSave.textContent = '...';
+            
+            const formData = new FormData(techStackForm);
+            const csrfToken = "{{ csrf_token() }}";
+            
+            fetch("{{ url_for('student.add_student_tech_stack') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    techStackForm.reset();
+                    loadTechStack();
+                } else {
+                    alert(data.error || 'Terjadi kesalahan.');
+                }
+            })
+            .finally(() => {
+                btnSave.disabled = false;
+                btnSave.textContent = '+ Tambah';
+            });
+        });
+    }
+    
+    loadTechStackOptions();
+    loadTechStack();
 
 </script>
 {% endblock %}
