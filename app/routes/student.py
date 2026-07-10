@@ -238,3 +238,115 @@ def delete_profile_photo():
         db.session.rollback()
         current_app.logger.error(f"Error deleting profile photo: {e}")
         return jsonify({'error': 'Failed to delete photo due to a server error.'}), 500
+
+@bp.route('/profile/education', methods=['GET'])
+@student_required
+def get_educations():
+    from flask import jsonify, request
+    from app.models.student import StudentEducationRecord
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    edu_id = request.args.get('id', type=int)
+    if edu_id:
+        record = StudentEducationRecord.query.filter_by(id=edu_id, student_profile_id=profile.id).first()
+        if not record:
+            return jsonify({'error': 'Education record not found.'}), 404
+        return jsonify({
+            'id': record.id,
+            'institution_name': record.institution_name,
+            'field_of_study': record.field_of_study,
+            'degree_name': record.degree_name,
+            'start_date': record.start_date.isoformat() if record.start_date else '',
+            'end_date': record.end_date.isoformat() if record.end_date else '',
+            'grade': record.grade
+        })
+        
+    records = StudentEducationRecord.query.filter_by(student_profile_id=profile.id).order_by(StudentEducationRecord.start_date.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'institution_name': r.institution_name,
+        'field_of_study': r.field_of_study,
+        'degree_name': r.degree_name,
+        'start_date': r.start_date.isoformat() if r.start_date else '',
+        'end_date': r.end_date.isoformat() if r.end_date else '',
+        'grade': r.grade
+    } for r in records])
+
+@bp.route('/profile/education', methods=['POST'])
+@student_required
+def add_education():
+    from flask import request, jsonify
+    from app.forms.student import EducationForm
+    from app.models.student import StudentEducationRecord
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    form = EducationForm(request.form)
+    if form.validate_on_submit():
+        new_record = StudentEducationRecord(
+            student_profile_id=profile.id,
+            institution_name=form.institution_name.data,
+            field_of_study=form.field_of_study.data,
+            degree_name=form.degree_name.data,
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            grade=form.grade.data
+        )
+        db.session.add(new_record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Education record added successfully.'})
+    
+    return jsonify({'error': 'Validation failed.', 'errors': form.errors}), 400
+
+@bp.route('/profile/education/<int:id>', methods=['POST'])
+@student_required
+def edit_education(id):
+    from flask import request, jsonify
+    from app.forms.student import EducationForm
+    from app.models.student import StudentEducationRecord
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    record = StudentEducationRecord.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Education record not found.'}), 404
+        
+    form = EducationForm(request.form)
+    if form.validate_on_submit():
+        record.institution_name = form.institution_name.data
+        record.field_of_study = form.field_of_study.data
+        record.degree_name = form.degree_name.data
+        record.start_date = form.start_date.data
+        record.end_date = form.end_date.data
+        record.grade = form.grade.data
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Education record updated successfully.'})
+        
+    return jsonify({'error': 'Validation failed.', 'errors': form.errors}), 400
+
+@bp.route('/profile/education/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_education(id):
+    from flask import jsonify
+    from app.models.student import StudentEducationRecord
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    record = StudentEducationRecord.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Education record not found.'}), 404
+        
+    db.session.delete(record)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Education record deleted successfully.'})

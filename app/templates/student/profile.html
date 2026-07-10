@@ -39,7 +39,7 @@
             </div>
         </div>
         
-        <button type="button" id="btnDeletePhoto" class="{% if not current_user.student_profile or not current_user.student_profile.profile_photo %}hidden{% endif %} px-4 py-4 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl font-medium transition-colors">
+        <button type="button" id="btnDeletePhoto" class="{% if not current_user.student_profile or not current_user.student_profile.profile_photo %}hidden{% endif %} px-3 py-3 text-sm border border-red-500 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl font-medium transition-colors">
             Hapus Foto
         </button>
     </div>
@@ -101,8 +101,15 @@
             
             <!-- Other tabs placeholders -->
             <div id="education" class="tab-content hidden">
-                <div class="text-center py-12">
-                    <p class="text-gray-500">Fitur Pendidikan akan segera hadir.</p>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 font-outfit">Riwayat Pendidikan</h3>
+                    <button type="button" onclick="openEducationModal()" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                        + Tambah Pendidikan
+                    </button>
+                </div>
+                
+                <div id="educationList" class="space-y-4">
+                    <div class="text-center py-12 text-gray-500">Memuat data...</div>
                 </div>
             </div>
             <div id="skills" class="tab-content hidden">
@@ -121,6 +128,59 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Education Modal -->
+<div id="educationModal" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center">
+    <div class="bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-xl transform transition-all">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 id="educationModalTitle" class="text-lg font-bold text-gray-900 font-outfit">Tambah Pendidikan</h3>
+            <button type="button" onclick="closeEducationModal()" class="text-gray-400 hover:text-gray-500">
+                {{ icon.x_mark(class="w-5 h-5") }}
+            </button>
+        </div>
+        
+        <form id="educationForm" class="p-6 space-y-4">
+            <input type="hidden" id="edu_id" name="edu_id" value="">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Institusi / Universitas *</label>
+                <input type="text" id="edu_institution" name="institution_name" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Program Studi / Jurusan *</label>
+                    <input type="text" id="edu_field" name="field_of_study" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Gelar *</label>
+                    <input type="text" id="edu_degree" name="degree_name" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai *</label>
+                    <input type="date" id="edu_start" name="start_date" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lulus (Atau Perkiraan)</label>
+                    <input type="date" id="edu_end" name="end_date" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">IPK / Nilai</label>
+                <input type="text" id="edu_grade" name="grade" placeholder="Contoh: 3.8/4.0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+            </div>
+            
+            <div class="pt-4 flex justify-end space-x-3">
+                <button type="button" onclick="closeEducationModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                <button type="submit" id="btnSaveEducation" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
@@ -271,5 +331,142 @@
             });
         }
     });
+
+    // Education CRUD Logic
+    function loadEducations() {
+        fetch("{{ url_for('student.get_educations') }}")
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('educationList');
+                list.innerHTML = '';
+                
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="text-center py-12 text-gray-500 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">Belum ada riwayat pendidikan yang ditambahkan.</div>';
+                    return;
+                }
+                
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-white border border-gray-100 p-5 rounded-2xl flex justify-between items-center hover:shadow-md transition-shadow';
+                    
+                    const startYear = new Date(item.start_date).getFullYear();
+                    const endYear = item.end_date ? new Date(item.end_date).getFullYear() : 'Sekarang';
+                    
+                    div.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-gray-900 font-outfit text-base">${item.institution_name}</h4>
+                            <p class="text-sm text-primary-600 font-medium">${item.degree_name}, ${item.field_of_study}</p>
+                            <p class="text-xs text-gray-500 mt-1">${startYear} - ${endYear} ${item.grade ? '• IPK: ' + item.grade : ''}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button type="button" onclick="editEducation(${item.id})" class="px-4 py-2 text-xs font-medium text-primary-600 bg-white border border-primary-600 rounded-md hover:bg-primary-50 transition-colors">
+                                Ubah
+                            </button>
+                            <button type="button" onclick="deleteEducation(${item.id})" class="px-4 py-2 text-xs font-medium text-red-600 bg-white border border-red-600 rounded-md hover:bg-red-50 transition-colors">
+                                Hapus
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching educations:', error);
+                document.getElementById('educationList').innerHTML = '<div class="text-center py-12 text-red-500">Gagal memuat data.</div>';
+            });
+    }
+
+    const educationModal = document.getElementById('educationModal');
+    const educationForm = document.getElementById('educationForm');
+    
+    window.openEducationModal = function() {
+        educationForm.reset();
+        document.getElementById('edu_id').value = '';
+        document.getElementById('educationModalTitle').textContent = 'Tambah Pendidikan';
+        educationModal.classList.remove('hidden');
+        educationModal.classList.add('flex');
+    };
+    
+    window.closeEducationModal = function() {
+        educationModal.classList.add('hidden');
+        educationModal.classList.remove('flex');
+    };
+    
+    window.editEducation = function(id) {
+        fetch(`{{ url_for('student.get_educations') }}?id=${id}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('edu_id').value = data.id;
+                document.getElementById('edu_institution').value = data.institution_name;
+                document.getElementById('edu_field').value = data.field_of_study;
+                document.getElementById('edu_degree').value = data.degree_name;
+                document.getElementById('edu_start').value = data.start_date;
+                document.getElementById('edu_end').value = data.end_date;
+                document.getElementById('edu_grade').value = data.grade || '';
+                
+                document.getElementById('educationModalTitle').textContent = 'Ubah Pendidikan';
+                educationModal.classList.remove('hidden');
+                educationModal.classList.add('flex');
+            });
+    };
+    
+    window.deleteEducation = function(id) {
+        if (!confirm('Apakah Anda yakin ingin menghapus riwayat pendidikan ini?')) return;
+        
+        const csrfToken = "{{ csrf_token() }}";
+        fetch(`/student/profile/education/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        }).then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadEducations();
+            } else {
+                alert(data.error || 'Gagal menghapus data.');
+            }
+        });
+    };
+    
+    educationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('edu_id').value;
+        const url = id ? `/student/profile/education/${id}` : `{{ url_for('student.add_education') }}`;
+        
+        const formData = new FormData(educationForm);
+        const csrfToken = "{{ csrf_token() }}";
+        
+        const btnSave = document.getElementById('btnSaveEducation');
+        btnSave.disabled = true;
+        btnSave.textContent = 'Menyimpan...';
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                closeEducationModal();
+                loadEducations();
+            } else {
+                alert(data.error || 'Terjadi kesalahan validasi.');
+                console.error(data.errors);
+            }
+        })
+        .finally(() => {
+            btnSave.disabled = false;
+            btnSave.textContent = 'Simpan';
+        });
+    });
+
+    // Load initial data
+    loadEducations();
+
 </script>
 {% endblock %}
