@@ -13,6 +13,9 @@ class StudentEducationRecord(db.Model):
     grade = db.Column(db.String(20), nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     # Relationships
     student_profile = db.relationship('StudentProfile', backref=db.backref('education_records', lazy=True))
 
@@ -25,6 +28,9 @@ class StudentSkill(db.Model):
     years_experience = db.Column(db.Integer, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     # Relationships
     student_profile = db.relationship('StudentProfile', backref=db.backref('skills', lazy=True))
     skill = db.relationship('Skill')
@@ -36,6 +42,9 @@ class StudentTechStackItem(db.Model):
     tech_stack_item_id = db.Column(db.Integer, db.ForeignKey('tech_stack_item.id'), nullable=False)
     proficiency_level = db.Column(db.String(50), nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     # Relationships
     student_profile = db.relationship('StudentProfile', backref=db.backref('tech_stack_items', lazy=True))
@@ -52,6 +61,9 @@ class StudentExperience(db.Model):
     end_date = db.Column(db.Date, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     # Relationships
     student_profile = db.relationship('StudentProfile', backref=db.backref('experiences', lazy=True))
 
@@ -65,6 +77,9 @@ class StudentOrganization(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     # Relationships
     student_profile = db.relationship('StudentProfile', backref=db.backref('organizations', lazy=True))

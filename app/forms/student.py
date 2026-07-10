@@ -40,3 +40,10 @@ class ExperienceForm(FlaskForm):
     start_date = DateField('Tanggal Mulai', validators=[DataRequired()])
     end_date = DateField('Tanggal Selesai', validators=[Optional()])
     description = TextAreaField('Deskripsi Pekerjaan', validators=[Optional(), Length(max=1000)])
+
+class OrganizationForm(FlaskForm):
+    organization_name = StringField('Nama Organisasi', validators=[DataRequired(), Length(max=200)])
+    role_title = StringField('Jabatan / Peran', validators=[DataRequired(), Length(max=100)])
+    start_date = DateField('Tanggal Mulai', validators=[DataRequired()])
+    end_date = DateField('Tanggal Selesai', validators=[Optional()])
+    description = TextAreaField('Deskripsi Kegiatan', validators=[Optional(), Length(max=1000)])

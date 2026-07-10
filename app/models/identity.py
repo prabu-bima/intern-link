@@ -25,7 +25,7 @@ def load_user(user_id):
 class FileAsset(db.Model):
     __tablename__ = 'file_asset'
     id = db.Column(db.Integer, primary_key=True)
-    owner_user_id = db.Column(db.Integer, db.ForeignKey('user_account.id'), nullable=False)
+    owner_user_id = db.Column(db.Integer, db.ForeignKey('user_account.id', ondelete='CASCADE'), nullable=False)
     file_purpose = db.Column(db.String(50), nullable=False)
     storage_bucket = db.Column(db.String(100), nullable=False)
     object_key = db.Column(db.String(255), nullable=False, unique=True)
@@ -47,8 +47,8 @@ class FileAsset(db.Model):
 class StudentProfile(db.Model):
     __tablename__ = 'student_profile'
     id = db.Column(db.Integer, primary_key=True)
-    user_account_id = db.Column(db.Integer, db.ForeignKey('user_account.id'), unique=True, nullable=False)
-    profile_photo_file_id = db.Column(db.Integer, db.ForeignKey('file_asset.id'), nullable=True)
+    user_account_id = db.Column(db.Integer, db.ForeignKey('user_account.id', ondelete='CASCADE'), unique=True, nullable=False)
+    profile_photo_file_id = db.Column(db.Integer, db.ForeignKey('file_asset.id', ondelete='SET NULL'), nullable=True)
     
     bio = db.Column(db.Text, nullable=True)
     phone_number = db.Column(db.String(20), nullable=True)
@@ -64,8 +64,8 @@ class StudentProfile(db.Model):
 class CompanyProfile(db.Model):
     __tablename__ = 'company_profile'
     id = db.Column(db.Integer, primary_key=True)
-    user_account_id = db.Column(db.Integer, db.ForeignKey('user_account.id'), unique=True, nullable=False)
-    company_name = db.Column(db.String(200), nullable=False)
+    user_account_id = db.Column(db.Integer, db.ForeignKey('user_account.id', ondelete='CASCADE'), unique=True, nullable=False)
+    company_name = db.Column(db.String(150), nullable=False)
     company_description = db.Column(db.Text, nullable=True)
     company_logo_file_id = db.Column(db.Integer, db.ForeignKey('file_asset.id'), nullable=True)
     address_line = db.Column(db.String(255), nullable=True)
