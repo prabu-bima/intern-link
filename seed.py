@@ -13,7 +13,7 @@ with app.app_context():
     # Ensure UserAccountStatus for Active exists
     status = UserAccountStatus.query.filter_by(status_name='Active').first()
     if not status:
-        status = UserAccountStatus(status_name='Active')
+        status = UserAccountStatus(status_code='ACTIVE', status_name='Active')
         db.session.add(status)
         db.session.commit()
 

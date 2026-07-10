@@ -600,3 +600,89 @@ def delete_experience(id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Experience deleted successfully.'})
+
+@bp.route('/profile/organization', methods=['GET'])
+@student_required
+def get_organizations():
+    from flask import request, jsonify
+    from app.models.student import StudentOrganization
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    org_id = request.args.get('id', type=int)
+    if org_id:
+        record = StudentOrganization.query.filter_by(id=org_id, student_profile_id=profile.id).first()
+        if not record:
+            return jsonify({'error': 'Organization not found.'}), 404
+        return jsonify({
+            'id': record.id,
+            'organization_name': record.organization_name,
+            'role_title': record.role_title,
+            'description': record.description,
+            'start_date': record.start_date.strftime('%Y-%m-%d') if record.start_date else '',
+            'end_date': record.end_date.strftime('%Y-%m-%d') if record.end_date else ''
+        })
+        
+    records = StudentOrganization.query.filter_by(student_profile_id=profile.id).order_by(StudentOrganization.start_date.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'organization_name': r.organization_name,
+        'role_title': r.role_title,
+        'description': r.description,
+        'start_date': r.start_date.strftime('%Y-%m-%d') if r.start_date else '',
+        'end_date': r.end_date.strftime('%Y-%m-%d') if r.end_date else ''
+    } for r in records])
+
+@bp.route('/profile/organization', methods=['POST'])
+@bp.route('/profile/organization/<int:id>', methods=['POST'])
+@student_required
+def save_organization(id=None):
+    from flask import request, jsonify
+    from app.forms.student import OrganizationForm
+    from app.models.student import StudentOrganization
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    form = OrganizationForm(request.form)
+    if form.validate_on_submit():
+        if id:
+            record = StudentOrganization.query.filter_by(id=id, student_profile_id=profile.id).first()
+            if not record:
+                return jsonify({'error': 'Organization not found.'}), 404
+        else:
+            record = StudentOrganization(student_profile_id=profile.id)
+            db.session.add(record)
+            
+        record.organization_name = form.organization_name.data
+        record.role_title = form.role_title.data
+        record.start_date = form.start_date.data
+        record.end_date = form.end_date.data if form.end_date.data else None
+        record.description = form.description.data
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Organization saved successfully.'})
+        
+    return jsonify({'error': 'Validation failed', 'errors': form.errors}), 400
+
+@bp.route('/profile/organization/<int:id>/delete', methods=['POST'])
+@student_required
+def delete_organization(id):
+    from flask import jsonify
+    from app.models.student import StudentOrganization
+    
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'error': 'Student profile not found.'}), 404
+        
+    record = StudentOrganization.query.filter_by(id=id, student_profile_id=profile.id).first()
+    if not record:
+        return jsonify({'error': 'Organization not found.'}), 404
+        
+    db.session.delete(record)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Organization deleted successfully.'})
