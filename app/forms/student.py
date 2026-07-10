@@ -33,3 +33,10 @@ class StudentTechStackItemForm(FlaskForm):
         ('Intermediate', 'Intermediate'),
         ('Advanced', 'Advanced')
     ], validators=[DataRequired()])
+
+class ExperienceForm(FlaskForm):
+    organization_name = StringField('Nama Perusahaan / Organisasi', validators=[DataRequired(), Length(max=200)])
+    title = StringField('Jabatan / Posisi', validators=[DataRequired(), Length(max=100)])
+    start_date = DateField('Tanggal Mulai', validators=[DataRequired()])
+    end_date = DateField('Tanggal Selesai', validators=[Optional()])
+    description = TextAreaField('Deskripsi Pekerjaan', validators=[Optional(), Length(max=1000)])
