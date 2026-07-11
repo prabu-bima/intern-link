@@ -1354,6 +1354,24 @@ def toggle_save_internship(id):
     flash(msg, 'success')
     return redirect(request.referrer or url_for('student.internships'))
 
+@bp.route('/saved', methods=['GET'])
+@student_required
+def saved_internships():
+    page = request.args.get('page', 1, type=int)
+    profile_id = current_user.student_profile.id
+    
+    query = SavedInternship.query.filter_by(
+        student_profile_id=profile_id
+    ).filter(SavedInternship.deleted_at.is_(None)).order_by(SavedInternship.id.desc())
+    
+    pagination = query.paginate(page=page, per_page=12, error_out=False)
+    
+    return render_template(
+        'student/saved_internships.html',
+        saved_items=pagination.items,
+        pagination=pagination
+    )
+
 @bp.route('/internships/<int:id>', methods=['GET'])
 @student_required
 def internship_detail(id):

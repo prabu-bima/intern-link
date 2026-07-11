@@ -40,8 +40,8 @@
                 </a>
                 
                 <!-- Saved Internships -->
-                <a href="#" class="{% if request.endpoint == 'student.saved' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
-                    {{ icon.bookmark(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'student.saved' else 'text-gray-400 group-hover:text-gray-500')) }}
+                <a href="{{ url_for('student.saved_internships') }}" class="{% if request.endpoint == 'student.saved_internships' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.bookmark(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'student.saved_internships' else 'text-gray-400 group-hover:text-gray-500')) }}
                     Disimpan
                 </a>
                 
