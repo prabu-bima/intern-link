@@ -65,13 +65,13 @@ def seed_data():
 
         # Application Status
         application_statuses = [
-            {'code': 'applied', 'name': 'Applied'},
-            {'code': 'reviewing', 'name': 'Under Review'},
-            {'code': 'shortlisted', 'name': 'Shortlisted'},
-            {'code': 'interviewing', 'name': 'Interviewing'},
-            {'code': 'accepted', 'name': 'Accepted'},
-            {'code': 'rejected', 'name': 'Rejected'},
-            {'code': 'withdrawn', 'name': 'Withdrawn'}
+            {"code": "applied", "name": "Dikirim"},
+            {"code": "reviewing", "name": "Direview"},
+            {"code": "shortlisted", "name": "Lolos Seleksi"},
+            {"code": "interviewing", "name": "Wawancara"},
+            {"code": "accepted", "name": "Diterima"},
+            {"code": "rejected", "name": "Ditolak"},
+            {"code": "withdrawn", "name": "Dibatalkan"}
         ]
         for s in application_statuses:
             if not ApplicationStatus.query.filter_by(status_code=s['code']).first():

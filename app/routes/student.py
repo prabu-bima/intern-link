@@ -1,12 +1,13 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import current_user
 from app.utils.decorators import student_required
-from app.models.internship import InternshipApplication, SavedInternship, Internship
+from app.models.internship import InternshipApplication, SavedInternship, Internship, ApplicationInterview
 from app.models.system import Notification
 from app.models.lookups import ApplicationStatus, InternshipLifecycleStatus, NotificationType
 from app.models.student import StudentCvVersion
 from app.models.master import TechnologyCategory, Location
 from app.extensions import db
+from datetime import datetime
 
 bp = Blueprint('student', __name__, url_prefix='/student')
 
@@ -1475,3 +1476,97 @@ def apply_internship(id):
     
     flash('Berhasil mengirim lamaran magang!', 'success')
     return redirect(url_for('student.internship_detail', id=id))
+
+@bp.route('/applications', methods=['GET'])
+@student_required
+def applications():
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status')
+    
+    query = InternshipApplication.query.filter_by(
+        student_profile_id=current_user.student_profile.id,
+        deleted_at=None
+    )
+    
+    if status_filter:
+        status_lookup = ApplicationStatus.query.filter_by(status_code=status_filter).first()
+        if status_lookup:
+            query = query.filter_by(application_status_id=status_lookup.id)
+            
+    # Order by most recently submitted
+    query = query.order_by(InternshipApplication.submitted_at.desc())
+    
+    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    applications = pagination.items
+    
+    # Get all possible statuses for the filter dropdown in correct order
+    statuses = ApplicationStatus.query.order_by(ApplicationStatus.id).all()
+    
+    return render_template(
+        'student/applications.html',
+        applications=applications,
+        pagination=pagination,
+        statuses=statuses,
+        current_status=status_filter
+    )
+
+@bp.route('/applications/<int:id>', methods=['GET'])
+@student_required
+def application_detail(id):
+    application = InternshipApplication.query.filter_by(
+        id=id,
+        student_profile_id=current_user.student_profile.id,
+        deleted_at=None
+    ).first_or_404()
+    
+    # Check if there's an interview
+    interview = ApplicationInterview.query.filter_by(
+        internship_application_id=application.id,
+        deleted_at=None
+    ).first()
+    
+    return render_template(
+        'student/application_detail.html',
+        application=application,
+        interview=interview
+    )
+
+@bp.route('/applications/<int:id>/cancel', methods=['POST'])
+@student_required
+def cancel_application(id):
+    application = InternshipApplication.query.filter_by(
+        id=id,
+        student_profile_id=current_user.student_profile.id,
+        deleted_at=None
+    ).first_or_404()
+    
+    # Validate status allows cancellation
+    cancellable_statuses = ['applied', 'reviewing', 'shortlisted']
+    if application.application_status.status_code not in cancellable_statuses:
+        flash('Lamaran ini tidak dapat dibatalkan pada tahap ini.', 'error')
+        return redirect(url_for('student.application_detail', id=id))
+        
+    # Update status to withdrawn
+    withdrawn_status = ApplicationStatus.query.filter_by(status_code='withdrawn').first()
+    application.application_status_id = withdrawn_status.id
+    application.canceled_at = datetime.utcnow()
+    
+    # Send notification to company
+    if application.internship.company_profile.user_account_id:
+        notif_type = NotificationType.query.filter_by(type_code='application').first()
+        company_payload = {
+            "title": "Pelamar Membatalkan Lamaran",
+            "message": f"Pelamar untuk posisi {application.internship.internship_title} telah membatalkan lamarannya.",
+            "internship_id": application.internship.id,
+            "student_profile_id": current_user.student_profile.id
+        }
+        notif_company = Notification(
+            recipient_user_id=application.internship.company_profile.user_account_id,
+            notification_type_id=notif_type.id,
+            payload_json=company_payload
+        )
+        db.session.add(notif_company)
+        
+    db.session.commit()
+    flash('Lamaran berhasil dibatalkan.', 'success')
+    return redirect(url_for('student.application_detail', id=id))

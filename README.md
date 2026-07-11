@@ -68,3 +68,8 @@ npm run watch:css
 python run.py
 ```
 Aplikasi akan berjalan di `http://127.0.0.1:5000/`.
+
+### 9. Mengupdate data lookups
+```bash
+venv\Scripts\python scripts\seed_lookups.py
+```
