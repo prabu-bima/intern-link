@@ -137,9 +137,12 @@
                     Sudah Dilamar
                 </button>
                 {% else %}
-                <a href="#" class="w-full flex justify-center items-center px-4 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
-                    Lamar Magang
-                </a>
+                <form action="{{ url_for('student.apply_internship', id=internship.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="w-full flex justify-center items-center px-4 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
+                        Lamar Magang
+                    </button>
+                </form>
                 {% endif %}
             </div>
             

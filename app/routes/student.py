@@ -3,7 +3,8 @@ from flask_login import current_user
 from app.utils.decorators import student_required
 from app.models.internship import InternshipApplication, SavedInternship, Internship
 from app.models.system import Notification
-from app.models.lookups import ApplicationStatus, InternshipLifecycleStatus
+from app.models.lookups import ApplicationStatus, InternshipLifecycleStatus, NotificationType
+from app.models.student import StudentCvVersion
 from app.models.master import TechnologyCategory, Location
 from app.extensions import db
 
@@ -1390,3 +1391,87 @@ def internship_ai_match(id):
     result = calculate_skill_match(profile_id, id)
     
     return jsonify(result)
+
+@bp.route('/internships/<int:id>/apply', methods=['POST'])
+@student_required
+def apply_internship(id):
+    internship = Internship.query.get_or_404(id)
+    profile_id = current_user.student_profile.id
+    
+    # 1. Check if student has a current CV
+    current_cv = StudentCvVersion.query.filter_by(
+        student_profile_id=profile_id,
+        is_current=True,
+        deleted_at=None
+    ).first()
+    
+    if not current_cv:
+        flash('Anda harus mengunggah CV aktif sebelum melamar magang.', 'error')
+        return redirect(url_for('student.internship_detail', id=id))
+        
+    # 2. Check if already applied
+    existing_app = InternshipApplication.query.filter_by(
+        student_profile_id=profile_id,
+        internship_id=id,
+        deleted_at=None
+    ).first()
+    
+    if existing_app:
+        flash('Anda sudah pernah melamar posisi ini.', 'warning')
+        return redirect(url_for('student.internship_detail', id=id))
+        
+    # 3. Create Application
+    status_applied = ApplicationStatus.query.filter_by(status_code='applied').first()
+    if not status_applied:
+        # Fallback if not seeded
+        status_applied = ApplicationStatus(status_code='applied', status_name='Applied')
+        db.session.add(status_applied)
+        db.session.flush()
+        
+    application = InternshipApplication(
+        student_profile_id=profile_id,
+        internship_id=id,
+        application_status_id=status_applied.id,
+        submitted_cv_id=current_cv.file_asset_id
+    )
+    db.session.add(application)
+    
+    # 4. Notifications
+    notif_type = NotificationType.query.filter_by(type_code='application').first()
+    if not notif_type:
+        notif_type = NotificationType(type_code='application', type_name='Application')
+        db.session.add(notif_type)
+        db.session.flush()
+        
+    # Notification for Student
+    student_payload = {
+        "title": "Lamaran Terkirim",
+        "message": f"Lamaran Anda untuk posisi {internship.internship_title} telah berhasil dikirim.",
+        "internship_id": id
+    }
+    notif_student = Notification(
+        recipient_user_id=current_user.id,
+        notification_type_id=notif_type.id,
+        payload_json=student_payload
+    )
+    db.session.add(notif_student)
+    
+    # Notification for Company (if company has user_account_id)
+    if internship.company_profile.user_account_id:
+        company_payload = {
+            "title": "Pelamar Baru",
+            "message": f"Terdapat pelamar baru untuk posisi {internship.internship_title}.",
+            "internship_id": id,
+            "student_profile_id": profile_id
+        }
+        notif_company = Notification(
+            recipient_user_id=internship.company_profile.user_account_id,
+            notification_type_id=notif_type.id,
+            payload_json=company_payload
+        )
+        db.session.add(notif_company)
+        
+    db.session.commit()
+    
+    flash('Berhasil mengirim lamaran magang!', 'success')
+    return redirect(url_for('student.internship_detail', id=id))
