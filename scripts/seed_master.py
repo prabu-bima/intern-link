@@ -65,6 +65,7 @@ def seed_data():
             {'code': 'bandung', 'city': 'Bandung', 'region': 'Jawa Barat', 'country': 'Indonesia'},
             {'code': 'yogyakarta', 'city': 'Yogyakarta', 'region': 'DI Yogyakarta', 'country': 'Indonesia'},
             {'code': 'surabaya', 'city': 'Surabaya', 'region': 'Jawa Timur', 'country': 'Indonesia'},
+            {'code': 'purwokerto', 'city': 'Purwokerto', 'region': 'Jawa Tengah', 'country': 'Indonesia'},
             {'code': 'remote', 'city': 'Remote', 'region': 'Anywhere', 'country': 'Indonesia'}
         ]
         for loc in locations:

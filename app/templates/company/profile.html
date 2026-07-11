@@ -69,16 +69,27 @@
             <h2 class="text-lg font-bold text-gray-900 mb-4">Logo Perusahaan</h2>
             
             <div class="flex flex-col items-center">
-                <div class="w-32 h-32 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden mb-4 relative group">
-                    {% if profile.company_logo %}
-                        <img src="{{ profile.company_logo.url }}" alt="Logo" class="w-full h-full object-contain">
-                    {% else %}
-                        {{ icon.building_office(class="w-12 h-12 text-gray-300") }}
-                    {% endif %}
-                </div>
-                
                 <form action="{{ url_for('company.profile_logo') }}" method="POST" enctype="multipart/form-data" class="w-full">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    {% if profile.company_logo %}
+                    <div class="flex justify-center mb-4">
+                        <div class="relative w-32 h-32 rounded-xl bg-gray-50 border-2 border-gray-200 flex items-center justify-center overflow-hidden group">
+                            <img src="{{ profile.company_logo.url }}" alt="Logo" class="w-full h-full object-contain">
+                            
+                            <!-- Overlay for changing photo -->
+                            <label for="company_logo" class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                {{ icon.camera(class="w-6 h-6 text-white mb-1") }}
+                                <span class="text-white text-xs font-medium">Ubah Foto</span>
+                                <input id="company_logo" name="company_logo" type="file" class="sr-only" accept=".jpg,.jpeg,.png,.webp" onchange="this.form.submit()">
+                            </label>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="w-32 h-32 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden mb-4 mx-auto">
+                        {{ icon.building_office(class="w-12 h-12 text-gray-300") }}
+                    </div>
+                    
                     <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl">
                         <div class="space-y-1 text-center">
                             {{ icon.camera(class="mx-auto h-12 w-12 text-gray-400") }}
@@ -91,6 +102,7 @@
                             <p class="text-xs text-gray-500">PNG, JPG, WEBP maks 2MB</p>
                         </div>
                     </div>
+                    {% endif %}
                 </form>
             </div>
         </div>

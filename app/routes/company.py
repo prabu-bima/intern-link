@@ -154,7 +154,8 @@ def profile_logo():
         
         # Create new FileAsset
         new_asset = FileAsset(
-            owner_id=current_user.id,
+            owner_user_id=current_user.id,
+            file_purpose='company_logo',
             storage_bucket=bucket_name,
             object_key=object_key,
             file_name=secure_filename(file.filename),
