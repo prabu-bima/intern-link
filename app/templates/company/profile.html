@@ -1,0 +1,272 @@
+{% extends "layouts/company_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Profil Perusahaan - InternLink{% endblock %}
+
+{% block company_content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900 font-outfit">Profil Perusahaan</h1>
+    <p class="text-gray-500 mt-1">Kelola informasi perusahaan Anda untuk memudahkan kandidat mengenal Anda.</p>
+</div>
+
+<!-- Verification Status Alert -->
+{% if not verification %}
+<div class="mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            {{ icon.exclamation_triangle(class="h-5 w-5 text-yellow-400") }}
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">Profil Belum Diverifikasi</h3>
+            <p class="mt-2 text-sm text-yellow-700">Lengkapi semua informasi di bawah agar admin dapat memverifikasi profil perusahaan Anda.</p>
+        </div>
+    </div>
+</div>
+{% elif verification.verification_status.status_code == 'pending' %}
+<div class="mb-8 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            {{ icon.information_circle(class="h-5 w-5 text-blue-400") }}
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">Menunggu Verifikasi Admin</h3>
+            <p class="mt-2 text-sm text-blue-700">Profil Anda sedang ditinjau. Anda akan mendapatkan notifikasi jika sudah diverifikasi.</p>
+        </div>
+    </div>
+</div>
+{% elif verification.verification_status.status_code == 'rejected' %}
+<div class="mb-8 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            {{ icon.x_circle(class="h-5 w-5 text-red-400") }}
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">Verifikasi Ditolak</h3>
+            <p class="mt-2 text-sm text-red-700">Alasan: <strong>{{ verification.admin_note }}</strong></p>
+            <p class="mt-1 text-sm text-red-700">Mohon perbaiki profil Anda dan simpan ulang.</p>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="mb-8 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            {{ icon.check_circle(class="h-5 w-5 text-green-400") }}
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-green-800">Perusahaan Terverifikasi</h3>
+            <p class="mt-2 text-sm text-green-700">Profil Anda telah terverifikasi. Anda dapat membuat dan mempublikasikan lowongan magang.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column (Logo, Social Media) -->
+    <div class="space-y-6">
+        <!-- Logo Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Logo Perusahaan</h2>
+            
+            <div class="flex flex-col items-center">
+                <div class="w-32 h-32 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden mb-4 relative group">
+                    {% if profile.company_logo %}
+                        <img src="{{ profile.company_logo.url }}" alt="Logo" class="w-full h-full object-contain">
+                    {% else %}
+                        {{ icon.building_office(class="w-12 h-12 text-gray-300") }}
+                    {% endif %}
+                </div>
+                
+                <form action="{{ url_for('company.profile_logo') }}" method="POST" enctype="multipart/form-data" class="w-full">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl">
+                        <div class="space-y-1 text-center">
+                            {{ icon.camera(class="mx-auto h-12 w-12 text-gray-400") }}
+                            <div class="flex text-sm text-gray-600 justify-center">
+                                <label for="company_logo" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                    <span>Unggah file</span>
+                                    <input id="company_logo" name="company_logo" type="file" class="sr-only" accept=".jpg,.jpeg,.png,.webp" onchange="this.form.submit()">
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG, WEBP maks 2MB</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Social Media Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Media Sosial</h2>
+            
+            {% if profile.social_links %}
+            <ul class="space-y-3 mb-6">
+                {% for link in profile.social_links %}
+                <li class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="bg-white p-2 rounded-lg text-primary-600 shadow-sm">
+                            {{ icon.external_link(class="w-4 h-4") }}
+                        </div>
+                        <div class="truncate">
+                            <p class="text-sm font-medium text-gray-900">{{ link.platform }}</p>
+                            <a href="{{ link.url }}" target="_blank" class="text-xs text-gray-500 hover:text-primary-600 truncate">{{ link.url }}</a>
+                        </div>
+                    </div>
+                    <form action="{{ url_for('company.profile_social_delete', id=link.id) }}" method="POST" onsubmit="return confirm('Hapus tautan ini?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Hapus">
+                            {{ icon.trash(class="w-4 h-4") }}
+                        </button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="text-center p-4 bg-gray-50 rounded-xl mb-6 border border-dashed border-gray-200">
+                <p class="text-sm text-gray-500">Belum ada media sosial ditambahkan.</p>
+            </div>
+            {% endif %}
+            
+            <form action="{{ url_for('company.profile_social') }}" method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <label for="platform" class="block text-sm font-medium text-gray-700">Platform <span class="text-red-500">*</span></label>
+                    <select id="platform" name="platform" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Twitter/X">Twitter/X</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="YouTube">YouTube</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="url" class="block text-sm font-medium text-gray-700">URL Tautan <span class="text-red-500">*</span></label>
+                    <input type="url" name="url" id="url" required placeholder="https://..." class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-xl py-2 px-3">
+                </div>
+                
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                    Tambah Tautan
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Right Column (Main Info, Address, Website) -->
+    <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Main Info Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Informasi Dasar</h2>
+            
+            <form action="{{ url_for('company.profile_info') }}" method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <label for="company_name" class="block text-sm font-medium text-gray-700">Nama Perusahaan <span class="text-red-500">*</span></label>
+                    <input type="text" name="company_name" id="company_name" required value="{{ profile.company_name }}" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-xl py-2 px-3">
+                </div>
+                
+                <div>
+                    <label for="company_description" class="block text-sm font-medium text-gray-700">Deskripsi Perusahaan</label>
+                    <p class="text-xs text-gray-500 mb-1">Ceritakan tentang perusahaan Anda, misi, dan budaya kerjanya.</p>
+                    <textarea id="company_description" name="company_description" rows="5" class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 rounded-xl p-3">{{ profile.company_description or '' }}</textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label for="industry_category" class="block text-sm font-medium text-gray-700">Kategori Industri</label>
+                        <select id="industry_category" name="industry_category" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                            <option value="">Pilih Kategori</option>
+                            {% set industries = ['Teknologi Informasi', 'E-Commerce', 'Fintech', 'Kesehatan', 'Pendidikan', 'Agrikultur', 'Manufaktur', 'Layanan Finansial', 'Lainnya'] %}
+                            {% for ind in industries %}
+                            <option value="{{ ind }}" {% if profile.industry_category == ind %}selected{% endif %}>{{ ind }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="company_size" class="block text-sm font-medium text-gray-700">Ukuran Perusahaan</label>
+                        <select id="company_size" name="company_size" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                            <option value="">Pilih Ukuran</option>
+                            {% set sizes = ['1-50 Karyawan', '51-200 Karyawan', '201-500 Karyawan', '501-1000 Karyawan', '>1000 Karyawan'] %}
+                            {% for size in sizes %}
+                            <option value="{{ size }}" {% if profile.company_size == size %}selected{% endif %}>{{ size }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-1/2 md:pr-2.5">
+                    <label for="founding_year" class="block text-sm font-medium text-gray-700">Tahun Berdiri</label>
+                    <input type="number" name="founding_year" id="founding_year" min="1900" max="2050" value="{{ profile.founding_year or '' }}" placeholder="YYYY" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-xl py-2 px-3">
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        Simpan Informasi
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Address & Location Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Lokasi & Alamat</h2>
+            
+            <form action="{{ url_for('company.profile_address') }}" method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <label for="location_id" class="block text-sm font-medium text-gray-700">Kota Pusat Operasional</label>
+                    <select id="location_id" name="location_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                        <option value="">Pilih Kota</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}" {% if profile.location_id == loc.id %}selected{% endif %}>{{ loc.city }}{% if loc.region %}, {{ loc.region }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="address_line" class="block text-sm font-medium text-gray-700">Alamat Lengkap</label>
+                    <textarea id="address_line" name="address_line" rows="3" class="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 rounded-xl p-3" placeholder="Gedung, Jalan, RT/RW, Kode Pos">{{ profile.address_line or '' }}</textarea>
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        Simpan Alamat
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Website Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Website Resmi</h2>
+            
+            <form action="{{ url_for('company.profile_website') }}" method="POST" class="flex flex-col sm:flex-row gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="flex-grow">
+                    <label for="website_url" class="sr-only">URL Website</label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">
+                                {{ icon.globe_alt(class="w-5 h-5") if icon.globe_alt else icon.external_link(class="w-5 h-5") }}
+                            </span>
+                        </div>
+                        <input type="url" name="website_url" id="website_url" value="{{ profile.website_url or '' }}" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-2.5" placeholder="https://www.example.com">
+                    </div>
+                </div>
+                
+                <button type="submit" class="inline-flex justify-center items-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
+                    Simpan Tautan
+                </button>
+            </form>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

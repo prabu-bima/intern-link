@@ -94,3 +94,143 @@ def dashboard():
         active_jobs_list=active_jobs_list,
         latest_applicants=latest_applicants
     )
+
+from app.models.company import CompanySocialLink
+from app.models.master import Location
+from app.models.identity import FileAsset
+from app.services.storage import upload_file, validate_file, get_bucket_for_purpose, delete_file
+import os
+import uuid
+from werkzeug.utils import secure_filename
+
+@bp.route('/profile')
+@company_required
+def profile():
+    profile = current_user.company_profile
+    locations = Location.query.all()
+    verification = CompanyVerification.query.filter_by(
+        company_profile_id=profile.id
+    ).order_by(CompanyVerification.id.desc()).first()
+    return render_template('company/profile.html', profile=profile, locations=locations, verification=verification)
+
+@bp.route('/profile/info', methods=['POST'])
+@company_required
+def profile_info():
+    profile = current_user.company_profile
+    profile.company_name = request.form.get('company_name', profile.company_name)
+    profile.company_description = request.form.get('company_description')
+    profile.industry_category = request.form.get('industry_category')
+    profile.company_size = request.form.get('company_size')
+    
+    founding_year = request.form.get('founding_year')
+    if founding_year and founding_year.isdigit():
+        profile.founding_year = int(founding_year)
+        
+    db.session.commit()
+    flash('Informasi perusahaan berhasil diperbarui.', 'success')
+    return redirect(url_for('company.profile'))
+
+@bp.route('/profile/logo', methods=['POST'])
+@company_required
+def profile_logo():
+    if 'company_logo' not in request.files:
+        flash('Tidak ada file logo yang diunggah.', 'danger')
+        return redirect(url_for('company.profile'))
+        
+    file = request.files['company_logo']
+    is_valid, error_msg = validate_file(file, allowed_extensions=['jpg', 'jpeg', 'png', 'webp'], max_size_mb=2)
+    
+    if not is_valid:
+        flash(error_msg, 'danger')
+        return redirect(url_for('company.profile'))
+        
+    profile = current_user.company_profile
+    bucket_name = get_bucket_for_purpose('company_logo')
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    unique_filename = f"company_{profile.id}_{uuid.uuid4().hex}.{ext}"
+    
+    try:
+        object_key = upload_file(bucket_name, file, unique_filename, file.content_type)
+        
+        # Create new FileAsset
+        new_asset = FileAsset(
+            owner_id=current_user.id,
+            storage_bucket=bucket_name,
+            object_key=object_key,
+            file_name=secure_filename(file.filename),
+            content_type=file.content_type,
+            file_size_bytes=file.tell() if hasattr(file, 'tell') else 0
+        )
+        db.session.add(new_asset)
+        db.session.flush()
+        
+        # Delete old logo if exists
+        if profile.company_logo:
+            try:
+                delete_file(profile.company_logo.storage_bucket, profile.company_logo.object_key)
+            except Exception as e:
+                print(f"Failed to delete old logo: {e}")
+                
+        profile.company_logo_file_id = new_asset.id
+        db.session.commit()
+        flash('Logo perusahaan berhasil diperbarui.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Gagal mengunggah logo: {str(e)}', 'danger')
+        
+    return redirect(url_for('company.profile'))
+
+@bp.route('/profile/address', methods=['POST'])
+@company_required
+def profile_address():
+    profile = current_user.company_profile
+    profile.address_line = request.form.get('address_line')
+    location_id = request.form.get('location_id')
+    if location_id and location_id.isdigit():
+        profile.location_id = int(location_id)
+    db.session.commit()
+    flash('Alamat perusahaan berhasil diperbarui.', 'success')
+    return redirect(url_for('company.profile'))
+
+@bp.route('/profile/website', methods=['POST'])
+@company_required
+def profile_website():
+    profile = current_user.company_profile
+    profile.website_url = request.form.get('website_url')
+    db.session.commit()
+    flash('Tautan website berhasil diperbarui.', 'success')
+    return redirect(url_for('company.profile'))
+
+@bp.route('/profile/social', methods=['POST'])
+@company_required
+def profile_social():
+    profile = current_user.company_profile
+    platform = request.form.get('platform')
+    url = request.form.get('url')
+    
+    if platform and url:
+        new_link = CompanySocialLink(
+            company_profile_id=profile.id,
+            platform=platform,
+            url=url
+        )
+        db.session.add(new_link)
+        db.session.commit()
+        flash('Tautan media sosial berhasil ditambahkan.', 'success')
+    else:
+        flash('Platform dan URL harus diisi.', 'danger')
+        
+    return redirect(url_for('company.profile'))
+
+@bp.route('/profile/social/<int:id>/delete', methods=['POST'])
+@company_required
+def profile_social_delete(id):
+    link = CompanySocialLink.query.get_or_404(id)
+    if link.company_profile_id != current_user.company_profile.id:
+        flash('Anda tidak memiliki izin.', 'danger')
+        return redirect(url_for('company.profile'))
+        
+    db.session.delete(link)
+    db.session.commit()
+    flash('Tautan media sosial berhasil dihapus.', 'success')
+    return redirect(url_for('company.profile'))

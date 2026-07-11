@@ -14,7 +14,7 @@
                 </a>
                 
                 <!-- Profile -->
-                <a href="#" class="{% if request.endpoint == 'company.profile' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                <a href="{{ url_for('company.profile') }}" class="{% if request.endpoint == 'company.profile' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
                     {{ icon.building_office(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'company.profile' else 'text-gray-400 group-hover:text-gray-500')) }}
                     Profil Perusahaan
                 </a>
