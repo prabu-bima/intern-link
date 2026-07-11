@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import current_user
 from app.utils.decorators import student_required
 from app.models.internship import InternshipApplication, SavedInternship, Internship
 from app.models.system import Notification
 from app.models.lookups import ApplicationStatus, InternshipLifecycleStatus
+from app.models.master import TechnologyCategory, Location
 from app.extensions import db
 
 bp = Blueprint('student', __name__, url_prefix='/student')
@@ -1245,3 +1246,147 @@ def save_linkedin_profile():
                 flash(f'Error pada {getattr(form, field).label.text}: {error}', 'error')
                 
     return redirect(url_for('student.profile') + '#personal')
+
+@bp.route('/internships', methods=['GET'])
+@student_required
+def internships():
+    q = request.args.get('q', '').strip()
+    cat_id = request.args.get('cat', type=int)
+    loc_id = request.args.get('loc', type=int)
+    
+    # 1. Base Query: Only show active/published internships
+    active_status = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
+    if not active_status:
+        active_status = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%open%')).first()
+        
+    query = Internship.query
+    if active_status:
+        query = query.filter(Internship.lifecycle_status_id == active_status.id)
+    query = query.filter(Internship.deleted_at.is_(None))
+    
+    # 2. Search & Filter
+    if q:
+        search_filter = db.or_(
+            Internship.internship_title.ilike(f'%{q}%'),
+            Internship.internship_description.ilike(f'%{q}%')
+        )
+        query = query.filter(search_filter)
+        
+    if cat_id:
+        query = query.filter(Internship.technology_category_id == cat_id)
+        
+    if loc_id:
+        query = query.filter(Internship.location_id == loc_id)
+        
+    # Order by newest
+    query = query.order_by(Internship.id.desc())
+    internships_list = query.all()
+    
+    # 3. Get Saved Internships for the current user
+    saved_internships = SavedInternship.query.filter_by(
+        student_profile_id=current_user.student_profile.id
+    ).filter(SavedInternship.deleted_at.is_(None)).all()
+    saved_internship_ids = [s.internship_id for s in saved_internships]
+    
+    # 4. Filter Options for Dropdowns
+    categories = TechnologyCategory.query.all()
+    locations = Location.query.all()
+    
+    return render_template(
+        'student/internships.html',
+        internships=internships_list,
+        saved_internship_ids=saved_internship_ids,
+        categories=categories,
+        locations=locations,
+        q=q,
+        cat_id=cat_id,
+        loc_id=loc_id
+    )
+
+@bp.route('/internships/<int:id>/save', methods=['POST'])
+@student_required
+def toggle_save_internship(id):
+    from datetime import datetime
+    
+    # Verify internship exists
+    internship = Internship.query.get_or_404(id)
+    profile_id = current_user.student_profile.id
+    
+    # Check if already saved
+    saved = SavedInternship.query.filter_by(
+        student_profile_id=profile_id,
+        internship_id=id
+    ).first()
+    
+    is_saved = False
+    if saved:
+        if saved.deleted_at:
+            # Restore soft-deleted record
+            saved.deleted_at = None
+            is_saved = True
+            msg = 'Lowongan magang berhasil disimpan'
+        else:
+            # Soft delete to unsave
+            saved.deleted_at = datetime.utcnow()
+            is_saved = False
+            msg = 'Lowongan magang dihapus dari daftar simpan'
+    else:
+        # Create new save record
+        new_save = SavedInternship(
+            student_profile_id=profile_id,
+            internship_id=id
+        )
+        db.session.add(new_save)
+        is_saved = True
+        msg = 'Lowongan magang berhasil disimpan'
+        
+    db.session.commit()
+    
+    if request.headers.get('Accept') == 'application/json' or request.is_json:
+        return jsonify({
+            'status': 'success',
+            'is_saved': is_saved,
+            'message': msg
+        })
+        
+    flash(msg, 'success')
+    return redirect(request.referrer or url_for('student.internships'))
+
+@bp.route('/internships/<int:id>', methods=['GET'])
+@student_required
+def internship_detail(id):
+    internship = Internship.query.get_or_404(id)
+    profile_id = current_user.student_profile.id
+    
+    # Check if saved
+    saved = SavedInternship.query.filter_by(
+        student_profile_id=profile_id,
+        internship_id=id
+    ).filter(SavedInternship.deleted_at.is_(None)).first()
+    is_saved = True if saved else False
+    
+    # Check if applied
+    application = InternshipApplication.query.filter_by(
+        student_profile_id=profile_id,
+        internship_id=id
+    ).first()
+    is_applied = True if application else False
+    
+    return render_template(
+        'student/internship_detail.html',
+        internship=internship,
+        is_saved=is_saved,
+        is_applied=is_applied
+    )
+
+@bp.route('/internships/<int:id>/ai-match', methods=['GET'])
+@student_required
+def internship_ai_match(id):
+    from app.services.ai_service import calculate_skill_match
+    
+    profile_id = current_user.student_profile.id
+    
+    # Call the service which will check DB first or hit Gemini
+    result = calculate_skill_match(profile_id, id)
+    
+    return jsonify(result)
