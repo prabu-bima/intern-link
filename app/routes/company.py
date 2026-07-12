@@ -605,7 +605,7 @@ def applicant_detail(application_id):
     from app.models.lookups import ApplicationStatus
     
     # Get current company profile
-    profile = CompanyProfile.query.filter_by(user_id=current_user.id).first()
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
     
     # Get application and verify it belongs to this company
     application = InternshipApplication.query.join(Internship).filter(
@@ -635,7 +635,7 @@ def update_applicant_status(application_id):
     import json
     
     # Get current company profile
-    profile = CompanyProfile.query.filter_by(user_id=current_user.id).first()
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
     
     # Get application and verify it belongs to this company
     application = InternshipApplication.query.join(Internship).filter(
