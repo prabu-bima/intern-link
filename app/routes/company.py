@@ -595,3 +595,100 @@ def internship_applicants(id):
         application_statuses=application_statuses,
         status_counts=status_counts
     )
+
+@bp.route('/applicants/<int:application_id>', methods=['GET'])
+@login_required
+@company_required
+def applicant_detail(application_id):
+    from app.models.internship import InternshipApplication, Internship
+    from app.models.identity import CompanyProfile
+    from app.models.lookups import ApplicationStatus
+    
+    # Get current company profile
+    profile = CompanyProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Get application and verify it belongs to this company
+    application = InternshipApplication.query.join(Internship).filter(
+        InternshipApplication.id == application_id,
+        Internship.company_profile_id == profile.id,
+        InternshipApplication.deleted_at.is_(None)
+    ).first_or_404()
+    
+    # Get all possible application statuses
+    application_statuses = ApplicationStatus.query.all()
+    
+    return render_template(
+        'company/applicant_detail.html',
+        application=application,
+        application_statuses=application_statuses
+    )
+
+@bp.route('/applicants/<int:application_id>/status', methods=['POST'])
+@login_required
+@company_required
+def update_applicant_status(application_id):
+    from flask import request
+    from app.models.internship import InternshipApplication, Internship
+    from app.models.identity import CompanyProfile
+    from app.models.lookups import ApplicationStatus, NotificationType
+    from app.models.notification import Notification
+    import json
+    
+    # Get current company profile
+    profile = CompanyProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Get application and verify it belongs to this company
+    application = InternshipApplication.query.join(Internship).filter(
+        InternshipApplication.id == application_id,
+        Internship.company_profile_id == profile.id,
+        InternshipApplication.deleted_at.is_(None)
+    ).first_or_404()
+    
+    # Get new status
+    new_status_code = request.form.get('status_code')
+    if not new_status_code:
+        flash('Status tidak valid.', 'error')
+        return redirect(url_for('company.applicant_detail', application_id=application_id))
+        
+    new_status = ApplicationStatus.query.filter_by(status_code=new_status_code).first()
+    if not new_status:
+        flash('Status tidak valid.', 'error')
+        return redirect(url_for('company.applicant_detail', application_id=application_id))
+        
+    # Update status
+    old_status = application.application_status
+    application.application_status_id = new_status.id
+    
+    # Create notification for student
+    try:
+        # We assume notification types like 'application_status_updated' or 'application_accepted' exist.
+        # Fallback to a general one if specific doesn't exist.
+        notification_type_code = f"application_{new_status_code}"
+        notif_type = NotificationType.query.filter_by(type_code=notification_type_code).first()
+        if not notif_type:
+            # Fallback
+            notif_type = NotificationType.query.filter_by(type_code='application_update').first()
+            
+        if notif_type:
+            payload = {
+                "internship_title": application.internship.internship_title,
+                "company_name": profile.company_name,
+                "old_status": old_status.status_name,
+                "new_status": new_status.status_name,
+                "application_id": application.id
+            }
+            notification = Notification(
+                recipient_user_id=application.student_profile.user_id,
+                notification_type_id=notif_type.id,
+                payload_json=json.dumps(payload)
+            )
+            db.session.add(notification)
+    except Exception as e:
+        # Ignore notification error if types aren't fully seeded yet
+        print(f"Error creating notification: {e}")
+        pass
+        
+    db.session.commit()
+    
+    flash(f'Status pelamar berhasil diubah menjadi {new_status.status_name}.', 'success')
+    return redirect(url_for('company.applicant_detail', application_id=application_id))

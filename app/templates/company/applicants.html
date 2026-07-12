@@ -99,8 +99,8 @@
             
             <!-- Actions -->
             <div class="mt-4 md:mt-0 md:ml-6 flex-shrink-0">
-                <!-- Nantinya link ini akan mengarah ke detail profil pelamar -->
-                <a href="#" class="inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors">
+                <!-- Link ke detail profil pelamar -->
+                <a href="{{ url_for('company.applicant_detail', application_id=app.id) }}" class="inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors">
                     Lihat Profil
                     {{ icon.chevron_right(class="w-4 h-4 ml-1.5 text-gray-400") }}
                 </a>
