@@ -38,29 +38,29 @@
 <div class="space-y-4">
     {% if internships %}
         {% for internship in internships %}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-            <div class="flex flex-col md:flex-row md:items-center justify-between">
-                
+        <div class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col h-full">
+            <!-- Top Content Row -->
+            <div class="flex flex-col md:flex-row justify-between">
                 <!-- Info Section -->
                 <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
                         <h3 class="text-lg font-bold text-gray-900">{{ internship.internship_title }}</h3>
                         {% if internship.lifecycle_status.status_code == 'active' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
                                 Aktif
                             </span>
                         {% elif internship.lifecycle_status.status_code == 'closed' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
                                 Ditutup
                             </span>
                         {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
                                 {{ internship.lifecycle_status.status_name }}
                             </span>
                         {% endif %}
                     </div>
                     
-                    <div class="flex flex-wrap text-sm text-gray-500 gap-y-2 gap-x-4 mb-4">
+                    <div class="flex flex-wrap text-sm text-gray-600 gap-y-2 gap-x-4 mb-4">
                         <div class="flex items-center">
                             {{ icon.map_pin(class="w-4 h-4 mr-1.5 text-gray-400") }}
                             {{ internship.location.city }}{% if internship.location.region %}, {{ internship.location.region }}{% endif %}
@@ -78,33 +78,37 @@
                         </div>
                         {% endif %}
                     </div>
-                    
-                    <div class="flex space-x-4">
-                        <div class="bg-gray-50 rounded-lg px-4 py-2 border border-gray-100">
-                            <span class="text-xs text-gray-500 block mb-0.5 uppercase tracking-wider font-semibold">Total Pelamar</span>
-                            <span class="text-lg font-bold text-gray-900">{{ internship.applications|length }}</span>
-                        </div>
-                    </div>
                 </div>
                 
-                <!-- Action Buttons -->
-                <div class="mt-6 md:mt-0 md:ml-6 flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 justify-end w-full md:w-auto">
-                    <a href="{{ url_for('company.internship_edit_form', id=internship.id) }}" class="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors">
-                        {{ icon.pencil(class="w-4 h-4 mr-2 text-gray-500") }}
-                        Edit
-                    </a>
-                    
+                <!-- Total Pelamar Right Side -->
+                <div class="mt-4 md:mt-0 md:ml-6 flex-shrink-0 flex items-center justify-start md:justify-end">
+                    <div class="bg-gray-50 rounded-md px-3 py-1.5 border border-gray-200 flex items-center space-x-2">
+                        <span class="text-xs text-gray-500 font-mono uppercase tracking-widest">Total Pelamar:</span>
+                        <span class="text-sm font-bold text-gray-900">{{ internship.applications|length }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
+                <div>
+                    <button type="button" onclick="openModal('deleteModal_{{ internship.id }}')" class="inline-flex justify-center items-center px-4 py-2 text-sm font-medium rounded-md text-red-600 hover:bg-red-50 transition-colors">
+                        {{ icon.trash(class="w-4 h-4 mr-2") }}
+                        Hapus
+                    </button>
+                </div>
+                <div class="flex items-center space-x-3">
                     {% if internship.lifecycle_status.status_code == 'active' %}
-                    <button type="button" onclick="openModal('closeModal_{{ internship.id }}')" class="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors">
+                    <button type="button" onclick="openModal('closeModal_{{ internship.id }}')" class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         {{ icon.x_circle(class="w-4 h-4 mr-2 text-gray-500") }}
-                        Tutup
+                        Tutup Lowongan
                     </button>
                     {% endif %}
                     
-                    <button type="button" onclick="openModal('deleteModal_{{ internship.id }}')" class="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 hover:border-red-200 transition-colors">
-                        {{ icon.trash(class="w-4 h-4 mr-2 text-red-600") }}
-                        Hapus
-                    </button>
+                    <a href="{{ url_for('company.internship_edit_form', id=internship.id) }}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-black transition-colors">
+                        {{ icon.pencil(class="w-4 h-4 mr-2") }}
+                        Edit
+                    </a>
                 </div>
             </div>
         </div>
