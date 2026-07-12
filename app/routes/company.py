@@ -670,7 +670,12 @@ def update_applicant_status(application_id):
             notif_type = NotificationType.query.filter_by(type_code='application').first()
             
         if notif_type:
+            title = f"Status Lamaran: {new_status.status_name}"
+            message = f"Status lamaran Anda untuk posisi {application.internship.internship_title} di {profile.company_name} telah diperbarui menjadi {new_status.status_name}."
+            
             payload = {
+                "title": title,
+                "message": message,
                 "internship_title": application.internship.internship_title,
                 "company_name": profile.company_name,
                 "old_status": old_status.status_name,
