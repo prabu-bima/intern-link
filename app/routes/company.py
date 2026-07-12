@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from flask_login import current_user
+from flask_login import login_required, current_user
 from app.utils.decorators import company_required
 from app.models.company import CompanyVerification
 from app.models.internship import Internship, InternshipApplication
 from app.models.lookups import InternshipLifecycleStatus, InternshipModerationStatus, ApplicationStatus
 from app.extensions import db
 from sqlalchemy import func
+from datetime import datetime
 
 bp = Blueprint('company', __name__, url_prefix='/company')
 
