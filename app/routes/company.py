@@ -667,7 +667,7 @@ def update_applicant_status(application_id):
         notif_type = NotificationType.query.filter_by(type_code=notification_type_code).first()
         if not notif_type:
             # Fallback
-            notif_type = NotificationType.query.filter_by(type_code='application_update').first()
+            notif_type = NotificationType.query.filter_by(type_code='application').first()
             
         if notif_type:
             payload = {
@@ -678,9 +678,9 @@ def update_applicant_status(application_id):
                 "application_id": application.id
             }
             notification = Notification(
-                recipient_user_id=application.student_profile.user_id,
+                recipient_user_id=application.student_profile.user_account_id,
                 notification_type_id=notif_type.id,
-                payload_json=json.dumps(payload)
+                payload_json=payload
             )
             db.session.add(notification)
     except Exception as e:
