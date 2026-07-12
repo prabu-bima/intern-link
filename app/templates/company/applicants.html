@@ -5,11 +5,6 @@
 
 {% block company_content %}
 <div class="mb-8">
-    <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
-        <a href="{{ url_for('company.internships') }}" class="hover:text-gray-900 transition-colors">Lowongan</a>
-        <span>/</span>
-        <span class="text-gray-900">{{ internship.internship_title }}</span>
-    </div>
     <div class="flex justify-between items-end">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900 font-sans tracking-tight mb-2">Pelamar</h1>
@@ -61,12 +56,12 @@
             <div class="flex-1 flex items-start space-x-4">
                 <!-- Avatar placeholder or actual photo if available -->
                 <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-lg flex-shrink-0 border border-gray-200">
-                    {{ app.student_profile.full_name[:1].upper() if app.student_profile else '?' }}
+                    {{ app.student_profile.user.display_name[:1].upper() if app.student_profile and app.student_profile.user else '?' }}
                 </div>
                 
                 <div>
                     <div class="flex items-center space-x-3 mb-1">
-                        <h3 class="text-base font-semibold text-gray-900 font-sans tracking-tight">{{ app.student_profile.full_name }}</h3>
+                        <h3 class="text-base font-semibold text-gray-900 font-sans tracking-tight">{{ app.student_profile.user.display_name if app.student_profile and app.student_profile.user else 'Pelamar' }}</h3>
                         
                         {% if app.application_status.status_code == 'submitted' %}
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
@@ -94,7 +89,11 @@
                     <div class="flex flex-wrap text-sm text-gray-600 gap-y-1 gap-x-4">
                         <div class="flex items-center">
                             {{ icon.academic_cap(class="w-4 h-4 mr-1.5 text-gray-400") }}
-                            {{ app.student_profile.university or 'Universitas tidak diketahui' }}
+                            {% if app.student_profile and app.student_profile.education_records %}
+                                {{ app.student_profile.education_records[0].institution_name }}
+                            {% else %}
+                                Universitas tidak diketahui
+                            {% endif %}
                         </div>
                         <div class="flex items-center">
                             {{ icon.calendar(class="w-4 h-4 mr-1.5 text-gray-400") }}

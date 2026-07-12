@@ -538,7 +538,7 @@ def internship_applicants(id):
         flash('Akses ditolak.', 'error')
         return redirect(url_for('guest.index'))
         
-    internship = Internship.query.filter_by(id=id, company_profile_id=current_user.company_id).first_or_404()
+    internship = Internship.query.filter_by(id=id, company_profile_id=current_user.company_profile.id).first_or_404()
     
     # Filtering
     status = request.args.get('status', 'all')
