@@ -72,14 +72,25 @@ def dashboard():
         if code not in applicant_stats:
             applicant_stats[code] = {'name': default_name, 'count': 0}
 
+    from app.models.identity import StudentProfile
+    from sqlalchemy.orm import joinedload
+
     # 4. Active Jobs list (limit 5)
-    active_jobs_list = Internship.query.filter_by(
+    active_jobs_list = Internship.query.options(
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.applications)
+    ).filter_by(
         company_profile_id=profile.id,
         lifecycle_status_id=active_lifecycle.id if active_lifecycle else 0
     ).filter(Internship.deleted_at.is_(None)).order_by(Internship.id.desc()).limit(5).all()
 
     # 5. Latest Applicants feed (limit 5)
-    latest_applicants = InternshipApplication.query.join(Internship).filter(
+    latest_applicants = InternshipApplication.query.options(
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
+        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.application_status)
+    ).join(Internship).filter(
         Internship.company_profile_id == profile.id
     ).filter(InternshipApplication.deleted_at.is_(None)).order_by(InternshipApplication.submitted_at.desc()).limit(5).all()
 
@@ -543,7 +554,14 @@ def internship_applicants(id):
     # Filtering
     status = request.args.get('status', 'all')
     
-    query = InternshipApplication.query.filter_by(internship_id=internship.id)
+    from app.models.identity import StudentProfile
+    from sqlalchemy.orm import joinedload
+    
+    query = InternshipApplication.query.options(
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.education_records),
+        joinedload(InternshipApplication.application_status)
+    ).filter_by(internship_id=internship.id)
     
     if status != 'all':
         query = query.join(ApplicationStatus).filter(ApplicationStatus.status_code == status)
@@ -556,13 +574,17 @@ def internship_applicants(id):
     # Get all application statuses for filter bar
     application_statuses = ApplicationStatus.query.all()
     
-    # Calculate counts for each status
-    status_counts = {'all': InternshipApplication.query.filter_by(internship_id=internship.id).count()}
+    # Calculate counts for each status using a single GROUP BY query
+    status_counts_query = db.session.query(
+        InternshipApplication.application_status_id, 
+        db.func.count(InternshipApplication.id)
+    ).filter_by(internship_id=internship.id).group_by(InternshipApplication.application_status_id).all()
+    
+    status_counts_map = {status_id: count for status_id, count in status_counts_query}
+    
+    status_counts = {'all': sum(status_counts_map.values())}
     for stat in application_statuses:
-        status_counts[stat.status_code] = InternshipApplication.query.filter_by(
-            internship_id=internship.id, 
-            application_status_id=stat.id
-        ).count()
+        status_counts[stat.status_code] = status_counts_map.get(stat.id, 0)
     
     return render_template(
         'company/applicants.html',
