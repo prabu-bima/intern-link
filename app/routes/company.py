@@ -527,3 +527,49 @@ def internship_delete(id):
     flash('Lowongan magang berhasil dihapus.', 'success')
     return redirect(url_for('company.internships'))
 
+
+@bp.route('/internships/<int:id>/applicants', methods=['GET'])
+@login_required
+def internship_applicants(id):
+    from app.models.internship import Internship, InternshipApplication
+    from app.models.lookups import ApplicationStatus
+    
+    if current_user.role != 'company':
+        flash('Akses ditolak.', 'error')
+        return redirect(url_for('guest.index'))
+        
+    internship = Internship.query.filter_by(id=id, company_profile_id=current_user.company_id).first_or_404()
+    
+    # Filtering
+    status = request.args.get('status', 'all')
+    
+    query = InternshipApplication.query.filter_by(internship_id=internship.id)
+    
+    if status != 'all':
+        query = query.join(ApplicationStatus).filter(ApplicationStatus.status_code == status)
+        
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    pagination = query.order_by(InternshipApplication.submitted_at.desc()).paginate(page=page, per_page=10, error_out=False)
+    applicants = pagination.items
+    
+    # Get all application statuses for filter bar
+    application_statuses = ApplicationStatus.query.all()
+    
+    # Calculate counts for each status
+    status_counts = {'all': InternshipApplication.query.filter_by(internship_id=internship.id).count()}
+    for stat in application_statuses:
+        status_counts[stat.status_code] = InternshipApplication.query.filter_by(
+            internship_id=internship.id, 
+            application_status_id=stat.id
+        ).count()
+    
+    return render_template(
+        'company/applicants.html',
+        internship=internship,
+        applicants=applicants,
+        pagination=pagination,
+        current_status=status,
+        application_statuses=application_statuses,
+        status_counts=status_counts
+    )

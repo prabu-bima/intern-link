@@ -99,15 +99,20 @@
                 </div>
                 <div class="flex items-center space-x-3">
                     {% if internship.lifecycle_status.status_code == 'active' %}
-                    <button type="button" onclick="openModal('closeModal_{{ internship.id }}')" class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <button type="button" onclick="openModal('closeModal_{{ internship.id }}')" class="inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         {{ icon.x_circle(class="w-4 h-4 mr-2 text-gray-500") }}
-                        Tutup Lowongan
+                        Tutup
                     </button>
                     {% endif %}
                     
-                    <a href="{{ url_for('company.internship_edit_form', id=internship.id) }}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-black transition-colors">
-                        {{ icon.pencil(class="w-4 h-4 mr-2") }}
+                    <a href="{{ url_for('company.internship_edit_form', id=internship.id) }}" class="inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        {{ icon.pencil(class="w-4 h-4 mr-2 text-gray-500") }}
                         Edit
+                    </a>
+                    
+                    <a href="{{ url_for('company.internship_applicants', id=internship.id) }}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-black transition-colors">
+                        {{ icon.user_group(class="w-4 h-4 mr-2") if icon.user_group else icon.user(class="w-4 h-4 mr-2") }}
+                        Pelamar
                     </a>
                 </div>
             </div>
