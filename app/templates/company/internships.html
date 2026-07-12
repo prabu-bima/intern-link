@@ -1,0 +1,253 @@
+{% extends "layouts/company_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Kelola Lowongan - InternLink{% endblock %}
+
+{% block company_content %}
+<div class="mb-8 flex justify-between items-end">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 font-outfit">Kelola Lowongan</h1>
+        <p class="text-gray-500 mt-1">Kelola dan pantau semua lowongan magang perusahaan Anda.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('company.internship_create_form') }}" class="inline-flex justify-center items-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+            {{ icon.plus_circle(class="w-5 h-5 mr-2") }}
+            Buat Lowongan Baru
+        </a>
+    </div>
+</div>
+
+<!-- Filters & Tabs -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-center px-4 py-2">
+        <div class="flex space-x-2">
+            <a href="{{ url_for('company.internships', status='all') }}" class="{% if current_status == 'all' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-50{% endif %} px-4 py-2 rounded-lg text-sm transition-colors">
+                Semua Lowongan
+            </a>
+            <a href="{{ url_for('company.internships', status='active') }}" class="{% if current_status == 'active' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-50{% endif %} px-4 py-2 rounded-lg text-sm transition-colors">
+                Aktif
+            </a>
+            <a href="{{ url_for('company.internships', status='closed') }}" class="{% if current_status == 'closed' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-50{% endif %} px-4 py-2 rounded-lg text-sm transition-colors">
+                Ditutup
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Internship List -->
+<div class="space-y-4">
+    {% if internships %}
+        {% for internship in internships %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                
+                <!-- Info Section -->
+                <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <h3 class="text-lg font-bold text-gray-900">{{ internship.internship_title }}</h3>
+                        {% if internship.lifecycle_status.status_code == 'active' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Aktif
+                            </span>
+                        {% elif internship.lifecycle_status.status_code == 'closed' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Ditutup
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {{ internship.lifecycle_status.status_name }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex flex-wrap text-sm text-gray-500 gap-y-2 gap-x-4 mb-4">
+                        <div class="flex items-center">
+                            {{ icon.map_pin(class="w-4 h-4 mr-1.5 text-gray-400") }}
+                            {{ internship.location.city }}{% if internship.location.region %}, {{ internship.location.region }}{% endif %}
+                        </div>
+                        {% if internship.internship_type %}
+                        <div class="flex items-center">
+                            {{ icon.briefcase(class="w-4 h-4 mr-1.5 text-gray-400") }}
+                            {{ internship.internship_type }}
+                        </div>
+                        {% endif %}
+                        {% if internship.closing_at %}
+                        <div class="flex items-center">
+                            {{ icon.calendar(class="w-4 h-4 mr-1.5 text-gray-400") }}
+                            Tutup: {{ internship.closing_at.strftime('%d %B %Y') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <div class="bg-gray-50 rounded-lg px-4 py-2 border border-gray-100">
+                            <span class="text-xs text-gray-500 block mb-0.5 uppercase tracking-wider font-semibold">Total Pelamar</span>
+                            <span class="text-lg font-bold text-gray-900">{{ internship.applications|length }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="mt-6 md:mt-0 md:ml-6 flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 justify-end w-full md:w-auto">
+                    <a href="{{ url_for('company.internship_edit_form', id=internship.id) }}" class="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        {{ icon.pencil(class="w-4 h-4 mr-2 text-gray-400") }}
+                        Edit
+                    </a>
+                    
+                    {% if internship.lifecycle_status.status_code == 'active' %}
+                    <button type="button" onclick="openModal('closeModal_{{ internship.id }}')" class="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-yellow-300 shadow-sm text-sm font-medium rounded-xl text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors">
+                        {{ icon.x_circle(class="w-4 h-4 mr-2 text-yellow-500") }}
+                        Tutup
+                    </button>
+                    {% endif %}
+                    
+                    <button type="button" onclick="openModal('deleteModal_{{ internship.id }}')" class="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-xl text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        {{ icon.trash(class="w-4 h-4 mr-2 text-red-500") }}
+                        Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Close Modal -->
+        <div id="closeModal_{{ internship.id }}" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeModal('closeModal_{{ internship.id }}')"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
+                                {{ icon.exclamation_triangle(class="h-6 w-6 text-yellow-600") }}
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 font-outfit" id="modal-title">
+                                    Tutup Lowongan Magang
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500">
+                                        Apakah Anda yakin ingin menutup lowongan <b>{{ internship.internship_title }}</b>? Pelamar tidak akan bisa melamar posisi ini lagi setelah ditutup.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <form action="{{ url_for('company.internship_close', id=internship.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Ya, Tutup Lowongan
+                            </button>
+                        </form>
+                        <button type="button" onclick="closeModal('closeModal_{{ internship.id }}')" class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div id="deleteModal_{{ internship.id }}" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeModal('deleteModal_{{ internship.id }}')"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                {{ icon.exclamation_triangle(class="h-6 w-6 text-red-600") }}
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 font-outfit" id="modal-title">
+                                    Hapus Lowongan Magang
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500">
+                                        Apakah Anda yakin ingin menghapus lowongan <b>{{ internship.internship_title }}</b>? Data ini tidak dapat dikembalikan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <form action="{{ url_for('company.internship_delete', id=internship.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Hapus Permanen
+                            </button>
+                        </form>
+                        <button type="button" onclick="closeModal('deleteModal_{{ internship.id }}')" class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="mt-8 flex justify-center">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('company.internships', page=pagination.prev_num, status=current_status) }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Previous</span>
+                    {{ icon.chevron_left(class="h-5 w-5") }}
+                </a>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if pagination.page == page_num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-primary-500 bg-primary-50 text-sm font-medium text-primary-600">
+                            {{ page_num }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('company.internships', page=page_num, status=current_status) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('company.internships', page=pagination.next_num, status=current_status) }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Next</span>
+                    {{ icon.chevron_right(class="h-5 w-5") }}
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div class="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                {{ icon.briefcase(class="w-10 h-10 text-gray-300") }}
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2 font-outfit">Belum Ada Lowongan</h3>
+            <p class="text-gray-500 mb-6 max-w-md mx-auto">Anda belum memiliki lowongan magang{% if current_status != 'all' %} dengan status ini{% endif %}. Mulai temukan talenta terbaik dengan membuat lowongan pertama Anda.</p>
+            <a href="{{ url_for('company.internship_create_form') }}" class="inline-flex justify-center items-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                {{ icon.plus_circle(class="w-5 h-5 mr-2") }}
+                Buat Lowongan Sekarang
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+</script>
+{% endblock %}

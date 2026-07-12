@@ -338,3 +338,191 @@ def internship_create():
     db.session.commit()
     flash('Lowongan magang berhasil dipublikasikan!', 'success')
     return redirect(url_for('company.dashboard')) # Redirect to dashboard or a list page
+
+@bp.route('/internships', methods=['GET'])
+@login_required
+def internships():
+    from app.models.internship import Internship
+    
+    if current_user.role != 'company':
+        flash('Akses ditolak. Anda bukan perusahaan.', 'error')
+        return redirect(url_for('guest.index'))
+        
+    profile = current_user.company_profile
+    if not profile:
+        flash('Silakan lengkapi profil perusahaan Anda terlebih dahulu.', 'warning')
+        return redirect(url_for('company.profile_form'))
+        
+    status_filter = request.args.get('status', 'all')
+    
+    query = Internship.query.filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
+    
+    if status_filter == 'active':
+        query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
+    elif status_filter == 'closed':
+        query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'closed')
+        
+    query = query.order_by(Internship.id.desc())
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return render_template(
+        'company/internships.html',
+        pagination=pagination,
+        internships=pagination.items,
+        current_status=status_filter
+    )
+
+
+@bp.route('/internships/<int:id>/edit', methods=['GET'])
+@login_required
+def internship_edit_form(id):
+    from app.models.master import TechnologyCategory, Location, Skill, TechStackItem
+    from app.models.internship import Internship
+    
+    if current_user.role != 'company':
+        flash('Akses ditolak.', 'error')
+        return redirect(url_for('guest.index'))
+        
+    internship = Internship.query.get_or_404(id)
+    if internship.company_profile_id != current_user.company_profile.id:
+        flash('Akses ditolak.', 'error')
+        return redirect(url_for('company.dashboard'))
+        
+    categories = TechnologyCategory.query.all()
+    locations = Location.query.all()
+    skills = Skill.query.all()
+    tech_stacks = TechStackItem.query.all()
+    
+    existing_skills = [s.skill_id for s in internship.required_skills]
+    existing_tech_stacks = [t.tech_stack_item_id for t in internship.required_tech_stack_items]
+    
+    return render_template(
+        'company/internship_form.html',
+        categories=categories,
+        locations=locations,
+        skills=skills,
+        tech_stacks=tech_stacks,
+        internship=internship,
+        existing_skills=existing_skills,
+        existing_tech_stacks=existing_tech_stacks
+    )
+
+
+@bp.route('/internships/<int:id>/edit', methods=['POST'])
+@login_required
+def internship_edit(id):
+    from app.models.internship import Internship, InternshipRequiredSkill, InternshipRequiredTechStackItem
+    
+    if current_user.role != 'company':
+        return redirect(url_for('guest.index'))
+        
+    internship = Internship.query.get_or_404(id)
+    if internship.company_profile_id != current_user.company_profile.id:
+        return redirect(url_for('company.dashboard'))
+        
+    # Get form data
+    category_id = request.form.get('technology_category_id')
+    location_id = request.form.get('location_id')
+    title = request.form.get('internship_title')
+    description = request.form.get('internship_description')
+    internship_type = request.form.get('internship_type')
+    duration_months = request.form.get('duration_months')
+    
+    closing_at_str = request.form.get('closing_at')
+    closing_at = None
+    if closing_at_str:
+        try:
+            closing_at = datetime.strptime(closing_at_str, '%Y-%m-%d')
+        except ValueError:
+            pass
+            
+    # Update fields
+    internship.technology_category_id = int(category_id)
+    internship.location_id = int(location_id)
+    internship.internship_title = title
+    internship.internship_description = description
+    internship.internship_type = internship_type
+    internship.duration_months = int(duration_months) if duration_months and duration_months.isdigit() else None
+    internship.closing_at = closing_at
+    
+    # Update Skills
+    selected_skills = request.form.getlist('skills')
+    
+    # Remove old skills
+    for rs in internship.required_skills:
+        db.session.delete(rs)
+        
+    # Add new skills
+    for skill_id in selected_skills:
+        if skill_id.isdigit():
+            req_skill = InternshipRequiredSkill(
+                internship=internship,
+                skill_id=int(skill_id)
+            )
+            db.session.add(req_skill)
+            
+    # Update Tech Stacks
+    selected_tech_stacks = request.form.getlist('tech_stacks')
+    
+    # Remove old tech stacks
+    for rt in internship.required_tech_stack_items:
+        db.session.delete(rt)
+        
+    # Add new tech stacks
+    for tech_id in selected_tech_stacks:
+        if tech_id.isdigit():
+            req_tech = InternshipRequiredTechStackItem(
+                internship=internship,
+                tech_stack_item_id=int(tech_id)
+            )
+            db.session.add(req_tech)
+            
+    db.session.commit()
+    flash('Lowongan magang berhasil diperbarui!', 'success')
+    return redirect(url_for('company.internships'))
+
+
+@bp.route('/internships/<int:id>/close', methods=['POST'])
+@login_required
+def internship_close(id):
+    from app.models.internship import Internship
+    
+    if current_user.role != 'company':
+        return redirect(url_for('guest.index'))
+        
+    internship = Internship.query.get_or_404(id)
+    if internship.company_profile_id != current_user.company_profile.id:
+        return redirect(url_for('company.dashboard'))
+        
+    closed_status = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
+    if closed_status:
+        internship.lifecycle_status_id = closed_status.id
+        db.session.commit()
+        flash('Lowongan magang berhasil ditutup.', 'success')
+    else:
+        flash('Terjadi kesalahan pada sistem status.', 'error')
+        
+    return redirect(url_for('company.internships'))
+
+
+@bp.route('/internships/<int:id>/delete', methods=['POST'])
+@login_required
+def internship_delete(id):
+    from app.models.internship import Internship
+    
+    if current_user.role != 'company':
+        return redirect(url_for('guest.index'))
+        
+    internship = Internship.query.get_or_404(id)
+    if internship.company_profile_id != current_user.company_profile.id:
+        return redirect(url_for('company.dashboard'))
+        
+    internship.deleted_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash('Lowongan magang berhasil dihapus.', 'success')
+    return redirect(url_for('company.internships'))
+
