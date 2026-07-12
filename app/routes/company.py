@@ -631,7 +631,7 @@ def update_applicant_status(application_id):
     from app.models.internship import InternshipApplication, Internship
     from app.models.identity import CompanyProfile
     from app.models.lookups import ApplicationStatus, NotificationType
-    from app.models.notification import Notification
+    from app.models.system import Notification
     import json
     
     # Get current company profile
