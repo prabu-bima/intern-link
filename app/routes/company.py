@@ -742,7 +742,7 @@ def schedule_interview(application_id):
         db.session.add(interview)
         
         # Update application status to interview
-        interview_status = ApplicationStatus.query.filter_by(status_code='interview').first()
+        interview_status = ApplicationStatus.query.filter_by(status_code='interviewing').first()
         if interview_status:
             old_status = application.application_status
             application.application_status_id = interview_status.id
