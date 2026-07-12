@@ -105,3 +105,5 @@ class InternshipModerationEvent(db.Model):
     internship = db.relationship('Internship', backref=db.backref('moderation_events', lazy=True))
     admin_user = db.relationship('UserAccount', foreign_keys=[admin_user_id])
     moderation_status = db.relationship('InternshipModerationStatus')
+
+

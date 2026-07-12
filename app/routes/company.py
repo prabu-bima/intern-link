@@ -697,3 +697,141 @@ def update_applicant_status(application_id):
     
     flash(f'Status pelamar berhasil diubah menjadi {new_status.status_name}.', 'success')
     return redirect(url_for('company.applicant_detail', application_id=application_id))
+
+@bp.route('/applicants/<int:application_id>/interview', methods=['GET', 'POST'])
+@login_required
+@company_required
+def schedule_interview(application_id):
+    from app.models.internship import InternshipApplication, ApplicationInterview
+    from app.models.identity import CompanyProfile
+    from app.models.lookups import ApplicationStatus, NotificationType
+    from app.models.system import Notification
+    import json
+    from datetime import datetime
+    
+    # Get current company profile
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    
+    # Get application and verify ownership
+    application = InternshipApplication.query.get_or_404(application_id)
+    if application.internship.company_profile_id != profile.id:
+        abort(403)
+        
+    if request.method == 'POST':
+        scheduled_at_str = request.form.get('scheduled_at') # YYYY-MM-DDTHH:MM
+        interview_format = request.form.get('interview_format')
+        location_or_link = request.form.get('location_or_link')
+        notes = request.form.get('notes')
+        
+        try:
+            scheduled_at = datetime.fromisoformat(scheduled_at_str)
+        except ValueError:
+            flash('Format tanggal dan waktu tidak valid.', 'error')
+            return redirect(request.url)
+            
+        from app.models.lookups import InterviewStatus
+        interview_status_obj = InterviewStatus.query.filter_by(status_code='scheduled').first()
+        
+        interview = ApplicationInterview(
+            internship_application_id=application.id,
+            interview_status_id=interview_status_obj.id if interview_status_obj else 1,
+            scheduled_at=scheduled_at,
+            meeting_link=location_or_link,
+            interview_notes=f"Format: {interview_format}\nNotes: {notes}"
+        )
+        db.session.add(interview)
+        
+        # Update application status to interview
+        interview_status = ApplicationStatus.query.filter_by(status_code='interview').first()
+        if interview_status:
+            old_status = application.application_status
+            application.application_status_id = interview_status.id
+            
+            # Send notification
+            notif_type = NotificationType.query.filter_by(type_code='application').first()
+            if notif_type:
+                title = f"Undangan Wawancara: {application.internship.internship_title}"
+                format_display = "Online" if interview_format == "online" else "Tatap Muka (Offline)"
+                dt_display = scheduled_at.strftime('%d %B %Y, %H:%M')
+                message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}."
+                
+                payload = {
+                    "title": title,
+                    "message": message,
+                    "internship_title": application.internship.internship_title,
+                    "company_name": profile.company_name,
+                    "old_status": old_status.status_name,
+                    "new_status": interview_status.status_name,
+                    "application_id": application.id
+                }
+                notification = Notification(
+                    recipient_user_id=application.student_profile.user_account_id,
+                    notification_type_id=notif_type.id,
+                    payload_json=payload
+                )
+                db.session.add(notification)
+                
+        db.session.commit()
+        flash('Jadwal wawancara berhasil dibuat dan undangan telah dikirim ke pelamar.', 'success')
+        return redirect(url_for('company.applicant_detail', application_id=application.id))
+        
+    return render_template('company/interview_form.html', application=application)
+
+@bp.route('/interviews', methods=['GET'])
+@login_required
+@company_required
+def interviews():
+    from app.models.identity import CompanyProfile
+    from app.models.internship import ApplicationInterview, InternshipApplication, Internship
+    from sqlalchemy import desc
+    
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    if not profile:
+        abort(404)
+        
+    status_filter = request.args.get('status', 'all')
+    
+    from app.models.lookups import InterviewStatus
+    
+    query = ApplicationInterview.query.join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
+        Internship.company_profile_id == profile.id
+    )
+    
+    if status_filter != 'all':
+        query = query.filter(InterviewStatus.status_code == status_filter)
+        
+    # Default order by scheduled date
+    interviews = query.order_by(desc(ApplicationInterview.scheduled_at)).all()
+    
+    return render_template('company/interviews.html', interviews=interviews, current_status=status_filter)
+
+@bp.route('/interviews/<int:interview_id>/status', methods=['POST'])
+@login_required
+@company_required
+def update_interview_status(interview_id):
+    from app.models.internship import ApplicationInterview
+    from app.models.identity import CompanyProfile
+    
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    interview = ApplicationInterview.query.get_or_404(interview_id)
+    
+    # Verify ownership
+    if interview.application.internship.company_profile_id != profile.id:
+        abort(403)
+        
+    new_status = request.form.get('status')
+    
+    from app.models.lookups import InterviewStatus
+    from datetime import datetime
+    valid_status_obj = InterviewStatus.query.filter_by(status_code=new_status).first()
+    
+    if valid_status_obj:
+        interview.interview_status_id = valid_status_obj.id
+        if new_status == 'completed':
+            interview.interview_completed_at = datetime.utcnow()
+        db.session.commit()
+        flash('Status wawancara berhasil diperbarui.', 'success')
+    else:
+        flash('Status tidak valid.', 'error')
+        
+    return redirect(url_for('company.interviews'))

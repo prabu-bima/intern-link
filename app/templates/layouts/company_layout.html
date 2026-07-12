@@ -26,9 +26,15 @@
                 </a>
                 
                 <!-- Kelola Pelamar -->
-                <a href="#" class="{% if request.endpoint == 'company.applicants' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
-                    {{ icon.users(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'company.applicants' else 'text-gray-400 group-hover:text-gray-500')) }}
+                <a href="#" class="{% if request.endpoint == 'company.internship_applicants' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors hidden">
+                    {{ icon.users(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'company.internship_applicants' else 'text-gray-400 group-hover:text-gray-500')) }}
                     Pelamar Masuk
+                </a>
+                
+                <!-- Manajemen Wawancara -->
+                <a href="{{ url_for('company.interviews') }}" class="{% if request.endpoint == 'company.interviews' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.calendar(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'company.interviews' else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Manajemen Wawancara
                 </a>
                 
                 <hr class="my-4 border-gray-100">
