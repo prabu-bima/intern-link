@@ -235,3 +235,106 @@ def profile_social_delete(id):
     db.session.commit()
     flash('Tautan media sosial berhasil dihapus.', 'success')
     return redirect(url_for('company.profile'))
+
+from app.models.master import TechnologyCategory, Skill, TechStackItem
+from app.models.internship import InternshipRequiredSkill, InternshipRequiredTechStackItem
+
+@bp.route('/internships/create', methods=['GET'])
+@company_required
+def internship_create_form():
+    # Only allow verified companies
+    profile = current_user.company_profile
+    verification = CompanyVerification.query.filter_by(
+        company_profile_id=profile.id
+    ).order_by(CompanyVerification.id.desc()).first()
+    
+    if not verification or verification.verification_status.status_code != 'verified':
+        flash('Perusahaan Anda harus terverifikasi untuk dapat membuat lowongan.', 'warning')
+        return redirect(url_for('company.dashboard'))
+        
+    locations = Location.query.all()
+    categories = TechnologyCategory.query.all()
+    skills = Skill.query.all()
+    tech_stacks = TechStackItem.query.all()
+    
+    return render_template(
+        'company/internship_form.html',
+        locations=locations,
+        categories=categories,
+        skills=skills,
+        tech_stacks=tech_stacks
+    )
+
+@bp.route('/internships/create', methods=['POST'])
+@company_required
+def internship_create():
+    profile = current_user.company_profile
+    
+    # 1. Fetch form data
+    title = request.form.get('internship_title')
+    description = request.form.get('internship_description')
+    internship_type = request.form.get('internship_type')
+    duration_months = request.form.get('duration_months')
+    location_id = request.form.get('location_id')
+    category_id = request.form.get('technology_category_id')
+    closing_at_str = request.form.get('closing_at')
+    
+    # Check required fields
+    if not title or not description or not location_id or not category_id:
+        flash('Pastikan kolom wajib (Judul, Deskripsi, Lokasi, Kategori) terisi.', 'danger')
+        return redirect(url_for('company.internship_create_form'))
+        
+    # Parse closing_at
+    closing_at = None
+    if closing_at_str:
+        from datetime import datetime
+        try:
+            closing_at = datetime.strptime(closing_at_str, '%Y-%m-%d')
+        except ValueError:
+            pass
+            
+    # Default statuses
+    lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+    moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first() # Auto approve for now, or pending depending on policy
+    
+    new_internship = Internship(
+        company_profile_id=profile.id,
+        technology_category_id=int(category_id),
+        location_id=int(location_id),
+        internship_title=title,
+        internship_description=description,
+        internship_type=internship_type,
+        duration_months=int(duration_months) if duration_months and duration_months.isdigit() else None,
+        lifecycle_status_id=lifecycle.id if lifecycle else 2,
+        moderation_status_id=moderation.id if moderation else 2,
+        closing_at=closing_at
+    )
+    
+    db.session.add(new_internship)
+    db.session.flush() # to get ID
+    
+    # Handle Skills (Multi-select)
+    selected_skills = request.form.getlist('skills') # List of IDs
+    for skill_id in selected_skills:
+        if skill_id.isdigit():
+            req_skill = InternshipRequiredSkill(
+                internship_id=new_internship.id,
+                skill_id=int(skill_id),
+                required_level='required'
+            )
+            db.session.add(req_skill)
+            
+    # Handle Tech Stacks (Multi-select)
+    selected_techs = request.form.getlist('tech_stacks') # List of IDs
+    for tech_id in selected_techs:
+        if tech_id.isdigit():
+            req_tech = InternshipRequiredTechStackItem(
+                internship_id=new_internship.id,
+                tech_stack_item_id=int(tech_id),
+                required_level='required'
+            )
+            db.session.add(req_tech)
+            
+    db.session.commit()
+    flash('Lowongan magang berhasil dipublikasikan!', 'success')
+    return redirect(url_for('company.dashboard')) # Redirect to dashboard or a list page

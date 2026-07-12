@@ -20,9 +20,9 @@
                 </a>
                 
                 <!-- Kelola Lowongan -->
-                <a href="#" class="{% if 'internship' in request.endpoint and 'company' in request.endpoint %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
-                    {{ icon.briefcase(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if 'internship' in request.endpoint and 'company' in request.endpoint else 'text-gray-400 group-hover:text-gray-500')) }}
-                    Lowongan Magang
+                <a href="{{ url_for('company.internship_create_form') }}" class="{% if 'internship' in request.endpoint and 'company' in request.endpoint %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.plus_circle(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if 'internship' in request.endpoint and 'company' in request.endpoint else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Buat Lowongan
                 </a>
                 
                 <!-- Kelola Pelamar -->

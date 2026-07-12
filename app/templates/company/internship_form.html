@@ -1,0 +1,139 @@
+{% extends "layouts/company_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Buat Lowongan Magang - InternLink{% endblock %}
+
+{% block company_content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 font-outfit">Buat Lowongan Magang</h1>
+        <p class="text-gray-500 mt-1">Publikasikan kesempatan magang baru untuk talenta terbaik.</p>
+    </div>
+    <a href="{{ url_for('company.dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700">
+        {{ icon.chevron_left(class="w-4 h-4 mr-1") }} Kembali ke Dasbor
+    </a>
+</div>
+
+<form action="{{ url_for('company.internship_create') }}" method="POST" class="space-y-8">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <!-- Informasi Utama -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-lg font-bold text-gray-900">Informasi Utama</h2>
+            <p class="text-sm text-gray-500">Detail dasar mengenai lowongan magang yang Anda tawarkan.</p>
+        </div>
+        <div class="p-6 space-y-6">
+            <div>
+                <label for="internship_title" class="block text-sm font-medium text-gray-700">Judul Posisi Magang <span class="text-red-500">*</span></label>
+                <input type="text" name="internship_title" id="internship_title" required placeholder="Contoh: Frontend Developer Intern" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-xl py-2 px-3">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="technology_category_id" class="block text-sm font-medium text-gray-700">Kategori Pekerjaan <span class="text-red-500">*</span></label>
+                    <select id="technology_category_id" name="technology_category_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                        <option value="">Pilih Kategori</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="location_id" class="block text-sm font-medium text-gray-700">Lokasi Penempatan <span class="text-red-500">*</span></label>
+                    <select id="location_id" name="location_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                        <option value="">Pilih Lokasi</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}">{{ loc.city }}{% if loc.region %}, {{ loc.region }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="internship_type" class="block text-sm font-medium text-gray-700">Tipe Magang</label>
+                    <select id="internship_type" name="internship_type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                        <option value="">Pilih Tipe</option>
+                        <option value="On-site">On-site (WFO)</option>
+                        <option value="Remote">Remote (WFH)</option>
+                        <option value="Hybrid">Hybrid</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="duration_months" class="block text-sm font-medium text-gray-700">Durasi Magang (Bulan)</label>
+                    <input type="number" name="duration_months" id="duration_months" min="1" max="12" placeholder="Contoh: 3" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-xl py-2 px-3">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label for="closing_at" class="block text-sm font-medium text-gray-700">Batas Akhir Pendaftaran</label>
+                    <input type="date" name="closing_at" id="closing_at" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full md:w-1/2 shadow-sm sm:text-sm border-gray-300 rounded-xl py-2 px-3">
+                </div>
+            </div>
+            
+            <div>
+                <label for="internship_description" class="block text-sm font-medium text-gray-700">Deskripsi Lengkap <span class="text-red-500">*</span></label>
+                <p class="text-xs text-gray-500 mb-2">Tuliskan deskripsi pekerjaan, tanggung jawab (responsibilities), dan kualifikasi (qualifications) secara detail.</p>
+                <textarea id="internship_description" name="internship_description" rows="8" required class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 rounded-xl p-4"></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Skills & Tech Stack -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Soft Skills -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+                <h2 class="text-lg font-bold text-gray-900">Keahlian (Skills)</h2>
+                <p class="text-sm text-gray-500">Pilih kemampuan yang diharapkan dari kandidat.</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-64 overflow-y-auto pr-2">
+                    {% for skill in skills %}
+                    <label class="relative flex items-start p-3 cursor-pointer border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary-300 transition-colors">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="skills" value="{{ skill.id }}" class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <span class="font-medium text-gray-900 block">{{ skill.skill_name }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tech Stacks -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+                <h2 class="text-lg font-bold text-gray-900">Teknologi (Tech Stack)</h2>
+                <p class="text-sm text-gray-500">Pilih teknologi spesifik yang akan digunakan.</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-64 overflow-y-auto pr-2">
+                    {% for tech in tech_stacks %}
+                    <label class="relative flex items-start p-3 cursor-pointer border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-primary-300 transition-colors">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="tech_stacks" value="{{ tech.id }}" class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <span class="font-medium text-gray-900 block">{{ tech.tech_stack_name }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submit Area -->
+    <div class="pt-5 border-t border-gray-200 flex justify-end space-x-4">
+        <a href="{{ url_for('company.dashboard') }}" class="bg-white py-2.5 px-6 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+            Batal
+        </a>
+        <button type="submit" class="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+            Publikasikan Lowongan
+        </button>
+    </div>
+</form>
+{% endblock %}

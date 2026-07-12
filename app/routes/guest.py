@@ -94,8 +94,12 @@ def internships():
 @bp.route('/internships/<int:id>')
 def internship_detail(id):
     from app.models.internship import Internship
-    from flask import abort
+    from flask import abort, redirect, url_for
+    from flask_login import current_user
     
+    if current_user.is_authenticated and current_user.role == 'student':
+        return redirect(url_for('student.internship_detail', id=id))
+        
     internship = Internship.query.get_or_404(id)
     
     # We only want to show it if it's active or if the user somehow has the link.

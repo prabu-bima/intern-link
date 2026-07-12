@@ -123,6 +123,19 @@
     
     <!-- Sidebar (Right Column) -->
     <div class="w-full lg:w-1/3">
+        {% if current_user.is_authenticated and current_user.role == 'company' %}
+        <!-- Company Notice Card -->
+        <div class="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 text-gray-800 relative overflow-hidden">
+            <h3 class="text-xl font-bold text-gray-900 mb-2 relative z-10">Mode Perusahaan</h3>
+            <p class="text-gray-600 mb-6 text-sm relative z-10">Anda saat ini sedang login sebagai akun <b>Perusahaan</b>. Fitur melamar hanya tersedia untuk akun Mahasiswa.</p>
+            
+            <div class="space-y-4 relative z-10">
+                <a href="{{ url_for('company.dashboard') }}" class="w-full flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-100 transition-colors shadow-sm">
+                    Kembali ke Dasbor
+                </a>
+            </div>
+        </div>
+        {% else %}
         <!-- Apply CTA Card -->
         <div class="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl shadow-md p-8 mb-8 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 w-32 h-32 bg-white rounded-full mix-blend-overlay filter blur-2xl opacity-20 transform translate-x-10 -translate-y-10"></div>
@@ -142,6 +155,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         
         <!-- Company Profile Card -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">

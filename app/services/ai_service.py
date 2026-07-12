@@ -114,7 +114,21 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
         )
         
         result_json = response.text
-        result_data = json.loads(result_json)
+        # Clean up possible markdown wrappers
+        if result_json.startswith('```json'):
+            result_json = result_json[7:]
+        if result_json.startswith('```'):
+            result_json = result_json[3:]
+        if result_json.endswith('```'):
+            result_json = result_json[:-3]
+        result_json = result_json.strip()
+        
+        try:
+            result_data = json.loads(result_json)
+        except json.JSONDecodeError as e:
+            print(f"JSON Decode Error in Gemini AI Match: {e}")
+            print(f"Raw response: {result_json}")
+            return {'status': 'error', 'message': 'Gagal memproses respons dari AI. Silakan coba lagi.'}
         
         # 5. Save to database
         run = AISkillMatchRun(

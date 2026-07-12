@@ -9,6 +9,8 @@ class Internship(db.Model):
     location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False, index=True)
     internship_title = db.Column(db.String(255), nullable=False)
     internship_description = db.Column(db.Text, nullable=False)
+    internship_type = db.Column(db.String(50), nullable=True) # Full-time, Part-time, Remote, dsb.
+    duration_months = db.Column(db.Integer, nullable=True)
     lifecycle_status_id = db.Column(db.Integer, db.ForeignKey('internship_lifecycle_status.id'), nullable=False, index=True)
     moderation_status_id = db.Column(db.Integer, db.ForeignKey('internship_moderation_status.id'), nullable=False, index=True)
     closing_at = db.Column(db.DateTime, nullable=True)
