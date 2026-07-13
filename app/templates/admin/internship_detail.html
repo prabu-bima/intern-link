@@ -8,11 +8,6 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                <a href="{{ url_for('admin.internships') }}" class="hover:text-gray-900 transition-colors">Lowongan</a>
-                {{ icon.chevron_right(class="w-4 h-4") }}
-                <span class="text-gray-900 font-medium truncate max-w-[200px] sm:max-w-xs">{{ internship.internship_title }}</span>
-            </div>
             <h1 class="text-2xl font-bold text-gray-900 font-outfit">{{ internship.internship_title }}</h1>
         </div>
         <div class="flex flex-wrap gap-2">
