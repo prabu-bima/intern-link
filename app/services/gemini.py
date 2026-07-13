@@ -100,7 +100,7 @@ class AIPromptTemplates:
             "match_percentage": <int, 0-100 based on how well the skills and tech stack align>,
             "matching_skills": [<list of strings, skills the student has that the internship requires>],
             "missing_skills": [<list of strings, required skills the student is missing>],
-            "explanation": "<string, a 2-3 sentence paragraph explaining the match percentage and overall fit>",
+            "explanation": "<string, a 2-3 sentence paragraph explaining the match percentage and overall fit. MUST BE IN BAHASA INDONESIA>",
             "suggested_skills": [<list of strings, 2-4 skills the student should learn to be a better fit>]
         }}
         """
@@ -124,7 +124,7 @@ class AIPromptTemplates:
                 {{
                     "internship_id": <id of the recommended internship>,
                     "match_percentage": <int, 0-100>,
-                    "reasoning": "<string, brief 1-2 sentence explanation why this is a good fit>"
+                    "reasoning": "<string, brief 1-2 sentence explanation why this is a good fit. MUST BE IN BAHASA INDONESIA>"
                 }}
             ]
         }}
