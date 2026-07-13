@@ -48,39 +48,36 @@
                         <input type="radio" name="action" value="approved" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'approved' %}checked{% endif %}>
                         <span class="flex flex-1">
                             <span class="flex flex-col">
-                                <span class="block text-sm font-medium text-green-700 flex items-center gap-2">
-                                    {{ icon.check_circle(class="w-5 h-5") }} Setujui (Approved)
+                                <span class="block text-sm font-medium text-green-700">
+                                    Setujui (Approved)
                                 </span>
-                                <span class="mt-1 flex items-center text-xs text-gray-500">Lowongan akan tayang dan bisa dilamar.</span>
+                                <span class="mt-1 block text-xs text-gray-500">Lowongan akan tayang dan bisa dilamar.</span>
                             </span>
                         </span>
-                        {{ icon.check_circle(class="h-5 w-5 text-green-600 hidden absolute top-4 right-4 checked-icon") }}
                     </label>
 
                     <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
                         <input type="radio" name="action" value="flagged" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'flagged' %}checked{% endif %}>
                         <span class="flex flex-1">
                             <span class="flex flex-col">
-                                <span class="block text-sm font-medium text-orange-700 flex items-center gap-2">
-                                    {{ icon.exclamation_triangle(class="w-5 h-5") }} Tandai (Flagged)
+                                <span class="block text-sm font-medium text-orange-700">
+                                    Tandai (Flagged)
                                 </span>
-                                <span class="mt-1 flex items-center text-xs text-gray-500">Lowongan tetap tayang tapi diberi peringatan.</span>
+                                <span class="mt-1 block text-xs text-gray-500">Lowongan tetap tayang tapi diberi peringatan.</span>
                             </span>
                         </span>
-                        {{ icon.check_circle(class="h-5 w-5 text-orange-600 hidden absolute top-4 right-4 checked-icon") }}
                     </label>
 
                     <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
                         <input type="radio" name="action" value="hidden" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'hidden' %}checked{% endif %}>
                         <span class="flex flex-1">
                             <span class="flex flex-col">
-                                <span class="block text-sm font-medium text-red-700 flex items-center gap-2">
-                                    {{ icon.eye_slash(class="w-5 h-5") }} Sembunyikan (Hidden)
+                                <span class="block text-sm font-medium text-red-700">
+                                    Sembunyikan (Hidden)
                                 </span>
-                                <span class="mt-1 flex items-center text-xs text-gray-500">Lowongan diturunkan sementara (tidak bisa dilamar).</span>
+                                <span class="mt-1 block text-xs text-gray-500">Lowongan diturunkan sementara (tidak bisa dilamar).</span>
                             </span>
                         </span>
-                        {{ icon.check_circle(class="h-5 w-5 text-red-600 hidden absolute top-4 right-4 checked-icon") }}
                     </label>
                 </div>
                 
