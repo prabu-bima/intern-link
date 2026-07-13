@@ -250,13 +250,14 @@
     // AJAX for AI Skill Match
     async function loadAIMatch() {
         const internshipId = {{ internship.id }};
-        const loadingEl = document.getElementById('ai-loading');
-        const resultEl = document.getElementById('ai-result');
-        const errorEl = document.getElementById('ai-error');
+        const container = document.getElementById('ai-match-container');
         
-        loadingEl.classList.remove('hidden');
-        resultEl.classList.add('hidden');
-        errorEl.classList.add('hidden');
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-6 text-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+                <p class="text-sm text-gray-500">Menganalisis kecocokan profil Anda...</p>
+            </div>
+        `;
         
         try {
             const response = await fetch(`/student/internships/${internshipId}/ai-match`, {
@@ -268,65 +269,21 @@
             const data = await response.json();
             
             if(data.status === 'success') {
-                loadingEl.classList.add('hidden');
-                resultEl.classList.remove('hidden');
-                
-                // Update Score
-                const score = Math.round(data.match_percentage || 0);
-                document.getElementById('ai-score').innerText = `${score}%`;
-                
-                // Update Progress Circle (stroke-dasharray="score, 100")
-                // Wait a tiny bit for transition
-                setTimeout(() => {
-                    document.getElementById('ai-progress-bar').setAttribute('stroke-dasharray', `${score}, 100`);
-                    
-                    // Change color based on score
-                    const circlePath = document.getElementById('ai-progress-bar');
-                    if (score >= 80) circlePath.className.baseVal = 'text-green-500 transition-all duration-1000 ease-out';
-                    else if (score >= 50) circlePath.className.baseVal = 'text-yellow-500 transition-all duration-1000 ease-out';
-                    else circlePath.className.baseVal = 'text-red-500 transition-all duration-1000 ease-out';
-                }, 100);
-                
-                // Update Explanation
-                document.getElementById('ai-explanation').innerText = data.ai_explanation;
-                
-                // Update Matched Skills
-                const matchedList = document.getElementById('ai-matched-skills');
-                matchedList.innerHTML = '';
-                if (data.matching_skills && data.matching_skills.length > 0) {
-                    data.matching_skills.forEach(skill => {
-                        const li = document.createElement('li');
-                        li.className = 'flex items-start text-sm text-gray-700';
-                        li.innerHTML = `{{ icon.check_circle(class="mr-2 w-5 h-5 text-green-500 flex-shrink-0") }} <span>${skill}</span>`;
-                        matchedList.appendChild(li);
-                    });
-                    document.getElementById('ai-no-matched').classList.add('hidden');
-                } else {
-                    document.getElementById('ai-no-matched').classList.remove('hidden');
-                }
-                
-                // Update Missing Skills
-                const missingList = document.getElementById('ai-missing-skills');
-                missingList.innerHTML = '';
-                if (data.missing_skills && data.missing_skills.length > 0) {
-                    data.missing_skills.forEach(skill => {
-                        const li = document.createElement('li');
-                        li.className = 'flex items-start text-sm text-gray-700';
-                        li.innerHTML = `{{ icon.x_circle(class="mr-2 w-5 h-5 text-red-500 flex-shrink-0") }} <span>${skill}</span>`;
-                        missingList.appendChild(li);
-                    });
-                    document.getElementById('ai-no-missing').classList.add('hidden');
-                } else {
-                    document.getElementById('ai-no-missing').classList.remove('hidden');
-                }
-                
+                container.innerHTML = data.html;
             } else {
                 throw new Error(data.message || 'Unknown error');
             }
         } catch (error) {
             console.error('Error loading AI match:', error);
-            loadingEl.classList.add('hidden');
-            errorEl.classList.remove('hidden');
+            container.innerHTML = `
+                <div class="text-center py-6">
+                    <div class="text-red-500 mb-2">
+                        {{ icon.x_circle(class="w-10 h-10 mx-auto") }}
+                    </div>
+                    <p class="text-sm text-gray-600">Gagal memuat analisis AI.</p>
+                    <button onclick="loadAIMatch()" class="mt-3 text-sm text-blue-600 hover:underline">Coba Lagi</button>
+                </div>
+            `;
         }
     }
     

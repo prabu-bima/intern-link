@@ -1402,14 +1402,23 @@ def internship_detail(id):
 @bp.route('/internships/<int:id>/ai-match', methods=['GET'])
 @student_required
 def internship_ai_match(id):
-    from app.services.ai_service import calculate_skill_match
+    from app.services.ai_skill_match import run_skill_match
     
     profile_id = current_user.student_profile.id
     
-    # Call the service which will check DB first or hit Gemini
-    result = calculate_skill_match(profile_id, id)
+    # Call the robust service
+    match_run = run_skill_match(profile_id, id)
     
-    return jsonify(result)
+    if not match_run:
+        return jsonify({'status': 'error', 'message': 'Gagal melakukan analisis'})
+        
+    # Render the partial
+    html = render_template('student/_ai_match_partial.html', match_run=match_run)
+    
+    return jsonify({
+        'status': 'success',
+        'html': html
+    })
 
 @bp.route('/internships/<int:id>/apply', methods=['POST'])
 @student_required
