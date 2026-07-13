@@ -515,13 +515,175 @@ def disable_company(id):
     return redirect(url_for('admin.company_detail', id=id))
 
 
-# ── Placeholder routes (diimplementasi di section berikutnya) ────
+# ── Internship Management ────────────────────────────────────────
 
 @bp.route('/internships')
 @admin_required
 def internships():
-    return render_template('admin/internships.html')
+    from flask import request
+    from app.models.internship import Internship
+    from app.models.identity import CompanyProfile
+    from app.models.lookups import InternshipLifecycleStatus, InternshipModerationStatus
+    from sqlalchemy.orm import joinedload
+    
+    q = request.args.get('q', '').strip()
+    status_filter = request.args.get('status', 'all')
+    mod_filter = request.args.get('mod', 'all')
+    page = request.args.get('page', 1, type=int)
+    
+    query = Internship.query.options(
+        joinedload(Internship.company_profile),
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.moderation_status)
+    ).filter(Internship.deleted_at.is_(None))
+    
+    if q:
+        query = query.join(CompanyProfile).filter(
+            db.or_(
+                Internship.internship_title.ilike(f'%{q}%'),
+                CompanyProfile.company_name.ilike(f'%{q}%')
+            )
+        )
+        
+    if status_filter != 'all':
+        status_obj = InternshipLifecycleStatus.query.filter_by(status_code=status_filter).first()
+        if status_obj:
+            query = query.filter(Internship.lifecycle_status_id == status_obj.id)
+            
+    if mod_filter != 'all':
+        mod_obj = InternshipModerationStatus.query.filter_by(status_code=mod_filter).first()
+        if mod_obj:
+            query = query.filter(Internship.moderation_status_id == mod_obj.id)
+            
+    pagination = query.order_by(Internship.id.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    lifecycle_statuses = InternshipLifecycleStatus.query.all()
+    mod_statuses = InternshipModerationStatus.query.all()
+    
+    return render_template(
+        'admin/internships.html',
+        internships=pagination.items,
+        pagination=pagination,
+        q=q,
+        current_status=status_filter,
+        current_mod=mod_filter,
+        lifecycle_statuses=lifecycle_statuses,
+        mod_statuses=mod_statuses
+    )
 
+
+@bp.route('/internships/<int:id>')
+@admin_required
+def internship_detail(id):
+    from app.models.internship import Internship, InternshipApplication, InternshipModerationEvent
+    from sqlalchemy.orm import joinedload
+    
+    internship = Internship.query.options(
+        joinedload(Internship.company_profile),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.location),
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.moderation_status),
+        joinedload(Internship.required_skills),
+        joinedload(Internship.required_tech_stack_items)
+    ).filter_by(id=id, deleted_at=None).first_or_404()
+    
+    # Get applicants count
+    applicants_count = InternshipApplication.query.filter_by(
+        internship_id=internship.id, deleted_at=None
+    ).count()
+    
+    # Get moderation events
+    moderation_events = InternshipModerationEvent.query.options(
+        joinedload(InternshipModerationEvent.admin_user),
+        joinedload(InternshipModerationEvent.moderation_status)
+    ).filter_by(
+        internship_id=internship.id, deleted_at=None
+    ).order_by(InternshipModerationEvent.id.desc()).all()
+    
+    return render_template(
+        'admin/internship_detail.html',
+        internship=internship,
+        applicants_count=applicants_count,
+        moderation_events=moderation_events
+    )
+
+
+@bp.route('/internships/<int:id>/moderate', methods=['POST'])
+@admin_required
+def moderate_internship(id):
+    from flask import request, redirect, url_for, flash
+    from app.models.internship import Internship, InternshipModerationEvent
+    from app.models.lookups import InternshipModerationStatus
+    from app.models.system import AdminAuditLog
+    
+    internship = Internship.query.filter_by(id=id, deleted_at=None).first_or_404()
+    
+    action = request.form.get('action') # 'approved', 'flagged', 'hidden'
+    note = request.form.get('note', '').strip()
+    
+    mod_status = InternshipModerationStatus.query.filter_by(status_code=action).first()
+    if not mod_status:
+        flash('Status moderasi tidak valid.', 'danger')
+        return redirect(url_for('admin.internship_detail', id=id))
+        
+    internship.moderation_status_id = mod_status.id
+    
+    mod_event = InternshipModerationEvent(
+        internship_id=internship.id,
+        admin_user_id=current_user.id,
+        moderation_status_id=mod_status.id,
+        action_note=note
+    )
+    db.session.add(mod_event)
+    
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code=f'moderate_internship_{action}',
+        target_type='Internship',
+        target_id=internship.id,
+        details_json={
+            'internship_title': internship.internship_title,
+            'company_name': internship.company_profile.company_name if internship.company_profile else 'Unknown',
+            'note': note
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+    
+    flash(f'Status moderasi berhasil diubah menjadi {mod_status.status_name}.', 'success')
+    return redirect(url_for('admin.internship_detail', id=id))
+
+
+@bp.route('/internships/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_internship(id):
+    from flask import redirect, url_for, flash
+    from app.models.internship import Internship
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+    
+    internship = Internship.query.filter_by(id=id, deleted_at=None).first_or_404()
+    
+    internship.deleted_at = datetime.utcnow()
+    
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_internship',
+        target_type='Internship',
+        target_id=internship.id,
+        details_json={
+            'internship_title': internship.internship_title,
+            'company_name': internship.company_profile.company_name if internship.company_profile else 'Unknown'
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+    
+    flash('Lowongan magang berhasil dihapus.', 'success')
+    return redirect(url_for('admin.internships'))
 
 @bp.route('/categories')
 @admin_required
