@@ -232,46 +232,6 @@
                 <p class="text-sm font-medium text-gray-500">Total Pelamar</p>
             </div>
             
-            <!-- Moderation History -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h2 class="text-lg font-bold text-gray-900 font-outfit">Riwayat Moderasi</h2>
-                </div>
-                <div class="p-6">
-                    <ul role="list" class="-mb-8">
-                        {% for event in moderation_events %}
-                        <li>
-                            <div class="relative pb-8">
-                                {% if not loop.last %}
-                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                                {% endif %}
-                                <div class="relative flex space-x-3">
-                                    <div>
-                                        <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white {% if event.moderation_status.status_code == 'approved' %}bg-green-500{% elif event.moderation_status.status_code == 'flagged' %}bg-orange-500{% elif event.moderation_status.status_code == 'hidden' %}bg-red-500{% else %}bg-gray-400{% endif %}">
-                                            {{ icon.shield_check(class="h-5 w-5 text-white") }}
-                                        </span>
-                                    </div>
-                                    <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                        <div>
-                                            <p class="text-sm text-gray-500">
-                                                Status diubah ke <span class="font-medium text-gray-900">{{ event.moderation_status.status_name }}</span> oleh <span class="font-medium text-gray-900">{{ event.admin_user.display_name }}</span>
-                                            </p>
-                                            {% if event.action_note %}
-                                            <p class="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                                "{{ event.action_note }}"
-                                            </p>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-                        {% else %}
-                        <p class="text-sm text-gray-500 text-center py-4">Belum ada riwayat moderasi.</p>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
 </div>
