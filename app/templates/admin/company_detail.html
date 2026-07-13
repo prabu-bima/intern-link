@@ -114,6 +114,17 @@
                     Nonaktifkan
                 </button>
             </form>
+            {% else %}
+            <!-- Enable -->
+            <form action="{{ url_for('admin.enable_company', id=company.id) }}" method="POST"
+                  onsubmit="return confirm('Aktifkan kembali akun perusahaan ini?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                        class="w-full inline-flex items-center justify-center px-4 py-2 border border-green-300 text-sm font-medium rounded-xl text-green-600 bg-white hover:bg-green-50 transition-colors">
+                    {{ icon.check_circle(class="w-4 h-4 mr-1.5") }}
+                    Aktifkan
+                </button>
+            </form>
             {% endif %}
         </div>
         {% endif %}

@@ -6,7 +6,7 @@
 {% block admin_content %}
 {% set profile = student.student_profile %}
 {% set is_active = student.status and student.status.status_code == 'active' %}
-{% set is_disabled = student.status and student.status.status_code == 'disabled' %}
+{% set is_disabled = student.status and student.status.status_code == 'inactive' %}
 
 <!-- Header -->
 <div class="mb-6 flex items-center justify-between">

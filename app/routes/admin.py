@@ -212,9 +212,9 @@ def disable_student(id):
         id=id, role='student', deleted_at=None
     ).first_or_404()
 
-    disabled_status = UserAccountStatus.query.filter_by(status_code='disabled').first()
+    disabled_status = UserAccountStatus.query.filter_by(status_code='inactive').first()
     if not disabled_status:
-        flash('Status "disabled" tidak ditemukan di database.', 'danger')
+        flash('Status "inactive" tidak ditemukan di database.', 'danger')
         return redirect(url_for('admin.student_detail', id=id))
 
     student.account_status_id = disabled_status.id
@@ -480,9 +480,9 @@ def disable_company(id):
         id=id, role='company', deleted_at=None
     ).first_or_404()
 
-    disabled_status = UserAccountStatus.query.filter_by(status_code='disabled').first()
+    disabled_status = UserAccountStatus.query.filter_by(status_code='inactive').first()
     if not disabled_status:
-        flash('Status "disabled" tidak ditemukan di database.', 'danger')
+        flash('Status "inactive" tidak ditemukan di database.', 'danger')
         return redirect(url_for('admin.company_detail', id=id))
 
     company.account_status_id = disabled_status.id
@@ -512,6 +512,42 @@ def disable_company(id):
     db.session.commit()
 
     flash(f'Akun perusahaan {company.display_name} berhasil dinonaktifkan dan semua lowongan aktif telah ditutup.', 'success')
+    return redirect(url_for('admin.company_detail', id=id))
+
+
+@bp.route('/companies/<int:id>/enable', methods=['POST'])
+@admin_required
+def enable_company(id):
+    from flask import redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.lookups import UserAccountStatus
+    from app.models.system import AdminAuditLog
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    active_status = UserAccountStatus.query.filter_by(status_code='active').first()
+    if not active_status:
+        flash('Status "active" tidak ditemukan di database.', 'danger')
+        return redirect(url_for('admin.company_detail', id=id))
+
+    company.account_status_id = active_status.id
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='enable_company',
+        target_type='UserAccount',
+        target_id=company.id,
+        details_json={
+            'company_name': company.company_profile.company_name if company.company_profile else company.display_name,
+            'email': company.email,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Akun perusahaan {company.display_name} berhasil diaktifkan kembali.', 'success')
     return redirect(url_for('admin.company_detail', id=id))
 
 
