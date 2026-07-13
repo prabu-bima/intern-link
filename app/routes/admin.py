@@ -272,13 +272,250 @@ def enable_student(id):
     return redirect(url_for('admin.student_detail', id=id))
 
 
-# ── Placeholder routes (diimplementasi di section berikutnya) ────
+# ── Company Management ───────────────────────────────────────────
 
 @bp.route('/companies')
 @admin_required
 def companies():
-    return render_template('admin/companies.html')
+    from flask import request
+    from app.models.identity import UserAccount, CompanyProfile
+    from app.models.company import CompanyVerification
+    from app.models.lookups import CompanyVerificationStatus
+    from sqlalchemy.orm import joinedload
 
+    q = request.args.get('q', '').strip()
+    status_filter = request.args.get('status', 'all')
+    page = request.args.get('page', 1, type=int)
+
+    query = UserAccount.query.options(
+        joinedload(UserAccount.status),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.verifications)
+    ).filter_by(role='company', deleted_at=None)
+
+    if q:
+        query = query.join(CompanyProfile, CompanyProfile.user_account_id == UserAccount.id).filter(
+            db.or_(
+                UserAccount.display_name.ilike(f'%{q}%'),
+                UserAccount.email.ilike(f'%{q}%'),
+                CompanyProfile.company_name.ilike(f'%{q}%'),
+            )
+        )
+
+    # Filter by latest verification status
+    if status_filter != 'all':
+        ver_status = CompanyVerificationStatus.query.filter_by(status_code=status_filter).first()
+        if ver_status:
+            # Subquery: company_profile_ids whose latest verification has this status
+            from sqlalchemy import select
+            latest_ver = db.session.query(
+                CompanyVerification.company_profile_id,
+                db.func.max(CompanyVerification.id).label('max_id')
+            ).group_by(CompanyVerification.company_profile_id).subquery()
+
+            matching_ids = db.session.query(CompanyProfile.user_account_id).join(
+                latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
+            ).join(
+                CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
+            ).filter(
+                CompanyVerification.verification_status_id == ver_status.id
+            ).subquery()
+
+            query = query.filter(UserAccount.id.in_(
+                db.session.query(matching_ids)
+            ))
+
+    verification_statuses = CompanyVerificationStatus.query.all()
+    pagination = query.order_by(UserAccount.id.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+
+    return render_template(
+        'admin/companies.html',
+        companies=pagination.items,
+        pagination=pagination,
+        q=q,
+        status_filter=status_filter,
+        verification_statuses=verification_statuses,
+    )
+
+
+@bp.route('/companies/<int:id>')
+@admin_required
+def company_detail(id):
+    from app.models.identity import UserAccount, CompanyProfile
+    from app.models.company import CompanyVerification
+    from app.models.internship import Internship
+    from sqlalchemy.orm import joinedload
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    verifications = CompanyVerification.query.options(
+        joinedload(CompanyVerification.verification_status),
+        joinedload(CompanyVerification.admin_user),
+    ).filter_by(
+        company_profile_id=company.company_profile.id if company.company_profile else 0
+    ).order_by(CompanyVerification.id.desc()).all()
+
+    internships = Internship.query.filter_by(
+        company_profile_id=company.company_profile.id if company.company_profile else 0,
+        deleted_at=None
+    ).order_by(Internship.id.desc()).limit(10).all()
+
+    latest_verification = verifications[0] if verifications else None
+
+    return render_template(
+        'admin/company_detail.html',
+        company=company,
+        verifications=verifications,
+        internships=internships,
+        latest_verification=latest_verification,
+    )
+
+
+@bp.route('/companies/<int:id>/verify', methods=['POST'])
+@admin_required
+def verify_company(id):
+    from flask import request, redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.company import CompanyVerification
+    from app.models.lookups import CompanyVerificationStatus
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    verified_status = CompanyVerificationStatus.query.filter_by(status_code='verified').first()
+    if not verified_status:
+        flash('Status "verified" tidak ditemukan di database.', 'danger')
+        return redirect(url_for('admin.company_detail', id=id))
+
+    admin_note = request.form.get('admin_note', '').strip()
+
+    verification = CompanyVerification(
+        company_profile_id=company.company_profile.id,
+        verification_status_id=verified_status.id,
+        admin_user_id=current_user.id,
+        admin_note=admin_note or None,
+        verified_at=datetime.utcnow(),
+    )
+    db.session.add(verification)
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='verify_company',
+        target_type='CompanyProfile',
+        target_id=company.company_profile.id,
+        details_json={
+            'company_name': company.company_profile.company_name,
+            'admin_note': admin_note,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Perusahaan {company.company_profile.company_name} berhasil diverifikasi.', 'success')
+    return redirect(url_for('admin.company_detail', id=id))
+
+
+@bp.route('/companies/<int:id>/reject', methods=['POST'])
+@admin_required
+def reject_company(id):
+    from flask import request, redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.company import CompanyVerification
+    from app.models.lookups import CompanyVerificationStatus
+    from app.models.system import AdminAuditLog
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    rejected_status = CompanyVerificationStatus.query.filter_by(status_code='rejected').first()
+    if not rejected_status:
+        flash('Status "rejected" tidak ditemukan di database.', 'danger')
+        return redirect(url_for('admin.company_detail', id=id))
+
+    admin_note = request.form.get('admin_note', '').strip()
+
+    verification = CompanyVerification(
+        company_profile_id=company.company_profile.id,
+        verification_status_id=rejected_status.id,
+        admin_user_id=current_user.id,
+        admin_note=admin_note or None,
+    )
+    db.session.add(verification)
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='reject_company',
+        target_type='CompanyProfile',
+        target_id=company.company_profile.id,
+        details_json={
+            'company_name': company.company_profile.company_name,
+            'admin_note': admin_note,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Perusahaan {company.company_profile.company_name} telah ditolak.', 'warning')
+    return redirect(url_for('admin.company_detail', id=id))
+
+
+@bp.route('/companies/<int:id>/disable', methods=['POST'])
+@admin_required
+def disable_company(id):
+    from flask import redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.lookups import UserAccountStatus, InternshipLifecycleStatus
+    from app.models.internship import Internship
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    disabled_status = UserAccountStatus.query.filter_by(status_code='disabled').first()
+    if not disabled_status:
+        flash('Status "disabled" tidak ditemukan di database.', 'danger')
+        return redirect(url_for('admin.company_detail', id=id))
+
+    company.account_status_id = disabled_status.id
+
+    # Soft-hide all active internship postings
+    if company.company_profile:
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
+        if active_lifecycle and closed_lifecycle:
+            Internship.query.filter_by(
+                company_profile_id=company.company_profile.id,
+                lifecycle_status_id=active_lifecycle.id,
+                deleted_at=None
+            ).update({'lifecycle_status_id': closed_lifecycle.id})
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='disable_company',
+        target_type='UserAccount',
+        target_id=company.id,
+        details_json={
+            'company_name': company.company_profile.company_name if company.company_profile else company.display_name,
+            'email': company.email,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Akun perusahaan {company.display_name} berhasil dinonaktifkan dan semua lowongan aktif telah ditutup.', 'success')
+    return redirect(url_for('admin.company_detail', id=id))
+
+
+# ── Placeholder routes (diimplementasi di section berikutnya) ────
 
 @bp.route('/internships')
 @admin_required
