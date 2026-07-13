@@ -29,6 +29,9 @@
                     {% elif current_user.role == 'admin' %}
                         <a href="{{ url_for('admin.dashboard') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">Dashboard</a>
                     {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="bg-ink text-canvas hover:bg-body px-4 py-2 rounded-md text-body-md font-medium transition-colors">
+                        Logout
+                    </a>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">
                         Log in
