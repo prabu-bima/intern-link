@@ -52,7 +52,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
             {% for student in students %}
-            {% set is_active = student.status and student.status.status_code == 'active' %}
+            {% set is_active = not student.status or student.status.status_code == 'active' %}
             <tr class="hover:bg-gray-50/50 transition-colors">
                 <!-- Name + Avatar -->
                 <td class="px-6 py-4">
