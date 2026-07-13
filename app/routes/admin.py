@@ -724,22 +724,290 @@ def delete_internship(id):
 @bp.route('/categories')
 @admin_required
 def categories():
-    return render_template('admin/categories.html')
+    from flask import redirect, url_for
+    return redirect(url_for('admin.master_data', tab='categories'))
 
 
 @bp.route('/skills')
 @admin_required
 def skills():
-    return render_template('admin/skills.html')
+    from flask import redirect, url_for
+    return redirect(url_for('admin.master_data', tab='skills'))
 
 
 @bp.route('/tech-stacks')
 @admin_required
 def tech_stacks():
-    return render_template('admin/tech_stacks.html')
+    from flask import redirect, url_for
+    return redirect(url_for('admin.master_data', tab='tech-stack'))
 
 
 @bp.route('/locations')
 @admin_required
 def locations():
-    return render_template('admin/locations.html')
+    from flask import redirect, url_for
+    return redirect(url_for('admin.master_data', tab='locations'))
+
+
+# ── Master Data Management ───────────────────────────────────────
+
+@bp.route('/master-data')
+@admin_required
+def master_data():
+    from flask import request
+    from app.models.master import TechnologyCategory, Skill, TechStackItem, Location
+
+    tab = request.args.get('tab', 'categories')
+
+    categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+    skills = Skill.query.order_by(Skill.skill_name).all()
+    tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
+    locations = Location.query.order_by(Location.city).all()
+
+    return render_template(
+        'admin/master_data.html',
+        tab=tab,
+        categories=categories,
+        skills=skills,
+        tech_stacks=tech_stacks,
+        locations=locations,
+    )
+
+
+# — Technology Categories —
+
+@bp.route('/master-data/categories', methods=['POST'])
+@admin_required
+def add_category():
+    from flask import request, jsonify
+    from app.models.master import TechnologyCategory
+
+    name = request.form.get('category_name', '').strip()
+    code = request.form.get('category_code', '').strip().lower()
+    desc = request.form.get('description', '').strip()
+
+    if not name or not code:
+        return jsonify({'error': 'Nama dan kode kategori wajib diisi.'}), 400
+
+    if TechnologyCategory.query.filter_by(category_code=code).first():
+        return jsonify({'error': f'Kode "{code}" sudah digunakan.'}), 400
+
+    item = TechnologyCategory(category_code=code, category_name=name, description=desc or None)
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'success': True, 'id': item.id, 'category_name': item.category_name, 'category_code': item.category_code, 'description': item.description})
+
+
+@bp.route('/master-data/categories/<int:id>', methods=['POST'])
+@admin_required
+def edit_category(id):
+    from flask import request, jsonify
+    from app.models.master import TechnologyCategory
+
+    item = TechnologyCategory.query.get_or_404(id)
+    name = request.form.get('category_name', '').strip()
+    desc = request.form.get('description', '').strip()
+
+    if not name:
+        return jsonify({'error': 'Nama kategori wajib diisi.'}), 400
+
+    item.category_name = name
+    item.description = desc or None
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@bp.route('/master-data/categories/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_category(id):
+    from flask import jsonify
+    from app.models.master import TechnologyCategory
+
+    item = TechnologyCategory.query.get_or_404(id)
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Tidak dapat menghapus kategori yang masih digunakan oleh lowongan.'}), 400
+
+
+# — Skills —
+
+@bp.route('/master-data/skills', methods=['POST'])
+@admin_required
+def add_skill():
+    from flask import request, jsonify
+    from app.models.master import Skill
+
+    name = request.form.get('skill_name', '').strip()
+    code = request.form.get('skill_code', '').strip().lower()
+    desc = request.form.get('description', '').strip()
+
+    if not name or not code:
+        return jsonify({'error': 'Nama dan kode keahlian wajib diisi.'}), 400
+
+    if Skill.query.filter_by(skill_code=code).first():
+        return jsonify({'error': f'Kode "{code}" sudah digunakan.'}), 400
+
+    item = Skill(skill_code=code, skill_name=name, description=desc or None)
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'success': True, 'id': item.id, 'skill_name': item.skill_name, 'skill_code': item.skill_code, 'description': item.description})
+
+
+@bp.route('/master-data/skills/<int:id>', methods=['POST'])
+@admin_required
+def edit_skill(id):
+    from flask import request, jsonify
+    from app.models.master import Skill
+
+    item = Skill.query.get_or_404(id)
+    name = request.form.get('skill_name', '').strip()
+    desc = request.form.get('description', '').strip()
+
+    if not name:
+        return jsonify({'error': 'Nama keahlian wajib diisi.'}), 400
+
+    item.skill_name = name
+    item.description = desc or None
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@bp.route('/master-data/skills/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_skill(id):
+    from flask import jsonify
+    from app.models.master import Skill
+
+    item = Skill.query.get_or_404(id)
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Tidak dapat menghapus keahlian yang masih digunakan.'}), 400
+
+
+# — Tech Stack —
+
+@bp.route('/master-data/tech-stack', methods=['POST'])
+@admin_required
+def add_tech_stack():
+    from flask import request, jsonify
+    from app.models.master import TechStackItem
+
+    name = request.form.get('tech_stack_name', '').strip()
+    code = request.form.get('tech_stack_code', '').strip().lower()
+    desc = request.form.get('description', '').strip()
+
+    if not name or not code:
+        return jsonify({'error': 'Nama dan kode tech stack wajib diisi.'}), 400
+
+    if TechStackItem.query.filter_by(tech_stack_code=code).first():
+        return jsonify({'error': f'Kode "{code}" sudah digunakan.'}), 400
+
+    item = TechStackItem(tech_stack_code=code, tech_stack_name=name, description=desc or None)
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'success': True, 'id': item.id, 'tech_stack_name': item.tech_stack_name, 'tech_stack_code': item.tech_stack_code, 'description': item.description})
+
+
+@bp.route('/master-data/tech-stack/<int:id>', methods=['POST'])
+@admin_required
+def edit_tech_stack(id):
+    from flask import request, jsonify
+    from app.models.master import TechStackItem
+
+    item = TechStackItem.query.get_or_404(id)
+    name = request.form.get('tech_stack_name', '').strip()
+    desc = request.form.get('description', '').strip()
+
+    if not name:
+        return jsonify({'error': 'Nama tech stack wajib diisi.'}), 400
+
+    item.tech_stack_name = name
+    item.description = desc or None
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@bp.route('/master-data/tech-stack/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_tech_stack(id):
+    from flask import jsonify
+    from app.models.master import TechStackItem
+
+    item = TechStackItem.query.get_or_404(id)
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Tidak dapat menghapus tech stack yang masih digunakan.'}), 400
+
+
+# — Locations —
+
+@bp.route('/master-data/locations', methods=['POST'])
+@admin_required
+def add_location():
+    from flask import request, jsonify
+    from app.models.master import Location
+
+    code = request.form.get('location_code', '').strip().lower()
+    city = request.form.get('city', '').strip()
+    region = request.form.get('region', '').strip()
+    country = request.form.get('country', 'Indonesia').strip()
+
+    if not code or not city:
+        return jsonify({'error': 'Kode dan nama kota wajib diisi.'}), 400
+
+    if Location.query.filter_by(location_code=code).first():
+        return jsonify({'error': f'Kode "{code}" sudah digunakan.'}), 400
+
+    item = Location(location_code=code, city=city, region=region or None, country=country or 'Indonesia')
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'success': True, 'id': item.id, 'city': item.city, 'region': item.region, 'country': item.country, 'location_code': item.location_code})
+
+
+@bp.route('/master-data/locations/<int:id>', methods=['POST'])
+@admin_required
+def edit_location(id):
+    from flask import request, jsonify
+    from app.models.master import Location
+
+    item = Location.query.get_or_404(id)
+    city = request.form.get('city', '').strip()
+    region = request.form.get('region', '').strip()
+    country = request.form.get('country', '').strip()
+
+    if not city:
+        return jsonify({'error': 'Nama kota wajib diisi.'}), 400
+
+    item.city = city
+    item.region = region or None
+    item.country = country or 'Indonesia'
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@bp.route('/master-data/locations/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_location(id):
+    from flask import jsonify
+    from app.models.master import Location
+
+    item = Location.query.get_or_404(id)
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Tidak dapat menghapus lokasi yang masih digunakan.'}), 400
