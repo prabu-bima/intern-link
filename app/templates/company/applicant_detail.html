@@ -21,9 +21,13 @@
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                 <div class="p-8 flex flex-col md:flex-row items-start md:items-center gap-6">
                     <!-- Avatar -->
-                    <div class="h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-3xl flex-shrink-0 border border-gray-200">
-                        {{ application.student_profile.user.display_name[:1].upper() }}
-                    </div>
+                    {% if application.student_profile.profile_photo %}
+                        <img src="{{ application.student_profile.profile_photo.url }}" alt="{{ application.student_profile.user.display_name }}" class="h-24 w-24 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                    {% else %}
+                        <div class="h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-3xl flex-shrink-0 border border-gray-200">
+                            {{ application.student_profile.user.display_name[:1].upper() }}
+                        </div>
+                    {% endif %}
                     
                     <!-- Info -->
                     <div class="flex-grow">
