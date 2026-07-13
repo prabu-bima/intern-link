@@ -120,51 +120,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <!-- Verification History -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-            <h2 class="text-base font-bold text-gray-900">Riwayat Verifikasi</h2>
-        </div>
-        <div class="divide-y divide-gray-100">
-            {% if verifications %}
-            {% for ver in verifications %}
-            {% set vc = ver.verification_status.status_code %}
-            <div class="px-6 py-4 flex items-start gap-3">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
-                    {% if vc == 'verified' %}bg-green-100{% elif vc == 'rejected' %}bg-red-100{% else %}bg-yellow-100{% endif %}">
-                    {% if vc == 'verified' %}
-                    {{ icon.check_circle(class="w-4 h-4 text-green-600") }}
-                    {% elif vc == 'rejected' %}
-                    {{ icon.x_circle(class="w-4 h-4 text-red-500") }}
-                    {% else %}
-                    {{ icon.clock(class="w-4 h-4 text-yellow-600") }}
-                    {% endif %}
-                </div>
-                <div class="flex-grow min-w-0">
-                    <div class="flex items-center justify-between gap-2">
-                        <p class="text-sm font-medium text-gray-900">{{ ver.verification_status.status_name }}</p>
-                        <p class="text-xs text-gray-400 whitespace-nowrap">
-                            {% if ver.verified_at %}{{ ver.verified_at.strftime('%d %b %Y') }}{% endif %}
-                        </p>
-                    </div>
-                    {% if ver.admin_user %}
-                    <p class="text-xs text-gray-500 mt-0.5">oleh {{ ver.admin_user.display_name }}</p>
-                    {% endif %}
-                    {% if ver.admin_note %}
-                    <p class="text-xs text-gray-600 mt-1 italic">"{{ ver.admin_note }}"</p>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="px-6 py-8 text-center text-sm text-gray-400">
-                Belum ada riwayat verifikasi.
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
+<div class="mb-6">
     <!-- Company Info Detail -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
