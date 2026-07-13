@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Admin Sidebar -->
+    <aside class="w-full md:w-64 flex-shrink-0">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-6">
+
+            <nav class="space-y-1">
+                <!-- Dashboard -->
+                <a href="{{ url_for('admin.dashboard') }}"
+                   class="{% if request.endpoint == 'admin.dashboard' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.home(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'admin.dashboard' else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Dashboard
+                </a>
+
+                <hr class="my-2 border-gray-100">
+                <p class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Manajemen</p>
+
+                <!-- Student Management -->
+                <a href="{{ url_for('admin.students') }}"
+                   class="{% if 'admin.student' in request.endpoint %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.users(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if 'admin.student' in request.endpoint else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Mahasiswa
+                </a>
+
+                <!-- Company Management -->
+                <a href="{{ url_for('admin.companies') }}"
+                   class="{% if 'admin.compan' in request.endpoint %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.building_office(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if 'admin.compan' in request.endpoint else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Perusahaan
+                </a>
+
+                <!-- Internship Management -->
+                <a href="{{ url_for('admin.internships') }}"
+                   class="{% if 'admin.internship' in request.endpoint %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.briefcase(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if 'admin.internship' in request.endpoint else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Lowongan Magang
+                </a>
+
+                <hr class="my-2 border-gray-100">
+                <p class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Master Data</p>
+
+                <!-- Technology Categories -->
+                <a href="{{ url_for('admin.master_data', tab='categories') }}"
+                   class="{% if request.endpoint == 'admin.master_data' and request.args.get('tab','categories') == 'categories' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.sparkles(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'admin.master_data' and request.args.get('tab','categories') == 'categories' else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Kategori Teknologi
+                </a>
+
+                <!-- Skills -->
+                <a href="{{ url_for('admin.master_data', tab='skills') }}"
+                   class="{% if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'skills' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.lightning(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'skills' else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Keahlian
+                </a>
+
+                <!-- Tech Stack -->
+                <a href="{{ url_for('admin.master_data', tab='tech-stack') }}"
+                   class="{% if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'tech-stack' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.code(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'tech-stack' else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Tech Stack
+                </a>
+
+                <!-- Locations -->
+                <a href="{{ url_for('admin.master_data', tab='locations') }}"
+                   class="{% if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'locations' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.map_pin(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'locations' else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Lokasi
+                </a>
+
+                <hr class="my-2 border-gray-100">
+                <p class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Laporan</p>
+
+                <!-- Reports -->
+                <a href="{{ url_for('admin.report_users') }}"
+                   class="{% if 'admin.report' in request.endpoint %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.document_text(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if 'admin.report' in request.endpoint else 'text-gray-400 group-hover:text-gray-500')) }}
+                    Laporan & Export
+                </a>
+
+                <hr class="my-2 border-gray-100">
+
+                <a href="{{ url_for('auth.logout') }}"
+                   class="text-red-600 hover:bg-red-50 group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors">
+                    {{ icon.logout(class="mr-3 flex-shrink-0 h-5 w-5 text-red-500 group-hover:text-red-600") }}
+                    Keluar
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow min-w-0">
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

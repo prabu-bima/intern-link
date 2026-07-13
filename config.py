@@ -11,9 +11,17 @@ class Config:
 
     SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 
+    # Session & Security
+    SESSION_PROTECTION = 'strong'
+    REMEMBER_COOKIE_HTTPONLY = True
+
     # SQLAlchemy
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///dev.db')
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+    }
 
     # Supabase
     SUPABASE_URL = os.environ.get('SUPABASE_URL', '')

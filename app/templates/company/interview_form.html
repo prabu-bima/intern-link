@@ -1,0 +1,118 @@
+{% extends "layouts/company_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Jadwalkan Wawancara - InternLink{% endblock %}
+
+{% block company_content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Kembali -->
+    <div class="mb-6">
+        <a href="{{ url_for('company.applicant_detail', application_id=application.id) }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+            {{ icon.chevron_left(class="w-4 h-4 mr-1") }}
+            Kembali ke Detail Pelamar
+        </a>
+    </div>
+
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-gray-900 font-outfit">Jadwalkan Wawancara</h1>
+        <p class="text-gray-500 mt-1 text-sm">Atur jadwal wawancara untuk {{ application.student_profile.user.display_name }} pada posisi {{ application.internship.internship_title }}.</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <form action="{{ url_for('company.schedule_interview', application_id=application.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="p-6 md:p-8 space-y-6">
+                <!-- Date & Time -->
+                <div>
+                    <label for="scheduled_at" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal & Waktu Wawancara <span class="text-red-500">*</span>
+                    </label>
+                    <input type="datetime-local" name="scheduled_at" id="scheduled_at" required
+                        class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors">
+                    <p class="mt-1.5 text-xs text-gray-500">Pilih waktu dalam zona waktu lokal Anda.</p>
+                </div>
+
+                <!-- Format -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Format Wawancara <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none hover:border-blue-200 has-[:checked]:border-blue-500 has-[:checked]:ring-1 has-[:checked]:ring-blue-500 group">
+                            <input type="radio" name="interview_format" value="online" class="sr-only peer" checked onchange="updateLocationLabel('online')">
+                            <span class="flex flex-1">
+                                <span class="flex flex-col">
+                                    <span class="block text-sm font-medium text-gray-900">Online</span>
+                                    <span class="mt-1 flex items-center text-sm text-gray-500">Zoom, Google Meet, MS Teams, dll.</span>
+                                </span>
+                            </span>
+                            <div class="hidden peer-checked:block text-blue-600 ml-3">
+                                {{ icon.check_circle(class="h-5 w-5") }}
+                            </div>
+                        </label>
+
+                        <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none hover:border-blue-200 has-[:checked]:border-blue-500 has-[:checked]:ring-1 has-[:checked]:ring-blue-500 group">
+                            <input type="radio" name="interview_format" value="offline" class="sr-only peer" onchange="updateLocationLabel('offline')">
+                            <span class="flex flex-1">
+                                <span class="flex flex-col">
+                                    <span class="block text-sm font-medium text-gray-900">Tatap Muka (Offline)</span>
+                                    <span class="mt-1 flex items-center text-sm text-gray-500">Di kantor perusahaan.</span>
+                                </span>
+                            </span>
+                            <div class="hidden peer-checked:block text-blue-600 ml-3">
+                                {{ icon.check_circle(class="h-5 w-5") }}
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Location / Link -->
+                <div>
+                    <label for="location_or_link" id="location_label" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tautan Rapat (Meeting Link) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="location_or_link" id="location_or_link" required placeholder="https://meet.google.com/..."
+                        class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors">
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">
+                        Catatan Tambahan
+                    </label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Informasi tambahan untuk pelamar (opsional)..."
+                        class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors"></textarea>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3 rounded-b-xl">
+                <a href="{{ url_for('company.applicant_detail', application_id=application.id) }}" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Batal
+                </a>
+                <button type="submit" class="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Jadwalkan & Kirim Undangan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function updateLocationLabel(format) {
+        const label = document.getElementById('location_label');
+        const input = document.getElementById('location_or_link');
+        
+        if (format === 'online') {
+            label.innerHTML = 'Tautan Rapat (Meeting Link) <span class="text-red-500">*</span>';
+            input.placeholder = 'https://meet.google.com/...';
+        } else {
+            label.innerHTML = 'Alamat / Lokasi Wawancara <span class="text-red-500">*</span>';
+            input.placeholder = 'Gedung Menara X, Jl. Sudirman...';
+        }
+    }
+</script>
+{% endblock %}

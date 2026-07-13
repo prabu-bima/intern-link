@@ -19,6 +19,9 @@
     <!-- Flash Messages -->
     {% include 'components/flash.html' %}
     
+    <!-- Full Width Content (for Landing Page Hero, etc.) -->
+    {% block full_width_content %}{% endblock %}
+
     <!-- Main Content -->
     <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {% block content %}{% endblock %}

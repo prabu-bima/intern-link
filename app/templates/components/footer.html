@@ -1,43 +1,61 @@
-<footer class="bg-white border-t border-hairline mt-auto">
-    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+{% import "components/icons.html" as icon %}
+<footer class="bg-white border-t border-gray-200 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="col-span-1 md:col-span-1">
-                <span class="text-heading-md text-ink font-bold font-mono tracking-tight">InternLink.</span>
-                <p class="mt-4 text-body-sm text-mute">
-                    Connecting top tech talent with innovative companies.
+                <a href="/" class="text-2xl text-gray-900 font-bold font-mono tracking-tight">
+                    InternLink<span class="text-primary-600">.</span>
+                </a>
+                <p class="mt-4 text-sm text-gray-500 leading-relaxed">
+                    Menghubungkan talenta IT terbaik dengan perusahaan teknologi terkemuka. Bangun karir masa depan Anda mulai dari sini.
                 </p>
+                <div class="mt-6 flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                        <span class="sr-only">Twitter</span>
+                        {{ icon.twitter(class="h-5 w-5") }}
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                        <span class="sr-only">LinkedIn</span>
+                        {{ icon.linkedin(class="h-5 w-5") }}
+                    </a>
+                </div>
             </div>
             
             <div>
-                <h3 class="text-body-sm font-semibold text-ink tracking-wider uppercase">Platform</h3>
-                <ul class="mt-4 space-y-4">
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Browse Internships</a></li>
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Companies</a></li>
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Pricing</a></li>
+                <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Platform</h3>
+                <ul class="mt-4 space-y-3">
+                    <li><a href="{{ url_for('guest.index') }}" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Beranda</a></li>
+                    <li><a href="{{ url_for('guest.internships') }}" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Cari Lowongan</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Daftar Perusahaan</a></li>
                 </ul>
             </div>
             
             <div>
-                <h3 class="text-body-sm font-semibold text-ink tracking-wider uppercase">Resources</h3>
-                <ul class="mt-4 space-y-4">
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Help Center</a></li>
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Blog</a></li>
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">CV Guide</a></li>
+                <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Legal</h3>
+                <ul class="mt-4 space-y-3">
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Syarat & Ketentuan</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Kebijakan Privasi</a></li>
+                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Cookie Policy</a></li>
                 </ul>
             </div>
             
             <div>
-                <h3 class="text-body-sm font-semibold text-ink tracking-wider uppercase">Legal</h3>
-                <ul class="mt-4 space-y-4">
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Privacy Policy</a></li>
-                    <li><a href="#" class="text-body-sm text-mute hover:text-ink">Terms of Service</a></li>
+                <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Hubungi Kami</h3>
+                <ul class="mt-4 space-y-3">
+                    <li class="flex items-center text-sm text-gray-500">
+                        {{ icon.mail(class="h-4 w-4 mr-2 text-gray-400") }}
+                        hello@internlink.id
+                    </li>
+                    <li class="flex items-center text-sm text-gray-500">
+                        {{ icon.map_pin(class="h-4 w-4 mr-2 text-gray-400") }}
+                        Jakarta, Indonesia
+                    </li>
                 </ul>
             </div>
         </div>
-        
-        <div class="mt-12 border-t border-hairline pt-8 flex items-center justify-between">
-            <p class="text-body-sm text-mute">
-                &copy; {{ range(2026, 2027) | random }} InternLink. All rights reserved.
+        <div class="mt-12 pt-8 border-t border-gray-200 text-center flex items-center justify-between">
+            <p class="text-sm text-gray-400">
+                &copy; {{ current_year | default('2026') }} InternLink. All rights reserved.
             </p>
         </div>
     </div>

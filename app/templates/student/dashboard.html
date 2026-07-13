@@ -1,0 +1,228 @@
+{% extends "layouts/student_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Dashboard Mahasiswa - InternLink{% endblock %}
+
+{% block student_content %}
+<div class="space-y-6">
+    
+    <!-- Greeting Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-primary-50 rounded-full opacity-50 blur-2xl"></div>
+        <div class="relative z-10">
+            <h1 class="text-2xl font-extrabold text-gray-900 font-outfit mb-1">Selamat datang kembali, {{ current_user.display_name.split()[0] }}!</h1>
+            <p class="text-sm text-gray-500">Berikut adalah ringkasan aktivitas magang Anda hari ini.</p>
+        </div>
+        <div class="mt-4 sm:mt-0 relative z-10">
+            <a href="{{ url_for('guest.internships') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors">
+                {{ icon.briefcase(class="-ml-1 mr-2 h-5 w-5") }}
+                Cari Magang Baru
+            </a>
+        </div>
+    </div>
+
+    <!-- Activity Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mr-4">
+                {{ icon.document(class="w-6 h-6") }}
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Lamaran</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_applications | default(0) }}</p>
+            </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 mr-4">
+                {{ icon.chat_alt_2(class="w-6 h-6") }}
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Wawancara</p>
+                <p class="text-2xl font-bold text-gray-900">{{ upcoming_interviews | default(0) }}</p>
+            </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 mr-4">
+                {{ icon.user(class="w-6 h-6") }}
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Profil</p>
+                <div class="flex items-center">
+                    <p class="text-2xl font-bold text-gray-900 mr-2">{{ profile_completeness | default(0) }}%</p>
+                    <div class="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-500 rounded-full" style="width: {{ profile_completeness | default(0) }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 mr-4">
+                {{ icon.bookmark(class="w-6 h-6") }}
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Tersimpan</p>
+                <p class="text-2xl font-bold text-gray-900">{{ saved_internships_count | default(0) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Section: Pipeline & Recommended -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Application Status Pipeline -->
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-900 font-outfit mb-6">Status Lamaran Anda</h3>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Terkirim</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ status_counts.submitted | default(0) }}</p>
+                </div>
+                <div class="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-xs text-blue-500 uppercase tracking-wider font-semibold mb-1">Direview</p>
+                    <p class="text-2xl font-bold text-blue-900">{{ status_counts.under_review | default(0) }}</p>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-xl border border-purple-100">
+                    <p class="text-xs text-purple-500 uppercase tracking-wider font-semibold mb-1">Wawancara</p>
+                    <p class="text-2xl font-bold text-purple-900">{{ status_counts.interview | default(0) }}</p>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-xl border border-green-100">
+                    <p class="text-xs text-green-500 uppercase tracking-wider font-semibold mb-1">Diterima</p>
+                    <p class="text-2xl font-bold text-green-900">{{ status_counts.accepted | default(0) }}</p>
+                </div>
+            </div>
+            
+            {% if total_applications == 0 %}
+            <div class="mt-6 text-center text-sm text-gray-500 bg-gray-50 py-3 rounded-lg">
+                Anda belum melamar lowongan magang apapun.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- AI Recommended Internships -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full filter blur-2xl opacity-50 transform translate-x-10 -translate-y-10"></div>
+            
+            <div class="flex items-center mb-4">
+                {{ icon.lightning(class="h-6 w-6 text-primary-500 mr-2") }}
+                <h3 class="text-lg font-bold text-gray-900 font-outfit">AI Recommended</h3>
+            </div>
+            
+            <p class="text-sm text-gray-500 mb-6 line-clamp-2">Lowongan yang paling cocok dengan kemampuan dan profil Anda.</p>
+            
+            <div class="space-y-4 relative z-10">
+                <!-- Placeholder for AI Recommendation -->
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-primary-100 hover:shadow-sm transition-all cursor-pointer">
+                    <h4 class="font-bold text-sm text-gray-900 truncate">UI/UX Designer</h4>
+                    <p class="text-xs text-gray-500 mb-2 truncate">PT Kreatif Digital</p>
+                    <div class="flex items-center text-xs text-primary-600 font-medium">
+                        {{ icon.lightning_solid(class="w-3 h-3 mr-1") }}
+                        98% Match
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center relative z-10">
+                <a href="#" class="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">Lihat Semua Rekomendasi &rarr;</a>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Bottom Section: Latest Internships & Notifications -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Latest Internships Feed -->
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-900 font-outfit">Lowongan Magang Terbaru</h3>
+                <a href="{{ url_for('guest.internships') }}" class="text-sm font-medium text-primary-600 hover:text-primary-700">Lihat Semua</a>
+            </div>
+            
+            <div class="space-y-4">
+                {% for job in latest_internships %}
+                <div class="flex items-start p-4 rounded-xl border border-gray-100 hover:border-primary-100 hover:shadow-sm transition-all bg-gray-50/50">
+                    <div class="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-lg font-bold text-gray-400 mr-4 shrink-0">
+                        {{ job.company_profile.company_name[:1].upper() }}
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <h4 class="text-sm font-bold text-gray-900 truncate">
+                            <a href="{{ url_for('guest.internship_detail', id=job.id) }}" class="hover:text-primary-600">{{ job.internship_title }}</a>
+                        </h4>
+                        <p class="text-xs text-gray-500 truncate mt-0.5">{{ job.company_profile.company_name }} • {{ job.location.city }}</p>
+                        <div class="flex items-center mt-2 space-x-2">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ job.technology_category.category_name }}
+                            </span>
+                            <span class="inline-flex items-center text-xs text-gray-400">
+                                {{ icon.clock(class="mr-1 h-3 w-3") }}
+                                {% if job.closing_at %}
+                                    {{ job.closing_at.strftime('%d %b') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="ml-4 shrink-0">
+                        <a href="{{ url_for('guest.internship_detail', id=job.id) }}" class="p-2 text-gray-400 hover:text-primary-600 bg-white rounded-lg border border-gray-200 hover:border-primary-200 transition-colors inline-block">
+                            {{ icon.chevron_right(class="h-4 w-4") }}
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <p class="text-sm text-gray-500">Belum ada lowongan magang terbaru saat ini.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-900 font-outfit">Notifikasi</h3>
+                {% if notifications %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    {{ notifications|length }} Baru
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="space-y-4">
+                {% for notif in notifications %}
+                <div class="flex items-start">
+                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mr-3 shrink-0 mt-0.5">
+                        {{ icon.bell(class="w-4 h-4") }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ notif.payload_json.get('title', '') }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ notif.payload_json.get('message', '') }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ notif.event_at.strftime('%d %b, %H:%M') }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-6">
+                    <div class="mx-auto w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                        {{ icon.bell(class="w-6 h-6 text-gray-300") }}
+                    </div>
+                    <p class="text-xs text-gray-500">Tidak ada notifikasi baru.</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if notifications %}
+            <div class="mt-6 text-center border-t border-gray-100 pt-4">
+                <a href="#" class="text-xs font-medium text-primary-600 hover:text-primary-700">Tandai semua sudah dibaca</a>
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "layouts/student_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Kelola CV - InternLink{% endblock %}
+
+{% block student_content %}
+<div class="space-y-6">
+    
+    <!-- Page Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h1 class="text-2xl font-extrabold text-gray-900 font-outfit mb-2">Kelola CV / Resume</h1>
+        <p class="text-sm text-gray-500">Unggah dan kelola riwayat hidup Anda untuk memudahkan proses melamar magang.</p>
+    </div>
+
+    <!-- Main Content Area: Top Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Upload New CV (Left Column) -->
+        <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
+                <h2 class="text-lg font-bold text-gray-900 font-outfit mb-4 flex items-center">
+                    {{ icon.arrow_up_tray(class="w-5 h-5 mr-2 text-primary-500") }}
+                    Unggah CV Baru
+                </h2>
+                <form action="{{ url_for('student.upload_cv') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    {{ cv_form.hidden_tag() }}
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ cv_form.cv_file.label }}</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-primary-500 transition-colors bg-gray-50">
+                            <div class="space-y-1 text-center">
+                                {{ icon.document(class="mx-auto h-12 w-12 text-gray-400") }}
+                                <div class="flex text-sm text-gray-600 justify-center">
+                                    <label for="cv_file" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500 px-2 py-1">
+                                        <span>Pilih file</span>
+                                        {{ cv_form.cv_file(class="sr-only", id="cv_file", accept=".pdf") }}
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">Hanya PDF maksimal 5MB</p>
+                            </div>
+                        </div>
+                        <p id="file-name-display" class="mt-2 text-sm text-gray-600 text-center font-medium truncate hidden"></p>
+                    </div>
+                    
+                    <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        Unggah CV
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Current CV Highlight (Right Column) -->
+        <div class="lg:col-span-2">
+            {% if current_cv %}
+            <div class="bg-gradient-to-br from-primary-50 to-white p-6 rounded-2xl shadow-sm border border-primary-100 relative overflow-hidden h-full">
+                <div class="absolute top-0 right-0 p-3 opacity-10">
+                    {{ icon.check_badge(class="w-48 h-48 text-primary-600") }}
+                </div>
+                <div class="relative z-10 flex flex-col h-full justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                CV Aktif
+                            </span>
+                            <span class="text-xs text-gray-500">Versi {{ current_cv.version_no }}</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2 truncate" title="{{ current_cv.cv_file.file_name }}">
+                            {{ current_cv.cv_file.file_name }}
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-5">
+                            Diunggah pada: {% if current_cv.cv_file %}{{ current_cv.cv_file.deleted_at or 'Baru-baru ini' }}{% else %}Tidak diketahui{% endif %}<br>
+                            Tersedia untuk lamaran.
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ current_cv.cv_file.url }}" target="_blank" class="inline-flex items-center justify-center px-6 py-2.5 border border-primary-200 shadow-sm text-sm font-medium rounded-xl text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                            {{ icon.eye(class="mr-2 -ml-1 h-5 w-5") }}
+                            Lihat CV Aktif
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-yellow-50 p-6 rounded-2xl shadow-sm border border-yellow-100 h-full flex flex-col justify-center">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-0.5">
+                        {{ icon.exclamation_triangle(class="h-6 w-6 text-yellow-400") }}
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-base font-medium text-yellow-800">Belum ada CV aktif</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p>Anda belum mengunggah CV. Silakan unggah CV Anda di form sebelah kiri untuk mulai melamar magang.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Bottom Section: CV History -->
+    <div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100">
+                <h2 class="text-lg font-bold text-gray-900 font-outfit">Riwayat CV</h2>
+            </div>
+            
+            {% if cv_versions %}
+            <ul class="divide-y divide-gray-100">
+                {% for cv in cv_versions %}
+                <li class="hover:bg-gray-50 transition-colors group">
+                    <div class="flex items-center justify-between p-6">
+                        <a href="{{ cv.cv_file.url }}" target="_blank" class="flex items-center flex-1 min-w-0 cursor-pointer">
+                            <div class="flex-shrink-0 mr-4">
+                                <div class="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200 group-hover:bg-primary-50 group-hover:border-primary-200 transition-colors">
+                                    {{ icon.document(class="h-6 w-6 text-gray-500 group-hover:text-primary-600") }}
+                                </div>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <p class="text-sm font-medium text-gray-900 truncate group-hover:text-primary-700 transition-colors">
+                                        {{ cv.cv_file.file_name }}
+                                    </p>
+                                    {% if cv.is_current %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
+                                        Aktif
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    Versi {{ cv.version_no }} &middot; {{ (cv.cv_file.file_size_bytes / 1024 / 1024)|round(2) }} MB
+                                </p>
+                            </div>
+                        </a>
+                        
+                        <div class="flex items-center ml-4">
+                            <form action="{{ url_for('student.delete_cv', id=cv.id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus CV ini?');">
+                                <button type="submit" class="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Hapus">
+                                    {{ icon.trash(class="h-5 w-5") }}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="p-12 text-center">
+                {{ icon.document(class="mx-auto h-12 w-12 text-gray-300 mb-3") }}
+                <h3 class="text-sm font-medium text-gray-900">Belum ada riwayat CV</h3>
+                <p class="mt-1 text-sm text-gray-500">Mulai dengan mengunggah CV pertama Anda.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('cv_file');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = e.target.files[0].name;
+                fileNameDisplay.classList.remove('hidden');
+            } else {
+                fileNameDisplay.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}
