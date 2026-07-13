@@ -39,7 +39,7 @@
 <!-- Student Table -->
 {% if students %}
 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="w-full overflow-x-hidden">
     <table class="min-w-full divide-y divide-gray-100">
         <thead class="bg-gray-50/70">
             <tr>
@@ -55,7 +55,7 @@
             {% set is_active = student.status and student.status.status_code == 'active' %}
             <tr class="hover:bg-gray-50/50 transition-colors">
                 <!-- Name + Avatar -->
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                         {% if student.student_profile and student.student_profile.profile_photo %}
                         <img src="{{ student.student_profile.profile_photo.url }}"
@@ -70,11 +70,11 @@
                     </div>
                 </td>
                 <!-- Email -->
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                <td class="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell break-all max-w-[200px]">
                     {{ student.email }}
                 </td>
                 <!-- Education -->
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">
+                <td class="px-6 py-4 text-sm text-gray-500 hidden xl:table-cell">
                     {% if student.student_profile and student.student_profile.education_records %}
                     {% set edu = student.student_profile.education_records[0] %}
                     <span>{{ edu.institution_name }}</span>
