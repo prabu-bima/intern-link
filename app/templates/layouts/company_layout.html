@@ -36,6 +36,19 @@
                     {{ icon.calendar(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'company.interviews' else 'text-gray-400 group-hover:text-gray-500')) }}
                     Manajemen Wawancara
                 </a>
+
+                <!-- Notifikasi -->
+                <a href="{{ url_for('company.notifications') }}" class="{% if request.endpoint == 'company.notifications' %}bg-primary-50 text-primary-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-colors justify-between">
+                    <div class="flex items-center">
+                        {{ icon.bell(class="mr-3 flex-shrink-0 h-5 w-5 " ~ ('text-primary-500' if request.endpoint == 'company.notifications' else 'text-gray-400 group-hover:text-gray-500')) }}
+                        Notifikasi
+                    </div>
+                    {% if unread_notifications_count > 0 %}
+                    <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600">
+                        {{ unread_notifications_count }}
+                    </span>
+                    {% endif %}
+                </a>
                 
                 <hr class="my-4 border-gray-100">
                 

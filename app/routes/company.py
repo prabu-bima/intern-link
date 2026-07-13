@@ -4,11 +4,24 @@ from app.utils.decorators import company_required
 from app.models.company import CompanyVerification
 from app.models.internship import Internship, InternshipApplication
 from app.models.lookups import InternshipLifecycleStatus, InternshipModerationStatus, ApplicationStatus
+from app.models.system import Notification
 from app.extensions import db
 from sqlalchemy import func
 from datetime import datetime
 
 bp = Blueprint('company', __name__, url_prefix='/company')
+
+
+@bp.context_processor
+def inject_unread_notifications_count():
+    if current_user.is_authenticated and current_user.role == 'company':
+        count = Notification.query.filter_by(
+            recipient_user_id=current_user.id,
+            is_read=False,
+            deleted_at=None
+        ).count()
+        return dict(unread_notifications_count=count)
+    return dict(unread_notifications_count=0)
 
 @bp.route('/dashboard')
 @company_required
@@ -835,3 +848,62 @@ def update_interview_status(interview_id):
         flash('Status tidak valid.', 'error')
         
     return redirect(url_for('company.interviews'))
+
+# ─────────────────────────────────────────────
+# Company Notifications
+# ─────────────────────────────────────────────
+
+@bp.route('/notifications', methods=['GET'])
+@company_required
+def notifications():
+    page = request.args.get('page', 1, type=int)
+
+    query = Notification.query.filter_by(
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).order_by(Notification.event_at.desc())
+
+    pagination = query.paginate(page=page, per_page=15, error_out=False)
+
+    return render_template(
+        'company/notifications.html',
+        notifications=pagination.items,
+        pagination=pagination,
+        now=datetime.utcnow()
+    )
+
+
+@bp.route('/notifications/<int:id>/read', methods=['POST'])
+@company_required
+def mark_notification_read(id):
+    notif = Notification.query.filter_by(
+        id=id,
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).first_or_404()
+
+    if not notif.is_read:
+        notif.is_read = True
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+
+    return redirect(url_for('company.notifications'))
+
+
+@bp.route('/notifications/read-all', methods=['POST'])
+@company_required
+def mark_all_notifications_read():
+    unread_notifs = Notification.query.filter_by(
+        recipient_user_id=current_user.id,
+        is_read=False,
+        deleted_at=None
+    ).all()
+
+    now = datetime.utcnow()
+    for notif in unread_notifs:
+        notif.is_read = True
+        notif.read_at = now
+
+    db.session.commit()
+    flash('Semua notifikasi telah ditandai sebagai dibaca.', 'success')
+    return redirect(url_for('company.notifications'))
