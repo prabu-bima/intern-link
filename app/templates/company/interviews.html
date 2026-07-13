@@ -33,7 +33,7 @@
     <!-- Interviews List -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {% if interviews %}
-            <div class="overflow-x-auto">
+            <div class="w-full overflow-x-auto xl:overflow-x-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -52,9 +52,13 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10">
-                                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                                            {{ interview.application.student_profile.user.display_name[:1] | upper }}
-                                        </div>
+                                        {% if interview.application.student_profile.profile_photo %}
+                                            <img src="{{ interview.application.student_profile.profile_photo.url }}" alt="{{ interview.application.student_profile.user.display_name }}" class="h-10 w-10 rounded-full object-cover">
+                                        {% else %}
+                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                                                {{ interview.application.student_profile.user.display_name[:1] | upper }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ interview.application.student_profile.user.display_name }}</div>
@@ -74,7 +78,7 @@
                                     {% if interview.meeting_link and 'http' in interview.meeting_link %}
                                         <span class="inline-flex items-center text-blue-600">
                                             {{ icon.link(class="w-4 h-4 mr-1") }}
-                                            <a href="{{ interview.meeting_link }}" target="_blank" class="hover:underline truncate max-w-xs block">Link Rapat</a>
+                                            <a href="{{ interview.meeting_link }}" target="_blank" class="hover:underline truncate max-w-xs block">Link Wawancara</a>
                                         </span>
                                     {% else %}
                                         <span class="inline-flex items-center text-gray-600">
@@ -104,8 +108,8 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button type="button" onclick="openUpdateStatusModal({{ interview.id }}, '{{ interview.interview_status.status_code }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center">
-                                    {{ icon.pencil(class="w-4 h-4 mr-1.5") }} Update
+                                <button type="button" onclick="openUpdateStatusModal({{ interview.id }}, '{{ interview.interview_status.status_code }}')" class="inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                    Update
                                 </button>
                             </td>
                         </tr>

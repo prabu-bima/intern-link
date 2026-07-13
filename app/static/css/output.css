@@ -3428,6 +3428,11 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
+  .xl\:overflow-x-hidden {
+    @media (width >= 80rem) {
+      overflow-x: hidden;
+    }
+  }
 }
 @layer components {
   .form-select {
