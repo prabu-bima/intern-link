@@ -1,0 +1,154 @@
+{% extends "layouts/admin_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Manajemen Mahasiswa - InternLink{% endblock %}
+
+{% block admin_content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 font-outfit">Manajemen Mahasiswa</h1>
+        <p class="text-gray-500 mt-1">Daftar seluruh akun mahasiswa yang terdaftar di platform.</p>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<form method="GET" action="{{ url_for('admin.students') }}" class="mb-6">
+    <div class="relative max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            {{ icon.magnifying_glass(class="w-4 h-4 text-gray-400") }}
+        </div>
+        <input type="text" name="q" value="{{ q }}"
+               placeholder="Cari nama atau email..."
+               class="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+        {% if q %}
+        <a href="{{ url_for('admin.students') }}"
+           class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+            {{ icon.x_mark(class="w-4 h-4") }}
+        </a>
+        {% endif %}
+    </div>
+</form>
+
+{% if q %}
+<p class="text-sm text-gray-500 mb-4">
+    Menampilkan hasil pencarian untuk <span class="font-semibold text-gray-800">"{{ q }}"</span>
+    — {{ pagination.total }} hasil ditemukan.
+</p>
+{% endif %}
+
+<!-- Student Table -->
+{% if students %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-100">
+        <thead class="bg-gray-50/70">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mahasiswa</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Email</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell">Pendidikan</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+            {% for student in students %}
+            {% set is_active = student.status and student.status.status_code == 'active' %}
+            <tr class="hover:bg-gray-50/50 transition-colors">
+                <!-- Name + Avatar -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center gap-3">
+                        {% if student.student_profile and student.student_profile.profile_photo %}
+                        <img src="{{ student.student_profile.profile_photo.url }}"
+                             alt="{{ student.display_name }}"
+                             class="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                        {% else %}
+                        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-sm font-bold flex-shrink-0">
+                            {{ student.display_name[:1].upper() }}
+                        </div>
+                        {% endif %}
+                        <span class="text-sm font-medium text-gray-900">{{ student.display_name }}</span>
+                    </div>
+                </td>
+                <!-- Email -->
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                    {{ student.email }}
+                </td>
+                <!-- Education -->
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">
+                    {% if student.student_profile and student.student_profile.education_records %}
+                    {% set edu = student.student_profile.education_records[0] %}
+                    <span>{{ edu.institution_name }}</span>
+                    <span class="text-gray-400 ml-1">· {{ edu.field_of_study }}</span>
+                    {% else %}
+                    <span class="text-gray-300 italic">Belum diisi</span>
+                    {% endif %}
+                </td>
+                <!-- Status Badge -->
+                <td class="px-6 py-4">
+                    {% if is_active %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        Aktif
+                    </span>
+                    {% elif student.status and student.status.status_code == 'disabled' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        Nonaktif
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        {{ student.status.status_name if student.status else '-' }}
+                    </span>
+                    {% endif %}
+                </td>
+                <!-- Action -->
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <a href="{{ url_for('admin.student_detail', id=student.id) }}"
+                       class="text-sm font-medium text-primary-600 hover:text-primary-700">
+                        Detail
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<div class="mt-6 flex justify-center">
+    <nav class="inline-flex rounded-md shadow-sm -space-x-px">
+        <a href="{{ url_for('admin.students', page=pagination.prev_num, q=q) if pagination.has_prev else '#' }}"
+           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 {% if not pagination.has_prev %}opacity-50 cursor-not-allowed{% endif %}">
+            {{ icon.chevron_left(class="h-4 w-4") }}
+        </a>
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+            <a href="{{ url_for('admin.students', page=page_num, q=q) }}"
+               class="relative inline-flex items-center px-4 py-2 border text-sm font-medium
+                      {% if page_num == pagination.page %}z-10 bg-primary-50 border-primary-500 text-primary-600{% else %}bg-white border-gray-300 text-gray-500 hover:bg-gray-50{% endif %}">
+                {{ page_num }}
+            </a>
+            {% else %}
+            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm text-gray-700">...</span>
+            {% endif %}
+        {% endfor %}
+        <a href="{{ url_for('admin.students', page=pagination.next_num, q=q) if pagination.has_next else '#' }}"
+           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 {% if not pagination.has_next %}opacity-50 cursor-not-allowed{% endif %}">
+            {{ icon.chevron_right(class="h-4 w-4") }}
+        </a>
+    </nav>
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+    <div class="mx-auto w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+        {{ icon.users(class="w-7 h-7 text-gray-300") }}
+    </div>
+    <h3 class="text-base font-semibold text-gray-900 mb-1">Tidak ada mahasiswa ditemukan</h3>
+    <p class="text-sm text-gray-500">
+        {% if q %}Coba kata kunci yang berbeda.{% else %}Belum ada mahasiswa yang mendaftar.{% endif %}
+    </p>
+</div>
+{% endif %}
+{% endblock %}

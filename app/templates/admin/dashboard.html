@@ -1,0 +1,218 @@
+{% extends "layouts/admin_layout.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}Admin Dashboard - InternLink{% endblock %}
+
+{% block admin_content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900 font-outfit">Dashboard Admin</h1>
+    <p class="text-gray-500 mt-1">Statistik platform InternLink secara keseluruhan.</p>
+</div>
+
+<!-- ── Row 1: 4 summary cards ─────────────────────────────────── -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <!-- Total Students -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-medium text-gray-500">Total Mahasiswa</p>
+            <div class="p-2 bg-blue-50 rounded-xl">
+                {{ icon.users(class="w-5 h-5 text-blue-500") }}
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-gray-900 font-outfit">{{ total_students }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ active_students }} akun aktif</p>
+    </div>
+
+    <!-- Total Companies -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-medium text-gray-500">Total Perusahaan</p>
+            <div class="p-2 bg-violet-50 rounded-xl">
+                {{ icon.building_office(class="w-5 h-5 text-violet-500") }}
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-gray-900 font-outfit">{{ total_companies }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ verified_companies }} terverifikasi</p>
+    </div>
+
+    <!-- Total Internships -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-medium text-gray-500">Total Lowongan</p>
+            <div class="p-2 bg-amber-50 rounded-xl">
+                {{ icon.briefcase(class="w-5 h-5 text-amber-500") }}
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-gray-900 font-outfit">{{ total_internships }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ active_internships }} sedang aktif</p>
+    </div>
+
+    <!-- Total Applications -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-medium text-gray-500">Total Lamaran</p>
+            <div class="p-2 bg-green-50 rounded-xl">
+                {{ icon.document(class="w-5 h-5 text-green-500") }}
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-gray-900 font-outfit">{{ total_applications }}</p>
+        <p class="text-xs text-gray-400 mt-1">
+            {{ app_status_counts['accepted'].count }} diterima
+        </p>
+    </div>
+</div>
+
+<!-- ── Row 2: User & Company detail widgets ────────────────────── -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+    <!-- User Statistics Widget -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-base font-bold text-gray-900">Statistik Pengguna</h2>
+            <a href="{{ url_for('admin.students') }}"
+               class="text-sm font-medium text-primary-600 hover:text-primary-700">Kelola &rarr;</a>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Total mahasiswa terdaftar</span>
+                <span class="text-sm font-bold text-gray-900">{{ total_students }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Akun aktif</span>
+                <span class="text-sm font-semibold text-green-600">{{ active_students }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Akun tidak aktif</span>
+                <span class="text-sm font-semibold text-gray-500">{{ total_students - active_students }}</span>
+            </div>
+            <div class="pt-2 border-t border-gray-100">
+                <!-- Simple progress bar: active students vs total -->
+                {% if total_students > 0 %}
+                {% set pct = ((active_students / total_students) * 100)|round|int %}
+                {% else %}
+                {% set pct = 0 %}
+                {% endif %}
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>Tingkat akun aktif</span>
+                    <span>{{ pct }}%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ pct }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Statistics Widget -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-base font-bold text-gray-900">Statistik Perusahaan</h2>
+            <a href="{{ url_for('admin.companies') }}"
+               class="text-sm font-medium text-primary-600 hover:text-primary-700">Kelola &rarr;</a>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Total perusahaan terdaftar</span>
+                <span class="text-sm font-bold text-gray-900">{{ total_companies }}</span>
+            </div>
+            <!-- Status breakdown -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="text-center bg-green-50 rounded-xl p-3">
+                    <p class="text-xl font-bold text-green-700">{{ verified_companies }}</p>
+                    <p class="text-xs text-green-600 mt-0.5">Terverifikasi</p>
+                </div>
+                <div class="text-center bg-yellow-50 rounded-xl p-3">
+                    <p class="text-xl font-bold text-yellow-700">{{ pending_companies }}</p>
+                    <p class="text-xs text-yellow-600 mt-0.5">Menunggu</p>
+                </div>
+                <div class="text-center bg-red-50 rounded-xl p-3">
+                    <p class="text-xl font-bold text-red-700">{{ rejected_companies }}</p>
+                    <p class="text-xs text-red-600 mt-0.5">Ditolak</p>
+                </div>
+            </div>
+            {% if pending_companies > 0 %}
+            <div class="flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-2.5">
+                {{ icon.exclamation_triangle(class="w-4 h-4 text-yellow-500 flex-shrink-0") }}
+                <p class="text-xs text-yellow-700">
+                    <strong>{{ pending_companies }}</strong> perusahaan menunggu verifikasi.
+                    <a href="{{ url_for('admin.companies') }}" class="underline font-semibold ml-1">Tinjau sekarang</a>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ── Row 3: Internship & Application detail widgets ──────────── -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Internship Statistics Widget -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-base font-bold text-gray-900">Statistik Lowongan</h2>
+            <a href="{{ url_for('admin.internships') }}"
+               class="text-sm font-medium text-primary-600 hover:text-primary-700">Kelola &rarr;</a>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Total lowongan terdaftar</span>
+                <span class="text-sm font-bold text-gray-900">{{ total_internships }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="text-center bg-green-50 rounded-xl p-3">
+                    <p class="text-xl font-bold text-green-700">{{ active_internships }}</p>
+                    <p class="text-xs text-green-600 mt-0.5">Aktif</p>
+                </div>
+                <div class="text-center bg-gray-50 rounded-xl p-3">
+                    <p class="text-xl font-bold text-gray-600">{{ closed_internships }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Ditutup</p>
+                </div>
+                <div class="text-center bg-yellow-50 rounded-xl p-3">
+                    <p class="text-xl font-bold text-yellow-700">{{ pending_moderation }}</p>
+                    <p class="text-xs text-yellow-600 mt-0.5">Pending Review</p>
+                </div>
+            </div>
+            {% if pending_moderation > 0 %}
+            <div class="flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-2.5">
+                {{ icon.exclamation_triangle(class="w-4 h-4 text-yellow-500 flex-shrink-0") }}
+                <p class="text-xs text-yellow-700">
+                    <strong>{{ pending_moderation }}</strong> lowongan perlu moderasi.
+                    <a href="{{ url_for('admin.internships') }}" class="underline font-semibold ml-1">Tinjau sekarang</a>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Application Statistics Widget (Funnel) -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-base font-bold text-gray-900">Statistik Lamaran</h2>
+            <span class="text-sm text-gray-400">Total: {{ total_applications }}</span>
+        </div>
+        <div class="p-6 space-y-3">
+            {% set funnel = [
+                ('applied',      'Dikirim',    'bg-gray-200',  'text-gray-700'),
+                ('reviewing',    'Direview',   'bg-blue-200',  'text-blue-700'),
+                ('shortlisted',  'Shortlist',  'bg-indigo-200','text-indigo-700'),
+                ('interviewing', 'Wawancara',  'bg-yellow-200','text-yellow-700'),
+                ('accepted',     'Diterima',   'bg-green-200', 'text-green-700'),
+                ('rejected',     'Ditolak',    'bg-red-100',   'text-red-600'),
+            ] %}
+            {% for code, label, bar_bg, text_cls in funnel %}
+            {% set cnt = app_status_counts.get(code, {}).get('count', 0) %}
+            {% set pct = ((cnt / total_applications * 100)|round|int) if total_applications > 0 else 0 %}
+            <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="font-medium {{ text_cls }}">{{ label }}</span>
+                    <span class="text-gray-500">{{ cnt }} <span class="text-gray-300">({{ pct }}%)</span></span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="{{ bar_bg }} h-2 rounded-full transition-all" style="width: {{ pct }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
