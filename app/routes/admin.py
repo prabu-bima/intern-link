@@ -1011,3 +1011,247 @@ def delete_location(id):
     except Exception:
         db.session.rollback()
         return jsonify({'error': 'Tidak dapat menghapus lokasi yang masih digunakan.'}), 400
+
+# ── Reports ──────────────────────────────────────────────────────
+
+import csv
+import io
+from datetime import datetime as dt
+
+@bp.route('/reports')
+@admin_required
+def reports():
+    from flask import redirect, url_for
+    return redirect(url_for('admin.report_users'))
+
+
+@bp.route('/reports/users')
+@admin_required
+def report_users():
+    from flask import request
+    from app.models.identity import UserAccount
+    from app.models.lookups import UserAccountStatus
+
+    date_from = request.args.get('date_from', '')
+    date_to   = request.args.get('date_to', '')
+    role      = request.args.get('role', 'all')
+    status    = request.args.get('status', 'all')
+
+    query = UserAccount.query.filter(UserAccount.deleted_at.is_(None))
+
+    if role != 'all':
+        query = query.filter(UserAccount.role == role)
+    if status != 'all':
+        st = UserAccountStatus.query.filter_by(status_code=status).first()
+        if st:
+            query = query.filter(UserAccount.account_status_id == st.id)
+    if date_from:
+        try:
+            query = query.filter(UserAccount.id >= 0)  # placeholder; use created_at if column exists
+        except Exception:
+            pass
+
+    users = query.order_by(UserAccount.id.desc()).all()
+    statuses = UserAccountStatus.query.all()
+
+    return render_template('admin/reports.html',
+        report_type='users', users=users, statuses=statuses,
+        date_from=date_from, date_to=date_to, role=role, status_filter=status)
+
+
+@bp.route('/reports/internships')
+@admin_required
+def report_internships():
+    from flask import request
+    from app.models.internship import Internship
+    from app.models.lookups import InternshipLifecycleStatus
+    from app.models.master import TechnologyCategory, Location
+    from sqlalchemy.orm import joinedload
+
+    category_id = request.args.get('category_id', 'all')
+    location_id = request.args.get('location_id', 'all')
+    status      = request.args.get('status', 'all')
+
+    query = Internship.query.options(
+        joinedload(Internship.company_profile),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.location),
+        joinedload(Internship.lifecycle_status),
+    ).filter(Internship.deleted_at.is_(None))
+
+    if category_id != 'all':
+        query = query.filter(Internship.technology_category_id == int(category_id))
+    if location_id != 'all':
+        query = query.filter(Internship.location_id == int(location_id))
+    if status != 'all':
+        ls = InternshipLifecycleStatus.query.filter_by(status_code=status).first()
+        if ls:
+            query = query.filter(Internship.lifecycle_status_id == ls.id)
+
+    internships = query.order_by(Internship.id.desc()).all()
+    categories  = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+    locations   = Location.query.order_by(Location.city).all()
+    lc_statuses = InternshipLifecycleStatus.query.all()
+
+    return render_template('admin/reports.html',
+        report_type='internships', internships=internships,
+        categories=categories, locations=locations, lc_statuses=lc_statuses,
+        category_id=category_id, location_id=location_id, status_filter=status)
+
+
+@bp.route('/reports/applications')
+@admin_required
+def report_applications():
+    from flask import request
+    from app.models.internship import InternshipApplication
+    from app.models.lookups import ApplicationStatus
+    from app.models.identity import CompanyProfile
+    from sqlalchemy.orm import joinedload
+
+    status_filter = request.args.get('status', 'all')
+    company_id    = request.args.get('company_id', 'all')
+
+    query = InternshipApplication.query.options(
+        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.student_profile),
+        joinedload(InternshipApplication.application_status),
+    ).filter(InternshipApplication.deleted_at.is_(None))
+
+    if status_filter != 'all':
+        st = ApplicationStatus.query.filter_by(status_code=status_filter).first()
+        if st:
+            query = query.filter(InternshipApplication.application_status_id == st.id)
+    if company_id != 'all':
+        from app.models.internship import Internship
+        query = query.join(Internship).filter(
+            Internship.company_profile_id == int(company_id)
+        )
+
+    applications = query.order_by(InternshipApplication.submitted_at.desc()).all()
+    app_statuses = ApplicationStatus.query.all()
+    companies    = CompanyProfile.query.order_by(CompanyProfile.company_name).all()
+
+    # Funnel counts
+    funnel = {}
+    for a in applications:
+        code = a.application_status.status_code if a.application_status else 'unknown'
+        funnel[code] = funnel.get(code, 0) + 1
+
+    return render_template('admin/reports.html',
+        report_type='applications', applications=applications,
+        app_statuses=app_statuses, companies=companies, funnel=funnel,
+        status_filter=status_filter, company_id=company_id)
+
+
+# ── Export CSV routes ─────────────────────────────────────────────
+
+def _make_csv_response(rows, headers, filename):
+    from flask import Response
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+
+def _save_admin_report(report_type):
+    from app.models.system import AdminReport
+    from app.models.lookups import ReportType
+    rt = ReportType.query.filter_by(type_code=report_type).first()
+    if not rt:
+        rt = ReportType(type_code=report_type, type_name=report_type.replace('_', ' ').title())
+        db.session.add(rt)
+        db.session.flush()
+    rec = AdminReport(
+        report_type_id=rt.id,
+        generated_by_user_id=current_user.id,
+        status='completed',
+    )
+    db.session.add(rec)
+    db.session.commit()
+
+
+@bp.route('/reports/users/export', methods=['POST'])
+@admin_required
+def export_users():
+    from app.models.identity import UserAccount
+
+    users = UserAccount.query.filter(UserAccount.deleted_at.is_(None)).order_by(UserAccount.id).all()
+    rows = [
+        (u.id, u.display_name, u.email, u.role,
+         u.status.status_name if u.status else '-')
+        for u in users
+    ]
+    _save_admin_report('user_report')
+    return _make_csv_response(
+        rows,
+        ['ID', 'Nama', 'Email', 'Role', 'Status'],
+        f'users_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
+
+
+@bp.route('/reports/internships/export', methods=['POST'])
+@admin_required
+def export_internships():
+    from app.models.internship import Internship
+    from sqlalchemy.orm import joinedload
+
+    internships = Internship.query.options(
+        joinedload(Internship.company_profile),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.location),
+        joinedload(Internship.lifecycle_status),
+    ).filter(Internship.deleted_at.is_(None)).order_by(Internship.id).all()
+
+    rows = [
+        (i.id, i.internship_title,
+         i.company_profile.company_name if i.company_profile else '-',
+         i.technology_category.category_name if i.technology_category else '-',
+         f"{i.location.city}, {i.location.region}" if i.location else '-',
+         i.lifecycle_status.status_name if i.lifecycle_status else '-',
+         i.closing_at.strftime('%Y-%m-%d') if i.closing_at else '-',
+         len(i.applications))
+        for i in internships
+    ]
+    _save_admin_report('internship_report')
+    return _make_csv_response(
+        rows,
+        ['ID', 'Judul', 'Perusahaan', 'Kategori', 'Lokasi', 'Status', 'Tutup', 'Pelamar'],
+        f'internships_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
+
+
+@bp.route('/reports/applications/export', methods=['POST'])
+@admin_required
+def export_applications():
+    from app.models.internship import InternshipApplication
+    from sqlalchemy.orm import joinedload
+
+    applications = InternshipApplication.query.options(
+        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.student_profile),
+        joinedload(InternshipApplication.application_status),
+    ).filter(InternshipApplication.deleted_at.is_(None)).order_by(
+        InternshipApplication.submitted_at
+    ).all()
+
+    rows = [
+        (a.id,
+         a.student_profile.user.display_name if a.student_profile and a.student_profile.user else '-',
+         a.internship.internship_title if a.internship else '-',
+         a.internship.company_profile.company_name if a.internship and a.internship.company_profile else '-',
+         a.application_status.status_name if a.application_status else '-',
+         a.submitted_at.strftime('%Y-%m-%d') if a.submitted_at else '-')
+        for a in applications
+    ]
+    _save_admin_report('application_report')
+    return _make_csv_response(
+        rows,
+        ['ID', 'Mahasiswa', 'Lowongan', 'Perusahaan', 'Status', 'Tanggal Lamar'],
+        f'applications_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
