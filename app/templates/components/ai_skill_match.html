@@ -1,19 +1,7 @@
 {% macro ai_skill_match_result(match_run) %}
 {% if match_run %}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-    <div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="bg-primary-100 text-primary-600 p-2 rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            </div>
-            <div>
-                <h3 class="font-semibold text-gray-900">Analisis Kecocokan AI</h3>
-                <p class="text-xs text-gray-500">Didukung oleh Gemini AI</p>
-            </div>
-        </div>
-        
+    <div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-center">
         <div class="flex items-center gap-2">
             {% set score_color = 'text-green-600' if match_run.match_percentage >= 75 else ('text-yellow-600' if match_run.match_percentage >= 50 else 'text-red-600') %}
             <span class="text-2xl font-bold {{ score_color }}">{{ match_run.match_percentage | int }}%</span>
