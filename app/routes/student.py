@@ -73,6 +73,18 @@ def dashboard():
     notifications = Notification.query.filter_by(recipient_user_id=current_user.id, is_read=False)\
         .order_by(Notification.event_at.desc()).limit(5).all()
         
+    # 8. AI Recommendations
+    from app.models.ai import AIJobRecommendationRun
+    recommendations = []
+    latest_run = None
+    if current_user.student_profile:
+        latest_run = AIJobRecommendationRun.query.filter_by(
+            student_profile_id=current_user.student_profile.id,
+            generation_status='success'
+        ).order_by(AIJobRecommendationRun.id.desc()).first()
+        if latest_run:
+            recommendations = latest_run.items[:3]
+        
     return render_template(
         'student/dashboard.html',
         total_applications=total_applications,
@@ -81,8 +93,67 @@ def dashboard():
         profile_completeness=profile_completeness,
         status_counts=status_counts,
         latest_internships=latest_internships,
-        notifications=notifications
+        notifications=notifications,
+        recommendations=recommendations,
+        latest_run=latest_run
     )
+
+@bp.route('/recommendations', methods=['GET'])
+@student_required
+def recommendations():
+    from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
+    sort_order = request.args.get('sort', 'desc') # desc or asc
+    
+    profile = current_user.student_profile
+    if not profile:
+        flash('Silakan lengkapi profil Anda terlebih dahulu.', 'warning')
+        return redirect(url_for('student.profile'))
+        
+    latest_run = AIJobRecommendationRun.query.filter_by(
+        student_profile_id=profile.id,
+        generation_status='success'
+    ).order_by(AIJobRecommendationRun.id.desc()).first()
+    
+    recommendation_items = []
+    if latest_run:
+        query = AIJobRecommendationItem.query.filter_by(ai_job_recommendation_run_id=latest_run.id)
+        if sort_order == 'asc':
+            query = query.order_by(AIJobRecommendationItem.match_score.asc())
+        else:
+            query = query.order_by(AIJobRecommendationItem.match_score.desc())
+        recommendation_items = query.all()
+        
+    return render_template(
+        'student/recommendations.html',
+        latest_run=latest_run,
+        recommendations=recommendation_items,
+        sort_order=sort_order
+    )
+
+@bp.route('/recommendations/refresh', methods=['POST'])
+@student_required
+def refresh_recommendations():
+    from flask import current_app
+    from app.services.ai_job_recommendation import run_job_recommendation
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'status': 'error', 'message': 'Student profile not found.'}), 404
+        
+    try:
+        new_run = run_job_recommendation(profile.id)
+        if not new_run or new_run.generation_status == 'failed':
+            return jsonify({
+                'status': 'error',
+                'message': 'Gagal menghitung rekomendasi magang menggunakan AI. Pastikan profil Anda lengkap dan coba lagi.'
+            }), 500
+            
+        return jsonify({
+            'status': 'success',
+            'message': 'Rekomendasi magang berhasil diperbarui!'
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error in refresh_recommendations: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @bp.route('/profile', methods=['GET'])
 @student_required

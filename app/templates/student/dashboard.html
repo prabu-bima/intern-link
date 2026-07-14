@@ -107,27 +107,75 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full filter blur-2xl opacity-50 transform translate-x-10 -translate-y-10"></div>
             
-            <div class="flex items-center mb-4">
-                {{ icon.lightning(class="h-6 w-6 text-primary-500 mr-2") }}
-                <h3 class="text-lg font-bold text-gray-900 font-outfit">AI Recommended</h3>
-            </div>
-            
-            <p class="text-sm text-gray-500 mb-6 line-clamp-2">Lowongan yang paling cocok dengan kemampuan dan profil Anda.</p>
-            
-            <div class="space-y-4 relative z-10">
-                <!-- Placeholder for AI Recommendation -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-primary-100 hover:shadow-sm transition-all cursor-pointer">
-                    <h4 class="font-bold text-sm text-gray-900 truncate">UI/UX Designer</h4>
-                    <p class="text-xs text-gray-500 mb-2 truncate">PT Kreatif Digital</p>
-                    <div class="flex items-center text-xs text-primary-600 font-medium">
-                        {{ icon.lightning_solid(class="w-3 h-3 mr-1") }}
-                        98% Match
-                    </div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    {{ icon.sparkles(class="h-5 w-5 text-primary-500 mr-2") }}
+                    <h3 class="text-base font-bold text-gray-900 font-outfit">AI Recommended</h3>
                 </div>
+                <button id="dash-refresh-btn" onclick="dashRefreshRecommendations()" title="Hitung ulang rekomendasi"
+                    class="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                    <svg id="dash-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Skeleton Loader (hidden) -->
+            <div id="dash-skeleton" class="hidden space-y-3 mb-4">
+                <div class="animate-pulse bg-gray-100 rounded-xl h-16"></div>
+                <div class="animate-pulse bg-gray-100 rounded-xl h-16"></div>
+                <p class="text-xs text-center text-gray-400">Menghitung...</p>
+            </div>
+
+            <!-- Error Banner (hidden) -->
+            <div id="dash-error" class="hidden mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p class="text-xs text-red-600">Gagal memuat rekomendasi AI. Silakan coba lagi.</p>
+            </div>
+
+            <div id="dash-recommendation-content" class="space-y-3 relative z-10">
+                {% if recommendations %}
+                    {% for item in recommendations %}
+                    {% set score = item.match_score | int %}
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 hover:border-primary-100 hover:shadow-sm transition-all">
+                        <a href="{{ url_for('student.internship_detail', id=item.internship.id) }}" class="block">
+                            <h4 class="font-bold text-sm text-gray-900 truncate">{{ item.internship.internship_title }}</h4>
+                            <p class="text-xs text-gray-500 mb-1.5 truncate">{{ item.internship.company_profile.company_name }}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center text-xs font-semibold
+                                    {% if score >= 75 %}text-green-600{% elif score >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">
+                                    {{ icon.lightning_solid(class="w-3 h-3 mr-1") }}
+                                    {{ score }}% Match
+                                </div>
+                                <span class="text-xs text-gray-400">#{{ item.rank_no }}</span>
+                            </div>
+                            <!-- Match bar -->
+                            <div class="w-full bg-gray-200 rounded-full h-1 mt-1.5">
+                                <div class="h-1 rounded-full {% if score >= 75 %}bg-green-500{% elif score >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %}"
+                                     style="width: {{ score }}%"></div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <!-- No recommendations yet -->
+                <div class="text-center py-4">
+                    <div class="mx-auto w-10 h-10 bg-primary-50 rounded-full flex items-center justify-center mb-3">
+                        {{ icon.sparkles(class="w-5 h-5 text-primary-400") }}
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">Belum ada rekomendasi. Klik tombol segarkan untuk menghitung rekomendasi AI.</p>
+                    <button onclick="dashRefreshRecommendations()"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
+                        {{ icon.sparkles(class="w-3 h-3 mr-1") }}
+                        Hitung Sekarang
+                    </button>
+                </div>
+                {% endif %}
             </div>
             
-            <div class="mt-4 text-center relative z-10">
-                <a href="#" class="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">Lihat Semua Rekomendasi &rarr;</a>
+            <div class="mt-4 text-center relative z-10 border-t border-gray-100 pt-4">
+                <a href="{{ url_for('student.recommendations') }}" class="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                    Lihat Semua Rekomendasi &rarr;
+                </a>
             </div>
         </div>
         
@@ -225,4 +273,49 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function dashRefreshRecommendations() {
+    const btn = document.getElementById('dash-refresh-btn');
+    const icon = document.getElementById('dash-refresh-icon');
+    const skeleton = document.getElementById('dash-skeleton');
+    const content = document.getElementById('dash-recommendation-content');
+    const error = document.getElementById('dash-error');
+
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+    skeleton.classList.remove('hidden');
+    content.classList.add('hidden');
+    error.classList.add('hidden');
+
+    try {
+        const response = await fetch('{{ url_for("student.refresh_recommendations") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            window.location.reload();
+        } else {
+            skeleton.classList.add('hidden');
+            content.classList.remove('hidden');
+            error.classList.remove('hidden');
+            btn.disabled = false;
+            icon.classList.remove('animate-spin');
+        }
+    } catch (err) {
+        skeleton.classList.add('hidden');
+        content.classList.remove('hidden');
+        error.classList.remove('hidden');
+        btn.disabled = false;
+        icon.classList.remove('animate-spin');
+    }
+}
+</script>
 {% endblock %}
