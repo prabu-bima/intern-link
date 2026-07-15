@@ -28,7 +28,9 @@
     </main>
     
     <!-- Footer -->
-    {% include 'components/footer.html' %}
+    {% block footer %}
+        {% include 'components/footer.html' %}
+    {% endblock %}
 
     <!-- Scripts -->
     {% block extra_js %}{% endblock %}
