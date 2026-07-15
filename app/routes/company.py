@@ -742,6 +742,20 @@ def schedule_interview(application_id):
             flash('Format tanggal dan waktu tidak valid.', 'error')
             return redirect(request.url)
             
+        location_or_link = location_or_link.strip() if location_or_link else None
+        
+        # Validation
+        if interview_format == 'offline' and not location_or_link:
+            flash('Alamat / Lokasi Wawancara wajib diisi untuk format Tatap Muka.', 'danger')
+            return redirect(request.url)
+            
+        if interview_format == 'online' and location_or_link:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(location_or_link)
+            if not (parsed_url.scheme and parsed_url.netloc) or parsed_url.scheme not in ['http', 'https']:
+                flash('Tautan rapat (Meeting Link) harus berupa URL yang valid (misal: https://meet.google.com/...).', 'danger')
+                return redirect(request.url)
+            
         from app.models.lookups import InterviewStatus
         interview_status_obj = InterviewStatus.query.filter_by(status_code='scheduled').first()
         
@@ -766,7 +780,11 @@ def schedule_interview(application_id):
                 title = f"Undangan Wawancara: {application.internship.internship_title}"
                 format_display = "Online" if interview_format == "online" else "Tatap Muka (Offline)"
                 dt_display = scheduled_at.strftime('%d %B %Y, %H:%M')
-                message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}."
+                
+                if interview_format == "online" and not location_or_link:
+                    message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}. Tautan rapat akan dikirim kemudian."
+                else:
+                    message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}."
                 
                 payload = {
                     "title": title,
@@ -789,6 +807,111 @@ def schedule_interview(application_id):
         return redirect(url_for('company.applicant_detail', application_id=application.id))
         
     return render_template('company/interview_form.html', application=application)
+
+@bp.route('/interviews/<int:interview_id>/edit', methods=['GET', 'POST'])
+@login_required
+@company_required
+def edit_interview(interview_id):
+    from app.models.internship import ApplicationInterview
+    from app.models.identity import CompanyProfile
+    from app.models.lookups import NotificationType
+    from app.models.system import Notification
+    from datetime import datetime
+    
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    interview = ApplicationInterview.query.get_or_404(interview_id)
+    
+    # Verify ownership
+    if interview.application.internship.company_profile_id != profile.id:
+        abort(403)
+        
+    if request.method == 'POST':
+        scheduled_at_str = request.form.get('scheduled_at') # YYYY-MM-DDTHH:MM
+        interview_format = request.form.get('interview_format')
+        location_or_link = request.form.get('location_or_link')
+        notes = request.form.get('notes')
+        
+        try:
+            scheduled_at = datetime.fromisoformat(scheduled_at_str)
+        except ValueError:
+            flash('Format tanggal dan waktu tidak valid.', 'error')
+            return redirect(request.url)
+            
+        location_or_link = location_or_link.strip() if location_or_link else None
+        
+        # Validation
+        if interview_format == 'offline' and not location_or_link:
+            flash('Alamat / Lokasi Wawancara wajib diisi untuk format Tatap Muka.', 'danger')
+            return redirect(request.url)
+            
+        if interview_format == 'online' and location_or_link:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(location_or_link)
+            if not (parsed_url.scheme and parsed_url.netloc) or parsed_url.scheme not in ['http', 'https']:
+                flash('Tautan rapat (Meeting Link) harus berupa URL yang valid (misal: https://meet.google.com/...).', 'danger')
+                return redirect(request.url)
+                
+        # Check if meeting link is added or updated
+        old_link = interview.meeting_link
+        
+        interview.scheduled_at = scheduled_at
+        interview.meeting_link = location_or_link
+        interview.interview_notes = f"Format: {interview_format}\nNotes: {notes}"
+        
+        # If meeting link changed
+        if location_or_link and location_or_link != old_link:
+            # Send notification to student
+            try:
+                notif_type = NotificationType.query.filter_by(type_code='application').first()
+                if notif_type:
+                    title = f"Pembaruan Wawancara: {interview.application.internship.internship_title}"
+                    dt_display = scheduled_at.strftime('%d %B %Y, %H:%M')
+                    message = f"Tautan rapat/lokasi untuk wawancara Anda pada {dt_display} telah ditambahkan atau diperbarui."
+                    
+                    payload = {
+                        "title": title,
+                        "message": message,
+                        "internship_title": interview.application.internship.internship_title,
+                        "company_name": profile.company_name,
+                        "meeting_link": location_or_link,
+                        "application_id": interview.application.id
+                    }
+                    notification = Notification(
+                        recipient_user_id=interview.application.student_profile.user_account_id,
+                        notification_type_id=notif_type.id,
+                        payload_json=payload
+                    )
+                    db.session.add(notification)
+            except Exception as e:
+                print(f"Error creating notification: {e}")
+                pass
+                
+        db.session.commit()
+        flash('Jadwal wawancara berhasil diperbarui.', 'success')
+        return redirect(url_for('company.interviews'))
+        
+    # Parse format and notes from interview_notes
+    interview_format = 'online'
+    notes = ''
+    if interview.interview_notes:
+        parts = interview.interview_notes.split('\n', 1)
+        if len(parts) > 0 and parts[0].startswith('Format: '):
+            interview_format = parts[0].replace('Format: ', '').strip()
+        if len(parts) > 1 and parts[1].startswith('Notes: '):
+            notes = parts[1].replace('Notes: ', '').strip()
+        elif len(parts) > 1:
+            notes = parts[1]
+            
+    scheduled_at_iso = interview.scheduled_at.isoformat()[:16]
+            
+    return render_template(
+        'company/interview_form.html', 
+        application=interview.application, 
+        interview=interview,
+        interview_format=interview_format,
+        notes=notes,
+        scheduled_at_iso=scheduled_at_iso
+    )
 
 @bp.route('/interviews', methods=['GET'])
 @login_required
