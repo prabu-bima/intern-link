@@ -191,11 +191,13 @@
                     <div>
                         <label for="industry_category" class="block text-sm font-medium text-gray-700">Kategori Industri</label>
                         <select id="industry_category" name="industry_category" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
-                            <option value="">Pilih Kategori</option>
-                            {% set industries = ['Teknologi Informasi', 'E-Commerce', 'Fintech', 'Kesehatan', 'Pendidikan', 'Agrikultur', 'Manufaktur', 'Layanan Finansial', 'Lainnya'] %}
+                            <option value="Software House" selected>Software House</option>
+                            {#
+                            <!-- {% set industries = ['Teknologi Informasi', 'E-Commerce', 'Fintech', 'Kesehatan', 'Pendidikan', 'Agrikultur', 'Manufaktur', 'Layanan Finansial', 'Lainnya'] %} -->
                             {% for ind in industries %}
                             <option value="{{ ind }}" {% if profile.industry_category == ind %}selected{% endif %}>{{ ind }}</option>
                             {% endfor %}
+                            #}
                         </select>
                     </div>
                     
