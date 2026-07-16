@@ -89,8 +89,9 @@
                     </p>
                     
                     <div class="mt-3 flex items-center gap-4">
-                        {% if notif.payload_json.get('internship_id') %}
-                        <a href="{{ url_for('student.application_detail', id=notif.payload_json.get('application_id', 0)) if notif.payload_json.get('application_id') else url_for('student.internship_detail', id=notif.payload_json.get('internship_id')) }}" class="text-xs font-medium text-primary-600 hover:text-primary-700">
+                        {% if notif.payload_json.get('application_id') or notif.payload_json.get('internship_id') %}
+                        {% set has_interview = 'Wawancara' in notif.payload_json.get('title', '') %}
+                        <a href="{{ url_for('student.application_detail', id=notif.payload_json.get('application_id')) ~ ('#interview-details' if has_interview else '') if notif.payload_json.get('application_id') else url_for('student.internship_detail', id=notif.payload_json.get('internship_id')) }}" class="text-xs font-medium text-primary-600 hover:text-primary-700">
                             Lihat Detail &rarr;
                         </a>
                         {% endif %}
