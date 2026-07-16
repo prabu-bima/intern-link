@@ -27,7 +27,7 @@ def dashboard():
         total_applications = InternshipApplication.query.filter_by(student_profile_id=current_user.student_profile.id).count()
         
         # 2. Upcoming Interviews
-        interview_status = ApplicationStatus.query.filter_by(status_name='Interview').first()
+        interview_status = ApplicationStatus.query.filter_by(status_code='interviewing').first()
         upcoming_interviews = 0
         if interview_status:
             upcoming_interviews = InternshipApplication.query.filter_by(
@@ -50,17 +50,17 @@ def dashboard():
         
         # 5. Application Status Pipeline
         status_counts = {
-            'submitted': 0,
-            'under_review': 0,
-            'interview': 0,
+            'applied': 0,
+            'reviewing': 0,
+            'interviewing': 0,
             'accepted': 0,
             'rejected': 0
         }
         applications = InternshipApplication.query.filter_by(student_profile_id=current_user.student_profile.id).all()
         for app in applications:
-            status_name = app.application_status.status_name.lower().replace(' ', '_')
-            if status_name in status_counts:
-                status_counts[status_name] += 1
+            status_code = app.application_status.status_code
+            if status_code in status_counts:
+                status_counts[status_code] += 1
                 
     # 6. Latest Internships
     active_lifecycle = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()

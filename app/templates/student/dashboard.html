@@ -77,15 +77,15 @@
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
                     <div class="p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <p class="text-3xl font-medium text-gray-900">{{ status_counts.submitted | default(0) }}</p>
+                        <p class="text-3xl font-medium text-gray-900">{{ status_counts.applied | default(0) }}</p>
                         <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mt-2">Terkirim</p>
                     </div>
                     <div class="p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <p class="text-3xl font-medium text-gray-900">{{ status_counts.under_review | default(0) }}</p>
+                        <p class="text-3xl font-medium text-gray-900">{{ status_counts.reviewing | default(0) }}</p>
                         <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mt-2">Direview</p>
                     </div>
                     <div class="p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <p class="text-3xl font-medium text-gray-900">{{ status_counts.interview | default(0) }}</p>
+                        <p class="text-3xl font-medium text-gray-900">{{ status_counts.interviewing | default(0) }}</p>
                         <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mt-2">Wawancara</p>
                     </div>
                     <div class="p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
