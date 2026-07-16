@@ -28,8 +28,8 @@ class Config:
     SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
     SUPABASE_STORAGE_BUCKET = os.environ.get('SUPABASE_STORAGE_BUCKET', 'internlink')
 
-    # Gemini AI
-    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+    # Groq AI
+    GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
     # Mail (for Forgot Password)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')

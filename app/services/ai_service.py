@@ -2,7 +2,7 @@ import os
 import json
 import hashlib
 from datetime import datetime
-import google.generativeai as genai
+from groq import Groq
 from flask import current_app
 from app.extensions import db
 from app.models.ai import AISkillMatchRun, AISkillMatchSkillItem, AISkillMatchTechStackItem
@@ -10,9 +10,10 @@ from app.models.lookups import AISkillMatchItemRole
 from app.models.identity import StudentProfile
 from app.models.internship import Internship
 
-# Configure Gemini globally if API key exists
-if os.environ.get('GEMINI_API_KEY'):
-    genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+# Configure Groq client globally if API key exists
+groq_client = None
+if os.environ.get('GROQ_API_KEY'):
+    groq_client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
 
 def calculate_skill_match(student_profile_id: int, internship_id: int) -> dict:
     """
@@ -71,8 +72,8 @@ def calculate_skill_match(student_profile_id: int, internship_id: int) -> dict:
         }
         
     # Check API key
-    if not os.environ.get('GEMINI_API_KEY'):
-        return {'status': 'error', 'message': 'GEMINI_API_KEY is not configured in .env'}
+    if not os.environ.get('GROQ_API_KEY'):
+        return {'status': 'error', 'message': 'GROQ_API_KEY is not configured in .env'}
         
     # 3. Build Prompt
     prompt = f"""
@@ -102,18 +103,15 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
 }}
 """
 
-    # 4. Call Gemini API
+    # 4. Call Groq API
     try:
-        model = genai.GenerativeModel('gemini-3.5-flash')
-        # Ensure we get JSON
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json",
-            )
+        response = groq_client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="openai/gpt-oss-20b",
+            response_format={"type": "json_object"}
         )
         
-        result_json = response.text
+        result_json = response.choices[0].message.content
         # Clean up possible markdown wrappers
         if result_json.startswith('```json'):
             result_json = result_json[7:]
@@ -126,7 +124,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
         try:
             result_data = json.loads(result_json)
         except json.JSONDecodeError as e:
-            print(f"JSON Decode Error in Gemini AI Match: {e}")
+            print(f"JSON Decode Error in Groq AI Match: {e}")
             print(f"Raw response: {result_json}")
             return {'status': 'error', 'message': 'Gagal memproses respons dari AI. Silakan coba lagi.'}
         
@@ -136,7 +134,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
             internship_id=internship_id,
             match_percentage=result_data.get('match_percentage', 0),
             ai_explanation=result_data.get('ai_explanation', ''),
-            model_name='gemini-3.5-flash',
+            model_name='openai/gpt-oss-20b',
             generation_status='success'
         )
         db.session.add(run)
@@ -191,7 +189,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error in Gemini AI Match: {str(e)}")
+        current_app.logger.error(f"Error in Groq AI Match: {str(e)}")
         return {
             'status': 'error',
             'message': str(e)

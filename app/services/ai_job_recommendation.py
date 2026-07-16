@@ -12,7 +12,7 @@ from app.models import (
     AIJobRecommendationRun,
     AIJobRecommendationItem
 )
-from app.services.gemini import gemini_service, AIPromptTemplates
+from app.services.groq_service import groq_service, AIPromptTemplates
 
 logger = logging.getLogger(__name__)
 
@@ -150,16 +150,16 @@ def compute_recommendation_input_hash(student_data: Dict[str, Any], internships_
 def run_job_recommendation(student_profile_id: int) -> Optional[AIJobRecommendationRun]:
     """
     Run the AI Job Recommendation logic. Uses cached result if input hasn't changed.
-    Generates new recommendations via Gemini API if no cache exists.
+    Generates new recommendations via Groq API if no cache exists.
     """
     student_data = get_student_full_profile(student_profile_id)
     internships_pool = get_active_internships_pool()
     
-    # If no active internships, return an empty run without calling Gemini API
+    # If no active internships, return an empty run without calling Groq API
     if not internships_pool:
         new_run = AIJobRecommendationRun(
             student_profile_id=student_profile_id,
-            model_name=gemini_service.model_name,
+            model_name=groq_service.model_name,
             model_version="1.0",
             input_snapshot_hash="",
             input_snapshot_json={"student": student_data, "internships": []},
@@ -182,7 +182,7 @@ def run_job_recommendation(student_profile_id: int) -> Optional[AIJobRecommendat
         logger.info(f"Returning cached AI Job Recommendation for Student {student_profile_id}")
         return existing_run
 
-    # 2. Call Gemini API
+    # 2. Call Groq API
     prompt = AIPromptTemplates.job_recommendation(student_data, internships_pool)
     
     fallback_response = {
@@ -190,12 +190,12 @@ def run_job_recommendation(student_profile_id: int) -> Optional[AIJobRecommendat
         "error": True
     }
     
-    result_json = gemini_service.generate_json(prompt, fallback=fallback_response)
+    result_json = groq_service.generate_json(prompt, fallback=fallback_response)
     
     # 3. Create AIJobRecommendationRun
     new_run = AIJobRecommendationRun(
         student_profile_id=student_profile_id,
-        model_name=gemini_service.model_name,
+        model_name=groq_service.model_name,
         model_version="1.0",
         input_snapshot_hash=snapshot_hash,
         input_snapshot_json={"student": student_data, "internships": internships_pool},
