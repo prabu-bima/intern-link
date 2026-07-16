@@ -3,223 +3,164 @@
 
 {% block title %}{{ internship.internship_title }} - InternLink{% endblock %}
 
-{% block page_title %}Detail Lowongan{% endblock %}
-
-{% block content %}
+{% block student_content %}
 <div class="max-w-7xl mx-auto">
-    <!-- Back Navigation -->
+    <!-- Back nav -->
     <div class="mb-6">
-        <a href="{{ url_for('student.internships') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+        <a href="{{ url_for('student.internships') }}" class="inline-flex items-center text-sm text-muted hover:text-ink transition-colors">
             {{ icon.arrow_left(class="mr-2 w-4 h-4") }}
             Kembali ke Pencarian
         </a>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-8">
-        
-        <!-- Left Column: Main Detail -->
-        <div class="flex-grow lg:w-2/3 space-y-6">
-            
-            <!-- Header Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <div class="flex flex-col sm:flex-row sm:items-start gap-6">
+    <div class="flex flex-col lg:flex-row gap-6">
+
+        <!-- ═══ LEFT COLUMN (2/3) ═══ -->
+        <div class="w-full lg:w-2/3 space-y-6">
+
+            <!-- ══ Header ══ -->
+            <div class="bg-white border border-hairline rounded-lg p-6">
+                <div class="flex items-start gap-4">
                     {% if internship.company_profile.company_logo %}
-                        <img src="{{ internship.company_profile.company_logo.url }}" alt="{{ internship.company_profile.company_name }}" class="w-20 h-20 rounded-xl object-contain border border-gray-100 bg-white flex-shrink-0">
+                        <img src="{{ internship.company_profile.company_logo.url }}" alt="" class="w-12 h-12 rounded-lg object-contain border border-hairline bg-white flex-shrink-0">
                     {% else %}
-                        <div class="w-20 h-20 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
-                            {{ icon.building_office(class="w-10 h-10") }}
+                        <div class="w-12 h-12 rounded-lg bg-canvas border border-hairline flex items-center justify-center flex-shrink-0">
+                            {{ icon.building_office(class="w-5 h-5 text-muted") }}
                         </div>
                     {% endif %}
-                    
-                    <div class="flex-grow">
-                        <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ internship.internship_title }}</h1>
-                        <div class="text-lg text-gray-700 mb-4">{{ internship.company_profile.company_name }}</div>
-                        
-                        <div class="flex flex-wrap gap-4 text-sm text-gray-500">
-                            <div class="flex items-center">
-                                {{ icon.map_pin(class="mr-1.5 w-4 h-4 text-gray-400") }}
+                    <div>
+                        <h1 class="text-xl font-semibold text-ink tracking-tight">{{ internship.internship_title }}</h1>
+                        <p class="text-sm text-body mt-1">{{ internship.company_profile.company_name }}</p>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted">
+                            <span class="flex items-center gap-1">
+                                {{ icon.map_pin(class="w-3 h-3") }}
                                 {{ internship.location.city }}
-                            </div>
-                            <div class="flex items-center">
-                                {{ icon.briefcase(class="mr-1.5 w-4 h-4 text-gray-400") }}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                {{ icon.briefcase(class="w-3 h-3") }}
                                 {{ internship.technology_category.category_name }}
-                            </div>
+                            </span>
                             {% if internship.closing_at %}
-                            <div class="flex items-center text-orange-600">
-                                {{ icon.clock(class="mr-1.5 w-4 h-4 text-orange-500") }}
+                            <span class="flex items-center gap-1 text-orange-600">
+                                {{ icon.clock(class="w-3 h-3") }}
                                 Tutup: {{ internship.closing_at.strftime('%d %b %Y') }}
-                            </div>
+                            </span>
                             {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Description Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Deskripsi Pekerjaan</h2>
-                <div class="prose prose-sm max-w-none text-gray-600">
+            <!-- ══ Deskripsi & Tentang Perusahaan ══ -->
+            <div class="bg-white border border-hairline rounded-lg p-6">
+                <h2 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Deskripsi</h2>
+                <div class="text-body leading-relaxed mb-6">
                     {{ internship.internship_description | safe }}
                 </div>
-                
-                <hr class="my-8 border-gray-100">
-                
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Persyaratan Keahlian & Teknologi</h2>
-                
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 mb-3">Tech Stack yang Digunakan:</h3>
-                        {% if internship.required_tech_stack_items %}
-                        <div class="flex flex-wrap gap-2">
-                            {% for ts in internship.required_tech_stack_items %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {{ ts.tech_stack_item.tech_stack_name }}
-                            </span>
-                            {% endfor %}
+
+                <h2 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4 border-t border-hairline pt-6">Tentang Perusahaan</h2>
+                <div class="flex items-start gap-4">
+                    {% if internship.company_profile.company_logo %}
+                        <img src="{{ internship.company_profile.company_logo.url }}" alt="" class="w-10 h-10 rounded-lg object-contain border border-hairline bg-white flex-shrink-0">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-lg bg-canvas border border-hairline flex items-center justify-center flex-shrink-0">
+                            {{ icon.building_office(class="w-4 h-4 text-muted") }}
                         </div>
-                        {% else %}
-                        <p class="text-sm text-gray-500">Tidak ada persyaratan khusus.</p>
-                        {% endif %}
-                    </div>
-                    
+                    {% endif %}
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-900 mb-3">Keahlian Tambahan:</h3>
-                        {% if internship.required_skills %}
-                        <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                            {% for s in internship.required_skills %}
-                            <li>{{ s.skill.skill_name }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <p class="text-sm text-gray-500">Tidak ada persyaratan tambahan.</p>
+                        <p class="text-sm font-medium text-ink">{{ internship.company_profile.company_name }}</p>
+                        <p class="text-sm text-body mt-1 leading-relaxed">{{ internship.company_profile.company_description or 'Deskripsi belum tersedia.' }}</p>
+                        {% if internship.company_profile.website_url %}
+                        <a href="{{ internship.company_profile.website_url }}" target="_blank" rel="noopener" class="inline-flex items-center text-xs font-medium text-primary-600 hover:text-primary-700 mt-2">
+                            Kunjungi Website {{ icon.external_link(class="ml-1 w-3 h-3") }}
+                        </a>
                         {% endif %}
                     </div>
                 </div>
             </div>
-            
-            <!-- Company Profile Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Tentang Perusahaan</h2>
-                <p class="text-sm text-gray-600 mb-6">
-                    {{ internship.company_profile.company_description or 'Deskripsi perusahaan belum tersedia.' }}
-                </p>
-                {% if internship.company_profile.website_url %}
-                <a href="{{ internship.company_profile.website_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700">
-                    Kunjungi Website &rarr;
-                </a>
+
+            <!-- ══ Persyaratan ══ -->
+            <div class="bg-white border border-hairline rounded-lg p-6">
+                <h2 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Persyaratan</h2>
+
+                {% if internship.required_tech_stack_items %}
+                <div class="mb-5">
+                    <h3 class="text-xs font-medium text-muted uppercase tracking-wider mb-3">Tech Stack</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for ts in internship.required_tech_stack_items %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-canvas border border-hairline text-ink">
+                            {{ ts.tech_stack_item.tech_stack_name }}
+                            {% if ts.required_level %}<span class="ml-1 text-muted">({{ ts.required_level }})</span>{% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if internship.required_skills %}
+                <div>
+                    <h3 class="text-xs font-medium text-muted uppercase tracking-wider mb-3">Keahlian</h3>
+                    <ul class="space-y-1.5">
+                        {% for s in internship.required_skills %}
+                        <li class="flex items-center gap-2 text-sm text-body">
+                            <span class="w-1 h-1 rounded-full bg-muted flex-shrink-0"></span>
+                            {{ s.skill.skill_name }}
+                            {% if s.required_level %}<span class="text-muted text-xs">({{ s.required_level }})</span>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if not internship.required_tech_stack_items and not internship.required_skills %}
+                <p class="text-sm text-muted italic">Tidak ada persyaratan khusus.</p>
                 {% endif %}
             </div>
         </div>
-        
-        <!-- Right Column: Sidebar Actions & AI Match -->
+
+        <!-- ═══ RIGHT COLUMN (1/3) ═══ -->
         <div class="w-full lg:w-1/3">
-            <div class="sticky top-6 space-y-6">
-                <!-- Action Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    
-                    
-                    <!-- Save Button -->
-                    <button onclick="toggleSave({{ internship.id }}, this)" class="w-full mb-3 flex justify-center items-center px-4 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                        {% if is_saved %}
-                            {{ icon.bookmark_solid(class="mr-2 w-5 h-5 text-primary-600") }}
-                            <span class="save-text">Tersimpan</span>
-                        {% else %}
-                            {{ icon.bookmark(class="mr-2 w-5 h-5 text-gray-400") }}
-                            <span class="save-text">Simpan Magang</span>
-                        {% endif %}
-                    </button>
-                    
-                    <!-- Apply Button -->
-                    {% if is_applied %}
-                    <button disabled class="w-full flex justify-center items-center px-4 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-green-600 cursor-not-allowed">
-                        {{ icon.check_circle(class="mr-2 w-5 h-5") }}
-                        Sudah Dilamar
-                    </button>
-                    {% else %}
-                    <form action="{{ url_for('student.apply_internship', id=internship.id) }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="w-full flex justify-center items-center px-4 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
-                            Lamar Magang
+            <div class="sticky top-6 space-y-5">
+
+                <!-- ══ Action Buttons ══ -->
+                <div class="bg-white border border-hairline rounded-lg overflow-hidden">
+                    <div class="p-4 space-y-2.5">
+                        <!-- Save -->
+                        <button onclick="toggleSave({{ internship.id }}, this)" class="w-full flex justify-center items-center gap-2 px-3 py-2 border border-hairline text-sm font-medium rounded-md text-ink hover:bg-canvas transition-colors">
+                            {% if is_saved %}
+                                {{ icon.bookmark_solid(class="w-4 h-4 text-primary-600") }}
+                                Tersimpan
+                            {% else %}
+                                {{ icon.bookmark(class="w-4 h-4 text-muted") }}
+                                Simpan Lowongan
+                            {% endif %}
                         </button>
-                    </form>
-                    {% endif %}
-                </div>
-                
-                <!-- AI Skill Match Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-                        <h3 class="text-white font-semibold flex items-center">
-                            {{ icon.sparkles(class="mr-2 w-5 h-5 text-blue-200") }}
-                            AI Skill Match
-                        </h3>
-                        <span class="text-blue-100 text-xs bg-black/20 px-2 py-1 rounded-md border border-white/10">Groq AI</span>
-                    </div>
-                    
-                    <div class="p-6" id="ai-match-container">
-                        <!-- Loading State -->
-                        <div id="ai-loading" class="flex flex-col items-center justify-center py-6 text-center">
-                            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <p class="text-sm text-gray-500">Menganalisis kecocokan profil Anda...</p>
-                        </div>
-                        
-                        <!-- Result State (Hidden by default) -->
-                        <div id="ai-result" class="hidden space-y-6">
-                            
-                            <div class="flex items-center justify-center gap-6">
-                                <!-- Circular Progress -->
-                                <div class="relative w-24 h-24">
-                                    <svg class="w-full h-full" viewBox="0 0 36 36">
-                                        <path class="text-gray-100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                        <path id="ai-progress-bar" class="text-blue-600 transition-all duration-1000 ease-out" stroke-dasharray="0, 100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    </svg>
-                                    <div class="absolute inset-0 flex items-center justify-center flex-col">
-                                        <span class="text-2xl font-bold text-gray-900" id="ai-score">0%</span>
-                                    </div>
-                                </div>
-                                <div class="flex-1">
-                                    <p id="ai-explanation" class="text-sm text-gray-600 italic">
-                                        Memuat analisis...
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <hr class="border-gray-100">
-                            
-                            <div>
-                                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Keahlian Anda yang Cocok</h4>
-                                <ul id="ai-matched-skills" class="space-y-2">
-                                    <!-- Populated by JS -->
-                                </ul>
-                                <p id="ai-no-matched" class="text-sm text-gray-400 hidden italic">Belum ada keahlian yang tercatat cocok.</p>
-                            </div>
-                            
-                            <div>
-                                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Keahlian yang Disarankan</h4>
-                                <ul id="ai-missing-skills" class="space-y-2">
-                                    <!-- Populated by JS -->
-                                </ul>
-                                <p id="ai-no-missing" class="text-sm text-gray-400 hidden italic">Anda memenuhi semua kriteria utama!</p>
-                            </div>
-                            
-                        </div>
-                        
-                        <!-- Error State (Hidden by default) -->
-                        <div id="ai-error" class="hidden text-center py-6">
-                            <div class="text-red-500 mb-2">
-                                {{ icon.x_circle(class="w-10 h-10 mx-auto") }}
-                            </div>
-                            <p class="text-sm text-gray-600">Gagal memuat analisis AI.</p>
-                            <button onclick="loadAIMatch()" class="mt-3 text-sm text-blue-600 hover:underline">Coba Lagi</button>
-                        </div>
+
+                        <!-- Apply -->
+                        {% if is_applied %}
+                        <button disabled class="w-full flex justify-center items-center gap-2 px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 cursor-not-allowed">
+                            {{ icon.check_circle(class="w-4 h-4") }}
+                            Sudah Dilamar
+                        </button>
+                        {% else %}
+                        <form action="{{ url_for('student.apply_internship', id=internship.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="w-full flex justify-center items-center gap-2 px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-ink hover:bg-body transition-colors">
+                                Lamar Lowongan
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
+
+                <!-- ══ AI Skill Match ══ -->
+                {% include "components/ai_skill_match.html" %}
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // AJAX for Saving Internship
     async function toggleSave(internshipId, btnElement) {
         try {
             const response = await fetch(`/student/internships/${internshipId}/save`, {
@@ -230,65 +171,19 @@
                     'X-CSRFToken': '{{ csrf_token() }}'
                 }
             });
-            
             const data = await response.json();
             if(data.status === 'success') {
                 const textSpan = btnElement.querySelector('.save-text');
                 if (data.is_saved) {
-                    btnElement.innerHTML = `{{ icon.bookmark_solid(class="mr-2 w-5 h-5 text-primary-600") }} <span class="save-text">Tersimpan</span>`;
+                    btnElement.innerHTML = `{{ icon.bookmark_solid(class="w-4 h-4 text-primary-600") }} <span class="save-text">Tersimpan</span>`;
                 } else {
-                    btnElement.innerHTML = `{{ icon.bookmark(class="mr-2 w-5 h-5 text-gray-400") }} <span class="save-text">Simpan Magang</span>`;
+                    btnElement.innerHTML = `{{ icon.bookmark(class="w-4 h-4 text-muted") }} <span class="save-text">Simpan Lowongan</span>`;
                 }
             }
         } catch (error) {
             console.error('Error toggling save:', error);
-            alert('Gagal menyimpan perubahan. Silakan coba lagi.');
+            alert('Gagal menyimpan perubahan.');
         }
     }
-    
-    // AJAX for AI Skill Match
-    async function loadAIMatch() {
-        const internshipId = {{ internship.id }};
-        const container = document.getElementById('ai-match-container');
-        
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-6 text-center">
-                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                <p class="text-sm text-gray-500">Menganalisis kecocokan profil Anda...</p>
-            </div>
-        `;
-        
-        try {
-            const response = await fetch(`/student/internships/${internshipId}/ai-match`, {
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            
-            const data = await response.json();
-            
-            if(data.status === 'success') {
-                container.innerHTML = data.html;
-            } else {
-                throw new Error(data.message || 'Unknown error');
-            }
-        } catch (error) {
-            console.error('Error loading AI match:', error);
-            container.innerHTML = `
-                <div class="text-center py-6">
-                    <div class="text-red-500 mb-2">
-                        {{ icon.x_circle(class="w-10 h-10 mx-auto") }}
-                    </div>
-                    <p class="text-sm text-gray-600">Gagal memuat analisis AI.</p>
-                    <button onclick="loadAIMatch()" class="mt-3 text-sm text-blue-600 hover:underline">Coba Lagi</button>
-                </div>
-            `;
-        }
-    }
-    
-    // Trigger on load
-    document.addEventListener('DOMContentLoaded', () => {
-        loadAIMatch();
-    });
 </script>
 {% endblock %}

@@ -20,6 +20,7 @@ def dashboard():
         InternshipModerationStatus,
         ApplicationStatus,
     )
+    from datetime import datetime as dt
 
     # ── User Statistics ──────────────────────────────────────────
     total_students = UserAccount.query.filter_by(
@@ -132,6 +133,7 @@ def dashboard():
         # Application stats
         total_applications=total_applications,
         app_status_counts=app_status_counts,
+        now=dt.now(),
     )
 
 
