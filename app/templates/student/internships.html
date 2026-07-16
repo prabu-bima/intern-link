@@ -36,7 +36,7 @@
                 <select name="loc" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white">
                     <option value="">Semua Lokasi</option>
                     {% for loc in locations %}
-                    <option value="{{ loc.id }}" {% if loc_id == loc.id %}selected{% endif %}>{{ loc.city_name }}</option>
+                    <option value="{{ loc.id }}" {% if loc_id == loc.id %}selected{% endif %}>{{ loc.city }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -74,7 +74,7 @@
                     {% endif %}
                     <div>
                         <h3 class="text-sm font-medium text-gray-900 line-clamp-1">{{ job.company_profile.company_name }}</h3>
-                        <p class="text-xs text-gray-500">{{ job.location.city_name }}</p>
+                        <p class="text-xs text-gray-500">{{ job.location.city }}</p>
                     </div>
                 </div>
 
