@@ -1,9 +1,26 @@
-/* Google Fonts: Inter and JetBrains Mono */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @import "tailwindcss";
 
 @source "../../templates";
+
+/* Font Inter & JetBrains Mono di-self-host dari static/fonts (bukan Google Fonts).
+   Alasan: request ke fonts.googleapis.com mem-block render dan di jaringan
+   tertentu makan >4 detik. File woff2 latin disajikan dari server sendiri. */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/static/fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/static/fonts/jetbrainsmono-latin.woff2') format('woff2');
+}
 
 @theme {
   --color-primary-50: #eff6ff;

@@ -23,23 +23,38 @@ def dashboard():
         saved_internships_count = 0
         status_counts = {}
     else:
-        # 1. Total Applications
-        total_applications = InternshipApplication.query.filter_by(student_profile_id=current_user.student_profile.id).count()
-        
-        # 2. Upcoming Interviews
-        interview_status = ApplicationStatus.query.filter_by(status_code='interviewing').first()
-        upcoming_interviews = 0
-        if interview_status:
-            upcoming_interviews = InternshipApplication.query.filter_by(
-                student_profile_id=current_user.student_profile.id,
-                application_status_id=interview_status.id
-            ).count()
-            
-        # 3. Saved Internships
-        saved_internships_count = SavedInternship.query.filter_by(student_profile_id=current_user.student_profile.id).count()
-        
-        # 4. Profile Completeness Calculation
+        from sqlalchemy.orm import joinedload
+
         profile = current_user.student_profile
+
+        # 1 & 2 & 5. Ambil semua lamaran SEKALI dengan status ter-eager-load,
+        # lalu turunkan total, pipeline status, dan jumlah interview dari data
+        # yang sama. Dulu ini 3+ query terpisah + N+1 (akses .application_status
+        # per baris). Sekarang 1 query.
+        applications = InternshipApplication.query.options(
+            joinedload(InternshipApplication.application_status)
+        ).filter_by(student_profile_id=profile.id).all()
+
+        total_applications = len(applications)
+
+        status_counts = {
+            'applied': 0,
+            'reviewing': 0,
+            'interviewing': 0,
+            'accepted': 0,
+            'rejected': 0,
+        }
+        for app in applications:
+            status_code = app.application_status.status_code if app.application_status else None
+            if status_code in status_counts:
+                status_counts[status_code] += 1
+
+        upcoming_interviews = status_counts['interviewing']
+
+        # 3. Saved Internships
+        saved_internships_count = SavedInternship.query.filter_by(student_profile_id=profile.id).count()
+
+        # 4. Profile Completeness Calculation
         completeness = 20 # Base for having an account
         if profile.bio: completeness += 20
         if profile.phone_number: completeness += 10
@@ -47,34 +62,26 @@ def dashboard():
         if profile.education_records: completeness += 20
         if profile.skills or profile.tech_stack_items: completeness += 20
         profile_completeness = min(100, completeness)
-        
-        # 5. Application Status Pipeline
-        status_counts = {
-            'applied': 0,
-            'reviewing': 0,
-            'interviewing': 0,
-            'accepted': 0,
-            'rejected': 0
-        }
-        applications = InternshipApplication.query.filter_by(student_profile_id=current_user.student_profile.id).all()
-        for app in applications:
-            status_code = app.application_status.status_code
-            if status_code in status_counts:
-                status_counts[status_code] += 1
-                
-    # 6. Latest Internships
+
+    # 6. Latest Internships — eager load relasi yang dirender kartu
+    # (company_profile, location, technology_category) untuk hindari N+1.
+    from sqlalchemy.orm import joinedload
     active_lifecycle = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
     latest_internships = []
     if active_lifecycle:
-        latest_internships = Internship.query.filter_by(lifecycle_status_id=active_lifecycle.id)\
+        latest_internships = Internship.query.options(
+            joinedload(Internship.company_profile),
+            joinedload(Internship.location),
+            joinedload(Internship.technology_category),
+        ).filter_by(lifecycle_status_id=active_lifecycle.id)\
             .order_by(Internship.id.desc()).limit(5).all()
-            
+
     # 7. Notifications
     notifications = Notification.query.filter_by(recipient_user_id=current_user.id, is_read=False)\
         .order_by(Notification.event_at.desc()).limit(5).all()
-        
-    # 8. AI Recommendations
-    from app.models.ai import AIJobRecommendationRun
+
+    # 8. AI Recommendations — eager load internship + company untuk kartu rekomendasi
+    from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
     recommendations = []
     latest_run = None
     if current_user.student_profile:
@@ -83,7 +90,11 @@ def dashboard():
             generation_status='success'
         ).order_by(AIJobRecommendationRun.id.desc()).first()
         if latest_run:
-            recommendations = latest_run.items[:3]
+            recommendations = AIJobRecommendationItem.query.options(
+                joinedload(AIJobRecommendationItem.internship)
+                .joinedload(Internship.company_profile)
+            ).filter_by(ai_job_recommendation_run_id=latest_run.id)\
+                .order_by(AIJobRecommendationItem.rank_no).limit(3).all()
         
     return render_template(
         'student/dashboard.html',

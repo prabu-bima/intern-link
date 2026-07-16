@@ -23,6 +23,17 @@ class Config:
         "pool_recycle": 1800,
     }
 
+    # Static asset caching (aman karena pakai cache-busting ?v= di base.html)
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 tahun
+
+    # Versi CSS untuk cache-busting; ambil dari mtime file output.css
+    _css_path = os.path.join(os.path.dirname(__file__), 'app', 'static', 'css', 'output.css')
+    CSS_VERSION = str(int(os.path.getmtime(_css_path))) if os.path.exists(_css_path) else '1'
+
+    # Flask-Caching (in-memory; cukup untuk single-process dev/small deploy)
+    CACHE_TYPE = 'SimpleCache'
+    CACHE_DEFAULT_TIMEOUT = 300
+
     # Supabase
     SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
     SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')

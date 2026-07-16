@@ -6,8 +6,12 @@
     <meta name="description" content="InternLink - Web-based Internship Recruitment Platform for Technology Students">
     <title>{% block title %}InternLink{% endblock %}</title>
     
+    <!-- Font self-hosted (lihat static/css/input.css @font-face). Preload font
+         utama agar teks LCP tampil cepat tanpa request ke domain eksternal. -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -33,6 +37,8 @@
     {% endblock %}
 
     <!-- Scripts -->
+    <!-- Prefetch halaman saat hover agar navigasi terasa instan -->
+    <script src="{{ url_for('static', filename='js/prefetch.js') }}" defer></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
