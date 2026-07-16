@@ -34,8 +34,8 @@
                 
                 <div class="hidden sm:block">
                     <div class="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-2xl font-bold text-gray-400 overflow-hidden shadow-sm">
-                        {% if internship.company_profile.logo_asset %}
-                            {{ internship.company_profile.company_name[:1].upper() }}
+                        {% if internship.company_profile.company_logo %}
+                            <img src="{{ internship.company_profile.company_logo.url }}" alt="{{ internship.company_profile.company_name }}" class="w-full h-full object-contain bg-white">
                         {% else %}
                             {{ internship.company_profile.company_name[:1].upper() }}
                         {% endif %}
@@ -163,8 +163,8 @@
             
             <div class="flex items-center mb-6">
                 <div class="w-14 h-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-bold text-gray-400 overflow-hidden mr-4 shrink-0">
-                    {% if internship.company_profile.logo_asset %}
-                        {{ internship.company_profile.company_name[:1].upper() }}
+                    {% if internship.company_profile.company_logo %}
+                        <img src="{{ internship.company_profile.company_logo.url }}" alt="{{ internship.company_profile.company_name }}" class="w-full h-full object-contain bg-white">
                     {% else %}
                         {{ internship.company_profile.company_name[:1].upper() }}
                     {% endif %}

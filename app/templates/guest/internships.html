@@ -76,9 +76,8 @@
                 <div class="p-6 flex-grow">
                     <div class="flex justify-between items-start mb-4">
                         <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-bold text-gray-400 overflow-hidden">
-                            {% if job.company_profile.logo_asset %}
-                                <!-- TODO: Add Logo support -->
-                                {{ job.company_profile.company_name[:1].upper() }}
+                            {% if job.company_profile.company_logo %}
+                                <img src="{{ job.company_profile.company_logo.url }}" alt="{{ job.company_profile.company_name }}" class="w-full h-full object-contain bg-white">
                             {% else %}
                                 {{ job.company_profile.company_name[:1].upper() }}
                             {% endif %}
