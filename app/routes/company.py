@@ -1026,19 +1026,28 @@ def edit_interview(interview_id):
 @login_required
 @company_required
 def interviews():
-    from app.models.identity import CompanyProfile
     from app.models.internship import ApplicationInterview, InternshipApplication, Internship
+    from app.models.identity import StudentProfile
+    from app.models.lookups import InterviewStatus
     from sqlalchemy import desc
+    from sqlalchemy.orm import joinedload
     
-    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    profile = current_user.company_profile
     if not profile:
         abort(404)
         
     status_filter = request.args.get('status', 'all')
     
-    from app.models.lookups import InterviewStatus
-    
-    query = ApplicationInterview.query.join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
+    query = ApplicationInterview.query.options(
+        joinedload(ApplicationInterview.interview_status),
+        joinedload(ApplicationInterview.application).options(
+            joinedload(InternshipApplication.internship),
+            joinedload(InternshipApplication.student_profile).options(
+                joinedload(StudentProfile.user),
+                joinedload(StudentProfile.profile_photo)
+            )
+        )
+    ).join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
         Internship.company_profile_id == profile.id
     )
     
