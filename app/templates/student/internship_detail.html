@@ -154,7 +154,12 @@
                 </div>
 
                 <!-- ══ AI Skill Match ══ -->
-                {% include "components/ai_skill_match.html" %}
+                <div id="ai-match-container">
+                    <div class="bg-white border border-hairline rounded-lg p-4 flex items-center gap-3">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-ink flex-shrink-0"></div>
+                        <p class="text-xs text-muted">Menganalisis kecocokan profil Anda...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -185,5 +190,32 @@
             alert('Gagal menyimpan perubahan.');
         }
     }
+
+    async function loadAIMatch() {
+        const internshipId = {{ internship.id }};
+        const container = document.getElementById('ai-match-container');
+
+        try {
+            const response = await fetch(`/student/internships/${internshipId}/ai-match`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                container.innerHTML = data.html;
+            } else {
+                throw new Error(data.message || 'Unknown error');
+            }
+        } catch (error) {
+            console.error('Error loading AI match:', error);
+            container.innerHTML = `
+                <div class="bg-white border border-hairline rounded-lg p-4 text-center">
+                    <p class="text-xs text-body mb-2">Gagal memuat analisis AI.</p>
+                    <button onclick="loadAIMatch()" class="text-xs font-medium text-primary-600 hover:text-primary-700">Coba Lagi</button>
+                </div>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAIMatch);
 </script>
 {% endblock %}
