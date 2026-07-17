@@ -1,204 +1,170 @@
 {% extends "base.html" %}
 {% import "components/icons.html" as icon %}
 
-{% block title %}{{ internship.internship_title }} di {{ internship.company_profile.company_name }} - InternLink{% endblock %}
+{% block title %}{{ internship.internship_title }} - InternLink{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-    <a href="{{ url_for('guest.internships') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors">
-        {{ icon.arrow_left_solid(class="mr-2 h-4 w-4") }}
-        Kembali ke Daftar Lowongan
-    </a>
-</div>
+<div class="max-w-7xl mx-auto">
+    <!-- Back nav -->
+    <div class="mb-6">
+        <a href="{{ url_for('guest.internships') }}" class="inline-flex items-center text-sm text-muted hover:text-ink transition-colors">
+            {{ icon.arrow_left_solid(class="mr-2 h-4 w-4") }}
+            Kembali ke Daftar Lowongan
+        </a>
+    </div>
 
-<div class="flex flex-col lg:flex-row gap-8">
-    <!-- Main Content (Left Column) -->
-    <div class="w-full lg:w-2/3">
-        <!-- Header Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8 relative overflow-hidden">
-            <!-- Decorative bg -->
-            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary-50 rounded-full opacity-50 blur-xl"></div>
-            
-            <div class="flex items-start justify-between">
+    <div class="flex flex-col lg:flex-row gap-6">
+
+        <!-- ═══ LEFT COLUMN (2/3) ═══ -->
+        <div class="w-full lg:w-2/3 space-y-6">
+
+            <!-- ══ Header ══ -->
+            <div class="bg-white border border-hairline rounded-lg p-6">
+                <h1 class="text-2xl font-semibold text-ink tracking-tight">{{ internship.internship_title }}</h1>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm text-muted">
+                    <span class="font-medium text-ink">{{ internship.company_profile.company_name }}</span>
+                    <span class="flex items-center gap-1">
+                        {{ icon.map_pin(class="w-3.5 h-3.5") }}
+                        {{ internship.location.city }}
+                    </span>
+                    <span class="flex items-center gap-1">
+                        {{ icon.briefcase(class="w-3.5 h-3.5") }}
+                        {{ internship.technology_category.category_name }}
+                    </span>
+                    {% if internship.closing_at %}
+                    <span class="flex items-center gap-1 text-orange-600">
+                        {{ icon.clock(class="w-3.5 h-3.5") }}
+                        Tutup: {{ internship.closing_at.strftime('%d %b %Y') }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ══ Deskripsi & Tentang Perusahaan ══ -->
+            <div class="bg-white border border-hairline rounded-lg p-6">
+                <h2 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Deskripsi</h2>
+                <div class="text-body leading-relaxed mb-6">
+                    {% if internship.internship_description %}
+                        {{ internship.internship_description | replace('\n', '<br>') | safe }}
+                    {% else %}
+                        <p class="italic text-muted">Belum ada deskripsi.</p>
+                    {% endif %}
+                </div>
+
+                <h2 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4 border-t border-hairline pt-6">Tentang Perusahaan</h2>
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-canvas border border-hairline flex items-center justify-center flex-shrink-0">
+                        {% if internship.company_profile.company_logo %}
+                            <img src="{{ internship.company_profile.company_logo.url }}" alt="" class="w-8 h-8 object-contain">
+                        {% else %}
+                            {{ icon.building_office(class="w-5 h-5 text-muted") }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-ink">{{ internship.company_profile.company_name }}</p>
+                        {% if internship.company_profile.company_description %}
+                        <p class="text-sm text-body mt-1 leading-relaxed">{{ internship.company_profile.company_description[:200] }}{% if internship.company_profile.company_description|length > 200 %}...{% endif %}</p>
+                        {% endif %}
+                        {% if internship.company_profile.website_url %}
+                        <a href="{{ internship.company_profile.website_url }}" target="_blank" rel="noopener" class="inline-flex items-center text-xs font-medium text-primary-600 hover:text-primary-700 mt-2">
+                            Kunjungi Website {{ icon.external_link(class="ml-1 w-3 h-3") }}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ Persyaratan ══ -->
+            <div class="bg-white border border-hairline rounded-lg p-6">
+                <h2 class="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Persyaratan</h2>
+
+                {% if internship.required_tech_stack_items %}
+                <div class="mb-5">
+                    <h3 class="text-xs font-medium text-muted uppercase tracking-wider mb-3">Tech Stack</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for ts in internship.required_tech_stack_items %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-canvas border border-hairline text-ink">
+                            {{ ts.tech_stack_item.tech_stack_name }}
+                            {% if ts.required_level %}<span class="ml-1 text-muted">({{ ts.required_level }})</span>{% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if internship.required_skills %}
                 <div>
-                    <h1 class="text-3xl font-extrabold text-gray-900 mb-2 font-outfit">{{ internship.internship_title }}</h1>
-                    <div class="flex items-center text-gray-600 mb-6">
-                        <span class="font-medium text-lg">{{ internship.company_profile.company_name }}</span>
-                        <span class="mx-3 text-gray-300">•</span>
-                        <span class="inline-flex items-center text-gray-500">
-                            {{ icon.map_pin(class="mr-1.5 h-4 w-4") }}
+                    <h3 class="text-xs font-medium text-muted uppercase tracking-wider mb-3">Keahlian</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for sk in internship.required_skills %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-canvas border border-hairline text-ink">
+                            {{ sk.skill.skill_name }}
+                            {% if sk.required_level %}<span class="ml-1 text-muted">({{ sk.required_level }})</span>{% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if not internship.required_tech_stack_items and not internship.required_skills %}
+                <p class="text-sm text-muted italic">Tidak ada spesifikasi khusus.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ═══ RIGHT COLUMN (1/3) ═══ -->
+        <div class="w-full lg:w-1/3">
+            <div class="sticky top-6 space-y-5">
+
+                <!-- Login/Apply CTA -->
+                {% if current_user.is_authenticated and current_user.role == 'company' %}
+                <div class="bg-white border border-hairline rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        {{ icon.building_office(class="w-4 h-4 text-muted") }}
+                        <h3 class="text-sm font-semibold text-ink">Mode Perusahaan</h3>
+                    </div>
+                    <p class="text-xs text-body mb-4">Fitur melamar hanya tersedia untuk akun Mahasiswa.</p>
+                    <a href="{{ url_for('company.dashboard') }}" class="block text-center text-xs font-medium text-muted hover:text-ink border border-hairline rounded-md px-3 py-2 transition-colors">
+                        Kembali ke Dasbor
+                    </a>
+                </div>
+
+                {% elif current_user.is_authenticated and current_user.role == 'student' %}
+                {# Redirected before reaching here, but safety fallback #}
+                <div class="bg-primary-50 border border-primary-100 rounded-lg p-5">
+                    <p class="text-xs text-primary-700">Login sebagai mahasiswa untuk melamar.</p>
+                </div>
+
+                {% else %}
+                <!-- Guest CTA -->
+                <div class="bg-ink text-canvas border border-ink rounded-lg p-5">
+                    <h3 class="text-sm font-semibold text-white mb-2">Tertarik melamar?</h3>
+                    <p class="text-xs text-white/80 mb-5 leading-relaxed">Buat profil Mahasiswa dan lamar posisi ini langsung ke perusahaan.</p>
+                    <div class="space-y-2.5">
+                        <a href="{{ url_for('auth.login') }}" class="block text-center text-xs font-medium bg-white text-ink hover:bg-canvas rounded-md px-3 py-2.5 transition-colors">
+                            Masuk untuk Melamar
+                        </a>
+                        <p class="text-center text-[11px] text-white/70">
+                            Belum punya akun? <a href="{{ url_for('auth.register_student') }}" class="text-white hover:text-white/90 underline underline-offset-2">Daftar Mahasiswa</a>
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Company Info Card (Sidebar) -->
+                <div class="bg-white border border-hairline rounded-lg p-4">
+                    <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Lokasi Perusahaan</h3>
+                    <div class="flex items-start gap-3">
+                        {{ icon.map_pin(class="w-4 h-4 text-muted mt-0.5 flex-shrink-0") }}
+                        <span class="text-sm text-body">
+                            {% if internship.company_profile.address_line %}
+                                {{ internship.company_profile.address_line }}
+                            {% endif %}
                             {{ internship.location.city }}
                         </span>
                     </div>
                 </div>
-                
-                <div class="hidden sm:block">
-                    <div class="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-2xl font-bold text-gray-400 overflow-hidden shadow-sm">
-                        {% if internship.company_profile.logo_asset %}
-                            {{ internship.company_profile.company_name[:1].upper() }}
-                        {% else %}
-                            {{ internship.company_profile.company_name[:1].upper() }}
-                        {% endif %}
-                    </div>
-                </div>
             </div>
-            
-            <div class="flex flex-wrap gap-4 border-t border-gray-100 pt-6">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-primary-600 mr-3">
-                        {{ icon.briefcase(class="w-5 h-5") }}
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
-                        <p class="text-sm font-medium text-gray-900">{{ internship.technology_category.category_name }}</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-accent-50 flex items-center justify-center text-accent-600 mr-3">
-                        {{ icon.calendar(class="w-5 h-5") }}
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Batas Lamaran</p>
-                        <p class="text-sm font-medium text-gray-900">
-                            {% if internship.closing_at %}
-                                {{ internship.closing_at.strftime('%d %B %Y') }}
-                            {% else %}
-                                Tidak ditentukan
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 mr-3">
-                        {{ icon.check_circle(class="w-5 h-5") }}
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p>
-                        <p class="text-sm font-medium text-green-700">{{ internship.lifecycle_status.status_name }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Description & Requirements -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-            <h2 class="text-xl font-bold text-gray-900 mb-6 font-outfit border-b border-gray-100 pb-4">Rincian Magang</h2>
-            
-            <div class="prose prose-primary max-w-none text-gray-600">
-                {% if internship.internship_description %}
-                    <!-- We output the raw description which might contain HTML (e.g., from a WYSIWYG editor) or we can just format it with line breaks if it's plain text -->
-                    {{ internship.internship_description | replace('\n', '<br>') | safe }}
-                {% else %}
-                    <p class="italic text-gray-400">Belum ada deskripsi yang ditambahkan.</p>
-                {% endif %}
-            </div>
-            
-            <h3 class="text-lg font-bold text-gray-900 mt-10 mb-4 font-outfit">Tech Stack & Keahlian yang Dicari</h3>
-            <div class="flex flex-wrap gap-2">
-                <!-- Tech Stack Items -->
-                {% for ts in internship.required_tech_stack_items %}
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                    {{ icon.code(class="mr-1.5 h-4 w-4 text-blue-500") }}
-                    {{ ts.tech_stack_item.tech_stack_name }}
-                    {% if ts.required_level %} <span class="ml-1 opacity-70 text-xs">({{ ts.required_level }})</span> {% endif %}
-                </span>
-                {% endfor %}
-                
-                <!-- Skills -->
-                {% for sk in internship.required_skills %}
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                    {{ sk.skill.skill_name }}
-                    {% if sk.required_level %} <span class="ml-1 opacity-70 text-xs">({{ sk.required_level }})</span> {% endif %}
-                </span>
-                {% endfor %}
-                
-                {% if not internship.required_tech_stack_items and not internship.required_skills %}
-                <span class="text-sm text-gray-400 italic">Tidak ada spesifikasi khusus.</span>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- Sidebar (Right Column) -->
-    <div class="w-full lg:w-1/3">
-        {% if current_user.is_authenticated and current_user.role == 'company' %}
-        <!-- Company Notice Card -->
-        <div class="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 text-gray-800 relative overflow-hidden">
-            <h3 class="text-xl font-bold text-gray-900 mb-2 relative z-10">Mode Perusahaan</h3>
-            <p class="text-gray-600 mb-6 text-sm relative z-10">Anda saat ini sedang login sebagai akun <b>Perusahaan</b>. Fitur melamar hanya tersedia untuk akun Mahasiswa.</p>
-            
-            <div class="space-y-4 relative z-10">
-                <a href="{{ url_for('company.dashboard') }}" class="w-full flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-100 transition-colors shadow-sm">
-                    Kembali ke Dasbor
-                </a>
-            </div>
-        </div>
-        {% else %}
-        <!-- Apply CTA Card -->
-        <div class="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl shadow-md p-8 mb-8 text-white relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-white rounded-full mix-blend-overlay filter blur-2xl opacity-20 transform translate-x-10 -translate-y-10"></div>
-            
-            <h3 class="text-xl font-bold text-white mb-2 relative z-10">Tertarik melamar posisi ini?</h3>
-            <p class="text-primary-100 mb-8 text-sm relative z-10">Buat profil Mahasiswa Anda sekarang dan lamar secara instan ke perusahaan teknologi terkemuka.</p>
-            
-            <div class="space-y-4 relative z-10">
-                <a href="{{ url_for('auth.login') }}" class="w-full flex justify-center items-center px-4 py-3 border border-transparent text-base font-bold rounded-xl text-primary-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
-                    Masuk untuk Melamar
-                </a>
-                <div class="text-center">
-                    <span class="text-sm text-primary-200">Belum punya akun?</span>
-                    <a href="{{ url_for('auth.register_student') }}" class="ml-1 text-sm font-bold text-white hover:text-primary-100 underline decoration-primary-400 underline-offset-4">
-                        Daftar Mahasiswa
-                    </a>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Company Profile Card -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Tentang Perusahaan</h3>
-            
-            <div class="flex items-center mb-6">
-                <div class="w-14 h-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-bold text-gray-400 overflow-hidden mr-4 shrink-0">
-                    {% if internship.company_profile.logo_asset %}
-                        {{ internship.company_profile.company_name[:1].upper() }}
-                    {% else %}
-                        {{ internship.company_profile.company_name[:1].upper() }}
-                    {% endif %}
-                </div>
-                <div>
-                    <h4 class="text-lg font-bold text-gray-900">{{ internship.company_profile.company_name }}</h4>
-                    {% if internship.company_profile.website_url %}
-                    <a href="{{ internship.company_profile.website_url }}" target="_blank" rel="noopener noreferrer" class="text-sm text-primary-600 hover:text-primary-700 flex items-center mt-1">
-                        Kunjungi Website
-                        {{ icon.external_link(class="ml-1 h-3 w-3") }}
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-            
-            {% if internship.company_profile.company_description %}
-            <p class="text-sm text-gray-600 mb-6 line-clamp-4">
-                {{ internship.company_profile.company_description }}
-            </p>
-            {% endif %}
-            
-            <div class="space-y-3">
-                <div class="flex items-start">
-                    {{ icon.map_pin(class="h-5 w-5 text-gray-400 mr-3 shrink-0 mt-0.5") }}
-                    <span class="text-sm text-gray-600">
-                        {% if internship.company_profile.address_line %}
-                            {{ internship.company_profile.address_line }}, {{ internship.company_profile.location.city }}
-                        {% else %}
-                            {{ internship.company_profile.location.city | default('Lokasi tidak dispesifikasikan') }}
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
-            
         </div>
     </div>
 </div>

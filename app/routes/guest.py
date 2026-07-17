@@ -4,48 +4,72 @@ bp = Blueprint('guest', __name__)
 
 @bp.route('/')
 def index():
-    from app.models.identity import StudentProfile, CompanyProfile
-    from app.models.internship import Internship
-    from app.models.lookups import InternshipLifecycleStatus
-    
-    student_count = StudentProfile.query.count()
-    company_count = CompanyProfile.query.count()
-    
-    # Query internships that are active (assuming 'Active' is the status name, fallback to all if empty)
-    internships = Internship.query.join(InternshipLifecycleStatus).filter(
-        InternshipLifecycleStatus.status_name.ilike('%active%')
-    ).count()
-    
-    internship_count = internships if internships > 0 else Internship.query.count()
-    
-    # Optional: Set base numbers to make the platform look populated if database is empty
-    base_students = 1250
-    base_companies = 45
-    base_internships = 120
-    
-    stats = {
-        'students': student_count + base_students,
-        'companies': company_count + base_companies,
-        'internships': internship_count + base_internships
-    }
-    
+    from app.extensions import cache
+
+    # Statistik landing tidak perlu real-time -> cache 5 menit.
+    # Menghindari 3x round-trip ke Supabase tiap kali halaman dibuka.
+    @cache.cached(timeout=300, key_prefix='landing_stats')
+    def _get_landing_stats():
+        from app.models.identity import StudentProfile, CompanyProfile
+        from app.models.internship import Internship
+        from app.models.lookups import InternshipLifecycleStatus
+
+        student_count = StudentProfile.query.count()
+        company_count = CompanyProfile.query.count()
+
+        # Query internships that are active (assuming 'Active' is the status name, fallback to all if empty)
+        internships = Internship.query.join(InternshipLifecycleStatus).filter(
+            InternshipLifecycleStatus.status_name.ilike('%active%')
+        ).count()
+
+        internship_count = internships if internships > 0 else Internship.query.count()
+
+        # Optional: Set base numbers to make the platform look populated if database is empty
+        base_students = 1250
+        base_companies = 45
+        base_internships = 120
+
+        return {
+            'students': student_count + base_students,
+            'companies': company_count + base_companies,
+            'internships': internship_count + base_internships
+        }
+
+    stats = _get_landing_stats()
+
     return render_template('guest/landing.html', stats=stats)
 
 @bp.route('/internships')
 def internships():
     from flask import request
-    from app.models.internship import Internship
+    from app.models.internship import Internship, InternshipRequiredSkill
     from app.models.lookups import InternshipLifecycleStatus
     from app.models.master import TechnologyCategory, Location
     from app.models.identity import CompanyProfile
     from sqlalchemy import or_
+    from sqlalchemy.orm import joinedload, selectinload
+    from app.extensions import cache
 
-    # Get master data for filters
-    categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
-    locations = Location.query.order_by(Location.city).all()
-    
-    # Base query for ACTIVE internships
-    query = Internship.query.join(InternshipLifecycleStatus).filter(
+    # Master data untuk filter jarang berubah -> cache 1 jam
+    @cache.cached(timeout=3600, key_prefix='guest_filter_categories')
+    def _filter_categories():
+        return TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+
+    @cache.cached(timeout=3600, key_prefix='guest_filter_locations')
+    def _filter_locations():
+        return Location.query.order_by(Location.city).all()
+
+    categories = _filter_categories()
+    locations = _filter_locations()
+
+    # Base query for ACTIVE internships.
+    # Eager load relasi yang dipakai template (company_profile, location, required_skills)
+    # untuk menghindari N+1 query saat me-render tiap kartu.
+    query = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        selectinload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill),
+    ).join(InternshipLifecycleStatus).filter(
         InternshipLifecycleStatus.status_name.ilike('%active%')
     )
     
@@ -100,7 +124,17 @@ def internship_detail(id):
     if current_user.is_authenticated and current_user.role == 'student':
         return redirect(url_for('student.internship_detail', id=id))
         
-    internship = Internship.query.get_or_404(id)
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    from app.models.internship import InternshipRequiredSkill, InternshipRequiredTechStackItem
+    
+    internship = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
+        joinedload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
+    ).filter_by(id=id).first_or_404()
     
     # We only want to show it if it's active or if the user somehow has the link.
     # For now, it's fine to just show whatever is in the DB, or we can optionally check status.

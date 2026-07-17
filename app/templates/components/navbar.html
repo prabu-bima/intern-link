@@ -11,7 +11,7 @@
                 </div>
                 <!-- Desktop Nav Links -->
                 <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
-                    <a href="{{ url_for('guest.internships') }}" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
+                    <a href="{% if current_user.is_authenticated and current_user.role == 'student' %}{{ url_for('student.internships') }}{% else %}{{ url_for('guest.internships') }}{% endif %}" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
                         Cari Lowongan
                     </a>
                     <a href="/companies" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
@@ -29,6 +29,9 @@
                     {% elif current_user.role == 'admin' %}
                         <a href="{{ url_for('admin.dashboard') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">Dashboard</a>
                     {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="bg-ink text-canvas hover:bg-body px-4 py-2 rounded-md text-body-md font-medium transition-colors">
+                        Logout
+                    </a>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="text-body-md text-mute hover:text-ink font-medium transition-colors">
                         Log in

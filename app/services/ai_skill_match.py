@@ -15,7 +15,7 @@ from app.models import (
     Skill,
     TechStackItem
 )
-from app.services.gemini import gemini_service, AIPromptTemplates
+from app.services.groq_service import groq_service, AIPromptTemplates
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ def compute_input_snapshot_hash(student_data: Dict[str, Any], internship_data: D
 def run_skill_match(student_profile_id: int, internship_id: int) -> Optional[AISkillMatchRun]:
     """
     Run the AI Skill Match logic. Uses cached result if input hasn't changed.
-    Generates new match via Gemini API if no cache exists.
+    Generates new match via Groq API if no cache exists.
     """
     student_data = get_student_profile_data(student_profile_id)
     internship_data = get_internship_requirements_data(internship_id)
@@ -107,7 +107,7 @@ def run_skill_match(student_profile_id: int, internship_id: int) -> Optional[AIS
         logger.info(f"Returning cached AI Skill Match for Student {student_profile_id} and Internship {internship_id}")
         return existing_run
 
-    # 2. Call Gemini API
+    # 2. Call Groq API
     prompt = AIPromptTemplates.ai_skill_match(student_data, internship_data)
     
     fallback_response = {
@@ -119,7 +119,7 @@ def run_skill_match(student_profile_id: int, internship_id: int) -> Optional[AIS
         "error": True
     }
     
-    result_json = gemini_service.generate_json(prompt, fallback=fallback_response)
+    result_json = groq_service.generate_json(prompt, fallback=fallback_response)
     
     # 3. Create AISkillMatchRun
     new_run = AISkillMatchRun(
@@ -128,7 +128,7 @@ def run_skill_match(student_profile_id: int, internship_id: int) -> Optional[AIS
         match_percentage=result_json.get("match_percentage", 0),
         ai_explanation=result_json.get("explanation", ""),
         suggested_skills_summary=", ".join(result_json.get("suggested_skills", [])),
-        model_name=gemini_service.model_name,
+        model_name=groq_service.model_name,
         model_version="1.0",
         input_snapshot_hash=snapshot_hash,
         input_snapshot_json={"student": student_data, "internship": internship_data},

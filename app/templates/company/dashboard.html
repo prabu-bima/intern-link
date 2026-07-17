@@ -4,231 +4,237 @@
 {% block title %}Dashboard Perusahaan - InternLink{% endblock %}
 
 {% block company_content %}
-<div class="mb-8 flex justify-between items-end">
+<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900 font-outfit">Dashboard Perusahaan</h1>
-        <p class="text-gray-500 mt-1">Ringkasan statistik lowongan magang dan pelamar Anda.</p>
+        <h1 class="text-2xl font-semibold tracking-tight text-ink">Dashboard Perusahaan</h1>
+        <p class="mt-1 text-sm text-mute">Ringkasan lowongan magang dan alur pelamar Anda.</p>
     </div>
-    <a href="#" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-        {{ icon.plus(class="-ml-1 mr-2 h-5 w-5") }}
+    <a href="{{ url_for('company.internship_create_form') }}"
+       class="inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+        {{ icon.plus(class="h-4 w-4") }}
         Buat Lowongan Baru
     </a>
 </div>
 
 <!-- Verification Banner -->
 {% if not verification %}
-<div class="mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            {{ icon.exclamation_triangle(class="h-5 w-5 text-yellow-400") }}
-        </div>
-        <div class="ml-3">
-            <h3 class="text-sm font-medium text-yellow-800">Akun Belum Diverifikasi</h3>
-            <div class="mt-2 text-sm text-yellow-700">
-                <p>Silakan lengkapi profil perusahaan dan dokumen persyaratan agar akun Anda dapat diverifikasi oleh admin. Anda belum bisa menerbitkan lowongan magang.</p>
-            </div>
-            <div class="mt-4">
-                <a href="#" class="text-sm font-medium text-yellow-800 hover:text-yellow-900 underline">Lengkapi Profil &rarr;</a>
-            </div>
-        </div>
+<div class="mb-8 flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4">
+    <span class="mt-0.5 flex-shrink-0 text-amber-600">{{ icon.exclamation_triangle(class="h-5 w-5") }}</span>
+    <div class="min-w-0">
+        <h2 class="text-sm font-semibold text-amber-900">Akun belum diverifikasi</h2>
+        <p class="mt-1 text-sm text-amber-800">Lengkapi profil perusahaan dan dokumen persyaratan agar admin dapat memverifikasi akun Anda. Sebelum diverifikasi, lowongan magang belum bisa diterbitkan.</p>
+        <a href="{{ url_for('company.profile') }}" class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber-900 hover:text-amber-950">
+            Lengkapi profil {{ icon.chevron_right(class="h-4 w-4") }}
+        </a>
     </div>
 </div>
 {% elif verification.verification_status.status_code == 'pending' %}
-<div class="mb-8 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            {{ icon.information_circle(class="h-5 w-5 text-blue-400") }}
-        </div>
-        <div class="ml-3">
-            <h3 class="text-sm font-medium text-blue-800">Menunggu Verifikasi Admin</h3>
-            <div class="mt-2 text-sm text-blue-700">
-                <p>Terima kasih! Profil perusahaan Anda sedang direviu oleh tim admin. Proses ini biasanya memakan waktu 1-2 hari kerja.</p>
-            </div>
-        </div>
+<div class="mb-8 flex items-start gap-3 rounded-md border border-primary-200 bg-primary-50 p-4">
+    <span class="mt-0.5 flex-shrink-0 text-primary-600">{{ icon.information_circle(class="h-5 w-5") }}</span>
+    <div class="min-w-0">
+        <h2 class="text-sm font-semibold text-primary-900">Menunggu verifikasi admin</h2>
+        <p class="mt-1 text-sm text-primary-800">Profil perusahaan Anda sedang direviu tim admin. Proses ini biasanya memakan waktu 1–2 hari kerja.</p>
     </div>
 </div>
 {% elif verification.verification_status.status_code == 'rejected' %}
-<div class="mb-8 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            {{ icon.x_circle(class="h-5 w-5 text-red-400") }}
-        </div>
-        <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">Verifikasi Ditolak</h3>
-            <div class="mt-2 text-sm text-red-700">
-                <p>Mohon maaf, pengajuan verifikasi profil perusahaan Anda ditolak karena: <strong>{{ verification.admin_note }}</strong></p>
-                <p class="mt-1">Silakan perbaiki informasi Anda dan ajukan kembali.</p>
-            </div>
-            <div class="mt-4">
-                <a href="#" class="text-sm font-medium text-red-800 hover:text-red-900 underline">Perbarui Profil &rarr;</a>
-            </div>
-        </div>
+<div class="mb-8 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4">
+    <span class="mt-0.5 flex-shrink-0 text-red-600">{{ icon.x_circle(class="h-5 w-5") }}</span>
+    <div class="min-w-0">
+        <h2 class="text-sm font-semibold text-red-900">Verifikasi ditolak</h2>
+        <p class="mt-1 text-sm text-red-800">Pengajuan Anda ditolak dengan alasan: <span class="font-medium">{{ verification.admin_note }}</span></p>
+        <a href="{{ url_for('company.profile') }}" class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-red-900 hover:text-red-950">
+            Perbarui profil {{ icon.chevron_right(class="h-4 w-4") }}
+        </a>
     </div>
 </div>
 {% endif %}
 
-<!-- Stats Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <!-- Job Stats -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-900">Lowongan Magang</h2>
-            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
-                {{ icon.briefcase(class="w-6 h-6") }}
-            </div>
+<!-- Metrics -->
+<div class="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <!-- Job stats -->
+    <section class="rounded-md border border-hairline bg-white p-5 sm:p-6">
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-body">Lowongan Magang</h2>
+            <a href="{{ url_for('company.internships') }}" class="text-xs font-medium text-primary-600 hover:text-primary-700">Kelola</a>
         </div>
-        <div class="flex items-end justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 mb-1">Total</p>
-                <p class="text-3xl font-bold text-gray-900 font-outfit">{{ total_jobs }}</p>
+        <p class="mt-3 flex items-baseline gap-2">
+            <span class="font-mono text-4xl font-semibold tabular-nums text-ink">{{ total_jobs }}</span>
+            <span class="text-sm text-mute">total lowongan</span>
+        </p>
+        <dl class="mt-6 grid grid-cols-3 border-t border-hairline pt-4">
+            <div class="flex flex-col gap-1">
+                <dt class="flex items-center gap-1.5 text-xs text-mute">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Aktif
+                </dt>
+                <dd class="font-mono text-lg font-medium tabular-nums text-ink">{{ active_jobs_count }}</dd>
             </div>
-            <div class="text-right space-y-1">
-                <div class="text-sm">
-                    <span class="font-medium text-green-600">{{ active_jobs_count }}</span>
-                    <span class="text-gray-500 ml-1">Aktif</span>
-                </div>
-                <div class="text-sm">
-                    <span class="font-medium text-yellow-600">{{ pending_jobs_count }}</span>
-                    <span class="text-gray-500 ml-1">Menunggu Review</span>
-                </div>
-                <div class="text-sm">
-                    <span class="font-medium text-gray-600">{{ closed_jobs_count }}</span>
-                    <span class="text-gray-500 ml-1">Ditutup</span>
-                </div>
+            <div class="flex flex-col gap-1">
+                <dt class="flex items-center gap-1.5 text-xs text-mute">
+                    <span class="h-2 w-2 rounded-full bg-amber-400"></span> Menunggu review
+                </dt>
+                <dd class="font-mono text-lg font-medium tabular-nums text-ink">{{ pending_jobs_count }}</dd>
             </div>
-        </div>
-    </div>
+            <div class="flex flex-col gap-1">
+                <dt class="flex items-center gap-1.5 text-xs text-mute">
+                    <span class="h-2 w-2 rounded-full bg-gray-300"></span> Ditutup
+                </dt>
+                <dd class="font-mono text-lg font-medium tabular-nums text-ink">{{ closed_jobs_count }}</dd>
+            </div>
+        </dl>
+    </section>
 
-    <!-- Applicant Stats -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-900">Pelamar</h2>
-            <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
-                {{ icon.users(class="w-6 h-6") }}
-            </div>
+    <!-- Applicant pipeline -->
+    <section class="rounded-md border border-hairline bg-white p-5 sm:p-6">
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-body">Alur Pelamar</h2>
+            <a href="{{ url_for('company.internships') }}" class="text-xs font-medium text-primary-600 hover:text-primary-700">Kelola</a>
         </div>
-        <div class="flex items-end justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500 mb-1">Total</p>
-                <p class="text-3xl font-bold text-gray-900 font-outfit">{{ total_applicants }}</p>
-            </div>
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-right">
-                <div class="text-sm">
-                    <span class="font-medium text-gray-900">{{ applicant_stats['applied'].count }}</span>
-                    <span class="text-gray-500 ml-1">Baru</span>
-                </div>
-                <div class="text-sm">
-                    <span class="font-medium text-blue-600">{{ applicant_stats['reviewing'].count }}</span>
-                    <span class="text-gray-500 ml-1">Direview</span>
-                </div>
-                <div class="text-sm">
-                    <span class="font-medium text-yellow-600">{{ applicant_stats['interviewing'].count }}</span>
-                    <span class="text-gray-500 ml-1">Wawancara</span>
-                </div>
-                <div class="text-sm">
-                    <span class="font-medium text-green-600">{{ applicant_stats['accepted'].count }}</span>
-                    <span class="text-gray-500 ml-1">Diterima</span>
-                </div>
-            </div>
+        <p class="mt-3 flex items-baseline gap-2">
+            <span class="font-mono text-4xl font-semibold tabular-nums text-ink">{{ total_applicants }}</span>
+            <span class="text-sm text-mute">total pelamar</span>
+        </p>
+
+        {% set applied = applicant_stats['applied'].count %}
+        {% set reviewing = applicant_stats['reviewing'].count %}
+        {% set interviewing = applicant_stats['interviewing'].count %}
+        {% set accepted = applicant_stats['accepted'].count %}
+        {% set rejected = applicant_stats['rejected'].count %}
+
+        {% if total_applicants %}
+        <div class="mt-6 flex h-2 gap-0.5 overflow-hidden rounded-pill" role="img"
+             aria-label="Baru {{ applied }}, Direview {{ reviewing }}, Wawancara {{ interviewing }}, Diterima {{ accepted }}, Ditolak {{ rejected }}">
+            {% if applied %}<div class="bg-slate-400" style="width: {{ (applied / total_applicants * 100)|round(2) }}%"></div>{% endif %}
+            {% if reviewing %}<div class="bg-primary-500" style="width: {{ (reviewing / total_applicants * 100)|round(2) }}%"></div>{% endif %}
+            {% if interviewing %}<div class="bg-amber-400" style="width: {{ (interviewing / total_applicants * 100)|round(2) }}%"></div>{% endif %}
+            {% if accepted %}<div class="bg-emerald-500" style="width: {{ (accepted / total_applicants * 100)|round(2) }}%"></div>{% endif %}
+            {% if rejected %}<div class="bg-rose-400" style="width: {{ (rejected / total_applicants * 100)|round(2) }}%"></div>{% endif %}
         </div>
-    </div>
+        {% else %}
+        <div class="mt-6 h-2 rounded-pill bg-hairline"></div>
+        {% endif %}
+
+        <dl class="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+            <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                <dt class="text-xs text-mute">Baru</dt>
+                <dd class="font-mono text-xs font-medium tabular-nums text-ink">{{ applied }}</dd>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-primary-500"></span>
+                <dt class="text-xs text-mute">Direview</dt>
+                <dd class="font-mono text-xs font-medium tabular-nums text-ink">{{ reviewing }}</dd>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+                <dt class="text-xs text-mute">Wawancara</dt>
+                <dd class="font-mono text-xs font-medium tabular-nums text-ink">{{ interviewing }}</dd>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <dt class="text-xs text-mute">Diterima</dt>
+                <dd class="font-mono text-xs font-medium tabular-nums text-ink">{{ accepted }}</dd>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-rose-400"></span>
+                <dt class="text-xs text-mute">Ditolak</dt>
+                <dd class="font-mono text-xs font-medium tabular-nums text-ink">{{ rejected }}</dd>
+            </div>
+        </dl>
+    </section>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <!-- Active Jobs -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <h2 class="text-base font-bold text-gray-900">Lowongan Aktif Terakhir</h2>
-            <a href="#" class="text-sm font-medium text-primary-600 hover:text-primary-700">Lihat Semua</a>
-        </div>
+<!-- Lists -->
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <!-- Active jobs -->
+    <section class="flex flex-col rounded-md border border-hairline bg-white">
+        <header class="flex items-center justify-between border-b border-hairline px-5 py-4 sm:px-6">
+            <h2 class="text-sm font-semibold text-ink">Lowongan Aktif Terakhir</h2>
+            <a href="{{ url_for('company.internships') }}" class="inline-flex items-center gap-0.5 text-xs font-medium text-primary-600 hover:text-primary-700">
+                Lihat semua {{ icon.chevron_right(class="h-3.5 w-3.5") }}
+            </a>
+        </header>
         <div class="flex-grow">
             {% if active_jobs_list %}
-            <ul class="divide-y divide-gray-100">
+            <ul class="divide-y divide-hairline">
                 {% for job in active_jobs_list %}
-                <li class="p-6 hover:bg-gray-50/50 transition-colors">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-sm font-medium text-gray-900 mb-1">
-                                <a href="#" class="hover:text-primary-600">{{ job.internship_title }}</a>
-                            </h3>
-                            <div class="text-xs text-gray-500 flex items-center">
-                                {{ icon.clock(class="mr-1 h-3 w-3") }}
+                <li>
+                    <a href="{{ url_for('company.internship_applicants', id=job.id) }}"
+                       class="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-canvas sm:px-6">
+                        <div class="min-w-0">
+                            <h3 class="truncate text-sm font-medium text-ink">{{ job.internship_title }}</h3>
+                            <p class="mt-0.5 flex items-center gap-1 text-xs text-mute">
+                                {{ icon.clock(class="h-3.5 w-3.5") }}
                                 {% if job.closing_at %}
-                                    Tutup: {{ job.closing_at.strftime('%d %b %Y') }}
+                                    Tutup {{ job.closing_at.strftime('%d %b %Y') }}
                                 {% else %}
-                                    Tanpa Batas
+                                    Tanpa batas waktu
                                 {% endif %}
-                            </div>
+                            </p>
                         </div>
-                        <div class="text-right">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                                {{ job.applications|length }} Pelamar
-                            </span>
-                        </div>
-                    </div>
+                        <span class="flex-shrink-0 rounded-pill bg-primary-50 px-2.5 py-0.5 font-mono text-xs font-medium tabular-nums text-primary-700">
+                            {{ job.applications|length }} pelamar
+                        </span>
+                    </a>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <div class="p-8 text-center text-gray-500">
-                <p class="text-sm">Belum ada lowongan aktif.</p>
-                <a href="#" class="mt-2 inline-block text-sm text-primary-600 hover:underline">Buat lowongan pertama Anda</a>
+            <div class="flex flex-col items-center justify-center px-6 py-12 text-center">
+                {{ icon.briefcase(class="h-8 w-8 text-gray-300") }}
+                <p class="mt-3 text-sm font-medium text-body">Belum ada lowongan aktif</p>
+                <p class="mt-1 text-sm text-mute">Terbitkan lowongan pertama untuk mulai menerima pelamar.</p>
+                <a href="{{ url_for('company.internship_create_form') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700">
+                    Buat lowongan {{ icon.chevron_right(class="h-4 w-4") }}
+                </a>
             </div>
             {% endif %}
         </div>
-    </div>
+    </section>
 
-    <!-- Latest Applicants Feed -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <h2 class="text-base font-bold text-gray-900">Pelamar Terbaru</h2>
-            <a href="#" class="text-sm font-medium text-primary-600 hover:text-primary-700">Kelola</a>
-        </div>
+    <!-- Latest applicants -->
+    <section class="flex flex-col rounded-md border border-hairline bg-white">
+        <header class="flex items-center justify-between border-b border-hairline px-5 py-4 sm:px-6">
+            <h2 class="text-sm font-semibold text-ink">Pelamar Terbaru</h2>
+            <a href="{{ url_for('company.internships') }}" class="inline-flex items-center gap-0.5 text-xs font-medium text-primary-600 hover:text-primary-700">
+                Kelola {{ icon.chevron_right(class="h-3.5 w-3.5") }}
+            </a>
+        </header>
         <div class="flex-grow">
             {% if latest_applicants %}
-            <ul class="divide-y divide-gray-100">
+            <ul class="divide-y divide-hairline">
                 {% for app in latest_applicants %}
-                <li class="p-6 hover:bg-gray-50/50 transition-colors">
-                    <div class="flex items-start gap-4">
+                <li>
+                    <a href="{{ url_for('company.applicant_detail', application_id=app.id) }}"
+                       class="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-canvas sm:px-6">
                         {% if app.student_profile.profile_photo %}
-                        <img src="{{ app.student_profile.profile_photo.url }}" alt="{{ app.student_profile.user.display_name }}" class="h-10 w-10 rounded-full object-cover border border-gray-200">
+                        <img src="{{ app.student_profile.profile_photo.url }}" alt="{{ app.student_profile.user.display_name }}"
+                             class="h-10 w-10 flex-shrink-0 rounded-full border border-hairline object-cover">
                         {% else %}
-                        <div class="h-10 w-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                        <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">
                             {{ app.student_profile.user.display_name[0]|upper }}
                         </div>
                         {% endif %}
-                        
-                        <div class="flex-grow">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900">{{ app.student_profile.user.display_name }}</h4>
-                                    <p class="text-xs text-gray-500 mt-0.5">Melamar untuk <span class="font-medium text-gray-700">{{ app.internship.internship_title }}</span></p>
-                                </div>
-                                <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
-                                    {{ app.submitted_at.strftime('%d %b') }}
-                                </span>
+                        <div class="min-w-0 flex-grow">
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="truncate text-sm font-medium text-ink">{{ app.student_profile.user.display_name }}</h3>
+                                <time class="flex-shrink-0 font-mono text-xs tabular-nums text-mute">{{ app.submitted_at.strftime('%d %b') }}</time>
                             </div>
-                            
-                            <div class="mt-3 flex space-x-2">
-                                <a href="#" class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
-                                    Lihat Profil
-                                </a>
-                                <a href="#" class="inline-flex items-center px-2.5 py-1.5 border border-transparent shadow-sm text-xs font-medium rounded text-white bg-primary-600 hover:bg-primary-700">
-                                    Reviu CV
-                                </a>
-                            </div>
+                            <p class="mt-0.5 truncate text-xs text-mute">
+                                Melamar <span class="text-body">{{ app.internship.internship_title }}</span>
+                            </p>
                         </div>
-                    </div>
+                    </a>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <div class="p-8 text-center text-gray-500 flex flex-col items-center justify-center h-full">
-                {{ icon.inbox(class="h-8 w-8 text-gray-300 mb-3") }}
-                <p class="text-sm">Belum ada pelamar yang masuk saat ini.</p>
+            <div class="flex flex-col items-center justify-center px-6 py-12 text-center">
+                {{ icon.inbox(class="h-8 w-8 text-gray-300") }}
+                <p class="mt-3 text-sm font-medium text-body">Belum ada pelamar</p>
+                <p class="mt-1 text-sm text-mute">Pelamar akan muncul di sini setelah lowongan Anda tayang.</p>
             </div>
             {% endif %}
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}

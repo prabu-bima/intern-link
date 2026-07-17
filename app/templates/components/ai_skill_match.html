@@ -1,95 +1,78 @@
 {% macro ai_skill_match_result(match_run) %}
 {% if match_run %}
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-    <div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="bg-primary-100 text-primary-600 p-2 rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            </div>
-            <div>
-                <h3 class="font-semibold text-gray-900">Analisis Kecocokan AI</h3>
-                <p class="text-xs text-gray-500">Didukung oleh Gemini AI</p>
-            </div>
+<div class="bg-white border border-hairline rounded-lg overflow-hidden">
+    {% if match_run.generation_status == 'failed' %}
+        <div class="p-4 text-xs text-red-600 bg-red-50 border-b border-red-100">
+            {{ match_run.ai_explanation }}
         </div>
-        
-        <div class="flex items-center gap-2">
+    {% else %}
+        <!-- Header: Score -->
+        <div class="px-4 py-3 border-b border-hairline flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-muted uppercase tracking-wider">AI Skill Match</h3>
             {% set score_color = 'text-green-600' if match_run.match_percentage >= 75 else ('text-yellow-600' if match_run.match_percentage >= 50 else 'text-red-600') %}
-            <span class="text-2xl font-bold {{ score_color }}">{{ match_run.match_percentage | int }}%</span>
-            <span class="text-sm font-medium text-gray-500">Kecocokan</span>
+            <span class="text-lg font-semibold {{ score_color }}">{{ match_run.match_percentage | int }}%</span>
         </div>
-    </div>
 
-    <div class="p-5 space-y-5">
-        {% if match_run.generation_status == 'failed' %}
-            <div class="p-4 bg-red-50 text-red-700 rounded-lg text-sm">
-                {{ match_run.ai_explanation }}
-            </div>
-        {% else %}
-            <!-- Penjelasan AI -->
-            <div class="text-sm text-gray-700 leading-relaxed bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-                <p>{{ match_run.ai_explanation }}</p>
-            </div>
+        <!-- Explanation -->
+        <div class="px-4 py-3 border-b border-hairline">
+            <p class="text-xs text-body leading-relaxed">{{ match_run.ai_explanation }}</p>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Kelebihan / Cocok -->
-                <div>
-                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Keahlian Sesuai</h4>
-                    {% set matching_items = match_run.skill_items | selectattr('item_role.role_code', 'equalto', 'matching') | list + match_run.tech_stack_items | selectattr('item_role.role_code', 'equalto', 'matching') | list %}
-                    {% if matching_items %}
-                        <ul class="space-y-2">
-                        {% for item in matching_items %}
-                            <li class="flex items-center gap-2 text-sm text-gray-700">
-                                <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>{{ item.skill.skill_name if item.skill else item.tech_stack_item.tech_stack_name }}</span>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-sm text-gray-500 italic">- Tidak ada -</p>
-                    {% endif %}
-                </div>
-
-                <!-- Kekurangan -->
-                <div>
-                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Keahlian Kurang</h4>
-                    {% set missing_items = match_run.skill_items | selectattr('item_role.role_code', 'equalto', 'missing') | list + match_run.tech_stack_items | selectattr('item_role.role_code', 'equalto', 'missing') | list %}
-                    {% if missing_items %}
-                        <ul class="space-y-2">
-                        {% for item in missing_items %}
-                            <li class="flex items-center gap-2 text-sm text-gray-700">
-                                <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                <span>{{ item.skill.skill_name if item.skill else item.tech_stack_item.tech_stack_name }}</span>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-sm text-gray-500 italic">- Tidak ada -</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if match_run.suggested_skills_summary %}
-            <div class="pt-4 border-t border-gray-100">
-                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Saran Pengembangan</h4>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    {% for skill in match_run.suggested_skills_summary.split(',') %}
-                        {% if skill.strip() %}
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                            {{ skill.strip() }}
-                        </span>
-                        {% endif %}
+        <!-- Skills Grid -->
+        <div class="p-4 grid grid-cols-2 gap-4">
+            <!-- Matching -->
+            <div>
+                <h4 class="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">Cocok</h4>
+                {% set matching_items = match_run.skill_items | selectattr('item_role.role_code', 'equalto', 'matching') | list + match_run.tech_stack_items | selectattr('item_role.role_code', 'equalto', 'matching') | list %}
+                {% if matching_items %}
+                    <ul class="space-y-1.5">
+                    {% for item in matching_items %}
+                        <li class="flex items-center gap-1.5 text-xs text-body">
+                            <span class="w-1 h-1 rounded-full bg-green-500 flex-shrink-0"></span>
+                            {{ item.skill.skill_name if item.skill else item.tech_stack_item.tech_stack_name }}
+                        </li>
                     {% endfor %}
-                </div>
+                    </ul>
+                {% else %}
+                    <p class="text-xs text-muted italic">-</p>
+                {% endif %}
             </div>
-            {% endif %}
+
+            <!-- Missing -->
+            <div>
+                <h4 class="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">Kurang</h4>
+                {% set missing_items = match_run.skill_items | selectattr('item_role.role_code', 'equalto', 'missing') | list + match_run.tech_stack_items | selectattr('item_role.role_code', 'equalto', 'missing') | list %}
+                {% if missing_items %}
+                    <ul class="space-y-1.5">
+                    {% for item in missing_items %}
+                        <li class="flex items-center gap-1.5 text-xs text-body">
+                            <span class="w-1 h-1 rounded-full bg-red-400 flex-shrink-0"></span>
+                            {{ item.skill.skill_name if item.skill else item.tech_stack_item.tech_stack_name }}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-xs text-muted italic">-</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Suggested Skills -->
+        {% if match_run.suggested_skills_summary %}
+        <div class="px-4 py-3 border-t border-hairline">
+            <h4 class="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">Saran Pengembangan</h4>
+            <div class="flex flex-wrap gap-1.5">
+                {% for skill in match_run.suggested_skills_summary.split(',') %}
+                    {% if skill.strip() %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-canvas border border-hairline text-body">
+                        {{ skill.strip() }}
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
         {% endif %}
-    </div>
+    {% endif %}
 </div>
 {% endif %}
 {% endmacro %}

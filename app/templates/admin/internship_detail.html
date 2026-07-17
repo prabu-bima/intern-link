@@ -282,12 +282,18 @@
             // Remove styles from all
             document.querySelectorAll('input[name="action"]').forEach(el => {
                 el.closest('label').classList.remove('border-primary-500', 'ring-1', 'ring-primary-500');
-                el.closest('label').querySelector('.checked-icon').classList.add('hidden');
+                const checkedIcon = el.closest('label').querySelector('.checked-icon');
+                if (checkedIcon) {
+                    checkedIcon.classList.add('hidden');
+                }
             });
             // Add style to selected
             if(e.target.checked) {
                 e.target.closest('label').classList.add('border-primary-500', 'ring-1', 'ring-primary-500');
-                e.target.closest('label').querySelector('.checked-icon').classList.remove('hidden');
+                const checkedIcon = e.target.closest('label').querySelector('.checked-icon');
+                if (checkedIcon) {
+                    checkedIcon.classList.remove('hidden');
+                }
             }
         });
     });

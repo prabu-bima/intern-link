@@ -16,13 +16,13 @@
 
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-2xl font-semibold text-gray-900 font-outfit">Jadwalkan Wawancara</h1>
-        <p class="text-gray-500 mt-1 text-sm">Atur jadwal wawancara untuk {{ application.student_profile.user.display_name }} pada posisi {{ application.internship.internship_title }}.</p>
+        <h1 class="text-2xl font-semibold text-gray-900 font-outfit">{% if interview %}Edit Jadwal Wawancara{% else %}Jadwalkan Wawancara{% endif %}</h1>
+        <p class="text-gray-500 mt-1 text-sm">{% if interview %}Perbarui{% else %}Atur{% endif %} jadwal wawancara untuk {{ application.student_profile.user.display_name }} pada posisi {{ application.internship.internship_title }}.</p>
     </div>
 
     <!-- Form Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <form action="{{ url_for('company.schedule_interview', application_id=application.id) }}" method="POST">
+        <form action="{% if interview %}{{ url_for('company.edit_interview', interview_id=interview.id) }}{% else %}{{ url_for('company.schedule_interview', application_id=application.id) }}{% endif %}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             
             <div class="p-6 md:p-8 space-y-6">
@@ -32,6 +32,7 @@
                         Tanggal & Waktu Wawancara <span class="text-red-500">*</span>
                     </label>
                     <input type="datetime-local" name="scheduled_at" id="scheduled_at" required
+                        value="{{ scheduled_at_iso if interview else '' }}"
                         class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors">
                     <p class="mt-1.5 text-xs text-gray-500">Pilih waktu dalam zona waktu lokal Anda.</p>
                 </div>
@@ -43,7 +44,7 @@
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none hover:border-blue-200 has-[:checked]:border-blue-500 has-[:checked]:ring-1 has-[:checked]:ring-blue-500 group">
-                            <input type="radio" name="interview_format" value="online" class="sr-only peer" checked onchange="updateLocationLabel('online')">
+                            <input type="radio" name="interview_format" value="online" class="sr-only peer" {% if not interview or interview_format == 'online' %}checked{% endif %} onchange="updateLocationLabel('online')">
                             <span class="flex flex-1">
                                 <span class="flex flex-col">
                                     <span class="block text-sm font-medium text-gray-900">Online</span>
@@ -56,7 +57,7 @@
                         </label>
 
                         <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none hover:border-blue-200 has-[:checked]:border-blue-500 has-[:checked]:ring-1 has-[:checked]:ring-blue-500 group">
-                            <input type="radio" name="interview_format" value="offline" class="sr-only peer" onchange="updateLocationLabel('offline')">
+                            <input type="radio" name="interview_format" value="offline" class="sr-only peer" {% if interview and interview_format == 'offline' %}checked{% endif %} onchange="updateLocationLabel('offline')">
                             <span class="flex flex-1">
                                 <span class="flex flex-col">
                                     <span class="block text-sm font-medium text-gray-900">Tatap Muka (Offline)</span>
@@ -73,9 +74,11 @@
                 <!-- Location / Link -->
                 <div>
                     <label for="location_or_link" id="location_label" class="block text-sm font-medium text-gray-700 mb-1">
-                        Tautan Rapat (Meeting Link) <span class="text-red-500">*</span>
+                        Tautan Rapat (Meeting Link)
                     </label>
-                    <input type="text" name="location_or_link" id="location_or_link" required placeholder="https://meet.google.com/..."
+                    <input type="text" name="location_or_link" id="location_or_link"
+                        value="{{ interview.meeting_link or '' if interview else '' }}"
+                        placeholder="https://meet.google.com/..."
                         class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors">
                 </div>
 
@@ -85,16 +88,16 @@
                         Catatan Tambahan
                     </label>
                     <textarea id="notes" name="notes" rows="3" placeholder="Informasi tambahan untuk pelamar (opsional)..."
-                        class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors"></textarea>
+                        class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900 transition-colors">{{ notes if interview else '' }}</textarea>
                 </div>
             </div>
             
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3 rounded-b-xl">
-                <a href="{{ url_for('company.applicant_detail', application_id=application.id) }}" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <a href="{% if interview %}{{ url_for('company.interviews') }}{% else %}{{ url_for('company.applicant_detail', application_id=application.id) }}{% endif %}" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     Batal
                 </a>
                 <button type="submit" class="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    Jadwalkan & Kirim Undangan
+                    {% if interview %}Simpan Perubahan{% else %}Jadwalkan & Kirim Undangan{% endif %}
                 </button>
             </div>
         </form>
@@ -107,12 +110,22 @@
         const input = document.getElementById('location_or_link');
         
         if (format === 'online') {
-            label.innerHTML = 'Tautan Rapat (Meeting Link) <span class="text-red-500">*</span>';
+            label.innerHTML = 'Tautan Rapat (Meeting Link) (Opsional)';
             input.placeholder = 'https://meet.google.com/...';
+            input.removeAttribute('required');
         } else {
             label.innerHTML = 'Alamat / Lokasi Wawancara <span class="text-red-500">*</span>';
             input.placeholder = 'Gedung Menara X, Jl. Sudirman...';
+            input.setAttribute('required', 'required');
         }
     }
+
+    // Trigger on load to set correct status
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectedFormat = document.querySelector('input[name="interview_format"]:checked');
+        if (selectedFormat) {
+            updateLocationLabel(selectedFormat.value);
+        }
+    });
 </script>
 {% endblock %}

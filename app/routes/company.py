@@ -23,6 +23,15 @@ def inject_unread_notifications_count():
         return dict(unread_notifications_count=count)
     return dict(unread_notifications_count=0)
 
+class VerificationStatusInfo:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+class VerificationInfo:
+    def __init__(self, status_code, admin_note):
+        self.verification_status = VerificationStatusInfo(status_code)
+        self.admin_note = admin_note
+
 @bp.route('/dashboard')
 @company_required
 def dashboard():
@@ -31,81 +40,130 @@ def dashboard():
         # Failsafe if company profile doesn't exist
         return "Company profile not found", 404
 
-    # 1. Company Verification Status
-    verification = CompanyVerification.query.filter_by(
-        company_profile_id=profile.id
-    ).order_by(CompanyVerification.id.desc()).first()
-
-    # 2. Job Statistics
-    # Total postings
-    total_jobs = Internship.query.filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None)).count()
-    
-    # Pre-fetch status codes to easily count
-    active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
-    closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
-    pending_moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
-
-    active_jobs = Internship.query.filter_by(
-        company_profile_id=profile.id, 
-        lifecycle_status_id=active_lifecycle.id if active_lifecycle else 0
-    ).filter(Internship.deleted_at.is_(None)).count()
-
-    closed_jobs = Internship.query.filter_by(
-        company_profile_id=profile.id, 
-        lifecycle_status_id=closed_lifecycle.id if closed_lifecycle else 0
-    ).filter(Internship.deleted_at.is_(None)).count()
-
-    pending_jobs = Internship.query.filter_by(
-        company_profile_id=profile.id,
-        moderation_status_id=pending_moderation.id if pending_moderation else 0
-    ).filter(Internship.deleted_at.is_(None)).count()
-
-    # 3. Applicant Statistics
-    # Total applicants
-    total_applicants = InternshipApplication.query.join(Internship).filter(
-        Internship.company_profile_id == profile.id
-    ).filter(InternshipApplication.deleted_at.is_(None)).count()
-    
-    # Applicants by status
-    # query: SELECT status.status_code, status.status_name, COUNT(app.id) FROM application_status 
-    # LEFT JOIN internship_application app ON ... 
-    # We can just group by application_status_id.
-    status_counts_query = db.session.query(
-        ApplicationStatus.status_code, 
-        ApplicationStatus.status_name, 
-        func.count(InternshipApplication.id)
-    ).select_from(InternshipApplication).join(Internship).join(ApplicationStatus, InternshipApplication.application_status_id == ApplicationStatus.id).filter(
-        Internship.company_profile_id == profile.id,
-        InternshipApplication.deleted_at.is_(None)
-    ).group_by(ApplicationStatus.status_code, ApplicationStatus.status_name).all()
-
-    applicant_stats = {code: {'name': name, 'count': count} for code, name, count in status_counts_query}
-    # Ensure some defaults exist
-    for code, default_name in [('applied', 'Dikirim'), ('reviewing', 'Direview'), ('interviewing', 'Wawancara'), ('accepted', 'Diterima'), ('rejected', 'Ditolak')]:
-        if code not in applicant_stats:
-            applicant_stats[code] = {'name': default_name, 'count': 0}
-
+    from app.extensions import cache
+    from sqlalchemy.orm import joinedload, selectinload
+    from sqlalchemy import case
     from app.models.identity import StudentProfile
-    from sqlalchemy.orm import joinedload
 
-    # 4. Active Jobs list (limit 5)
-    active_jobs_list = Internship.query.options(
-        joinedload(Internship.location),
-        joinedload(Internship.technology_category),
-        joinedload(Internship.applications)
-    ).filter_by(
-        company_profile_id=profile.id,
-        lifecycle_status_id=active_lifecycle.id if active_lifecycle else 0
-    ).filter(Internship.deleted_at.is_(None)).order_by(Internship.id.desc()).limit(5).all()
+    # 2. Caching Status Lookups (IDs only to avoid session detachment errors)
+    active_lifecycle_id = cache.get('status_lifecycle_active_id')
+    if not active_lifecycle_id:
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        if active_lifecycle:
+            active_lifecycle_id = active_lifecycle.id
+            cache.set('status_lifecycle_active_id', active_lifecycle_id, timeout=86400)
+            
+    closed_lifecycle_id = cache.get('status_lifecycle_closed_id')
+    if not closed_lifecycle_id:
+        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
+        if closed_lifecycle:
+            closed_lifecycle_id = closed_lifecycle.id
+            cache.set('status_lifecycle_closed_id', closed_lifecycle_id, timeout=86400)
+            
+    pending_moderation_id = cache.get('status_moderation_pending_id')
+    if not pending_moderation_id:
+        pending_moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
+        if pending_moderation:
+            pending_moderation_id = pending_moderation.id
+            cache.set('status_moderation_pending_id', pending_moderation_id, timeout=86400)
 
-    # 5. Latest Applicants feed (limit 5)
-    latest_applicants = InternshipApplication.query.options(
-        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
-        joinedload(InternshipApplication.internship),
-        joinedload(InternshipApplication.application_status)
-    ).join(Internship).filter(
-        Internship.company_profile_id == profile.id
-    ).filter(InternshipApplication.deleted_at.is_(None)).order_by(InternshipApplication.submitted_at.desc()).limit(5).all()
+    # 3. Caching Dashboard Stats (60 seconds)
+    stats_cache_key = f"company_dashboard_stats_{profile.id}"
+    stats = cache.get(stats_cache_key)
+    if not stats:
+        # 3a. Company Verification Status
+        verification_db = CompanyVerification.query.options(
+            joinedload(CompanyVerification.verification_status)
+        ).filter_by(
+            company_profile_id=profile.id
+        ).order_by(CompanyVerification.id.desc()).first()
+        
+        verification = None
+        if verification_db:
+            verification = VerificationInfo(
+                verification_db.verification_status.status_code if verification_db.verification_status else None,
+                verification_db.admin_note
+            )
+
+        # Job Statistics in a single combined query with conditional aggregation
+        counts = db.session.query(
+            func.count(Internship.id),
+            func.sum(case((Internship.lifecycle_status_id == (active_lifecycle_id or 0), 1), else_=0)),
+            func.sum(case((Internship.lifecycle_status_id == (closed_lifecycle_id or 0), 1), else_=0)),
+            func.sum(case((Internship.moderation_status_id == (pending_moderation_id or 0), 1), else_=0))
+        ).filter(
+            Internship.company_profile_id == profile.id,
+            Internship.deleted_at.is_(None)
+        ).first()
+        
+        total_jobs, active_jobs, closed_jobs, pending_jobs = counts or (0, 0, 0, 0)
+        total_jobs = int(total_jobs or 0)
+        active_jobs = int(active_jobs or 0)
+        closed_jobs = int(closed_jobs or 0)
+        pending_jobs = int(pending_jobs or 0)
+
+        # Applicant Statistics GROUP BY
+        status_counts_query = db.session.query(
+            ApplicationStatus.status_code, 
+            ApplicationStatus.status_name, 
+            func.count(InternshipApplication.id)
+        ).select_from(InternshipApplication).join(Internship).join(ApplicationStatus, InternshipApplication.application_status_id == ApplicationStatus.id).filter(
+            Internship.company_profile_id == profile.id,
+            InternshipApplication.deleted_at.is_(None)
+        ).group_by(ApplicationStatus.status_code, ApplicationStatus.status_name).all()
+
+        applicant_stats = {code: {'name': name, 'count': count} for code, name, count in status_counts_query}
+        # Ensure some defaults exist
+        for code, default_name in [('applied', 'Dikirim'), ('reviewing', 'Direview'), ('interviewing', 'Wawancara'), ('accepted', 'Diterima'), ('rejected', 'Ditolak')]:
+            if code not in applicant_stats:
+                applicant_stats[code] = {'name': default_name, 'count': 0}
+
+        total_applicants = sum(item['count'] for item in applicant_stats.values())
+
+        # 4. Active Jobs list (limit 5) - use selectinload for applications collection
+        active_jobs_list = Internship.query.options(
+            joinedload(Internship.location),
+            joinedload(Internship.technology_category),
+            selectinload(Internship.applications)
+        ).filter_by(
+            company_profile_id=profile.id,
+            lifecycle_status_id=active_lifecycle_id or 0
+        ).filter(Internship.deleted_at.is_(None)).order_by(Internship.id.desc()).limit(5).all()
+
+        # 5. Latest Applicants feed (limit 5) - eager load student_profile, user, and profile_photo to prevent N+1 queries
+        latest_applicants = InternshipApplication.query.options(
+            joinedload(InternshipApplication.student_profile).options(
+                joinedload(StudentProfile.user),
+                joinedload(StudentProfile.profile_photo)
+            ),
+            joinedload(InternshipApplication.internship),
+            joinedload(InternshipApplication.application_status)
+        ).join(Internship).filter(
+            Internship.company_profile_id == profile.id
+        ).filter(InternshipApplication.deleted_at.is_(None)).order_by(InternshipApplication.submitted_at.desc()).limit(5).all()
+
+        stats = {
+            'verification': verification,
+            'total_jobs': total_jobs,
+            'active_jobs': active_jobs,
+            'closed_jobs': closed_jobs,
+            'pending_jobs': pending_jobs,
+            'total_applicants': total_applicants,
+            'applicant_stats': applicant_stats,
+            'active_jobs_list': active_jobs_list,
+            'latest_applicants': latest_applicants
+        }
+        cache.set(stats_cache_key, stats, timeout=60)
+
+    verification = stats['verification']
+    total_jobs = stats['total_jobs']
+    active_jobs = stats['active_jobs']
+    closed_jobs = stats['closed_jobs']
+    pending_jobs = stats['pending_jobs']
+    total_applicants = stats['total_applicants']
+    applicant_stats = stats['applicant_stats']
+    active_jobs_list = stats['active_jobs_list']
+    latest_applicants = stats['latest_applicants']
 
     return render_template(
         'company/dashboard.html',
@@ -131,12 +189,52 @@ from werkzeug.utils import secure_filename
 @bp.route('/profile')
 @company_required
 def profile():
-    profile = current_user.company_profile
-    locations = Location.query.all()
-    verification = CompanyVerification.query.filter_by(
-        company_profile_id=profile.id
-    ).order_by(CompanyVerification.id.desc()).first()
+    from app.extensions import cache
+    from sqlalchemy.orm import joinedload, selectinload
+    from app.models.identity import CompanyProfile
+
+    # 1. Cache locations dropdown
+    locations = cache.get('all_locations')
+    if not locations:
+        locations = Location.query.all()
+        cache.set('all_locations', locations, timeout=86400)
+
+    # 2. Cache profile page data
+    profile_id = current_user.company_profile.id
+    profile_data_cache_key = f"company_profile_data_{profile_id}"
+    profile_data = cache.get(profile_data_cache_key)
+    
+    if not profile_data:
+        # Reload profile with all nested relationships pre-fetched
+        profile_db = CompanyProfile.query.options(
+            joinedload(CompanyProfile.company_logo),
+            joinedload(CompanyProfile.location),
+            selectinload(CompanyProfile.social_links)
+        ).filter_by(id=profile_id).first()
+
+        # Eager load verification status
+        verification_db = CompanyVerification.query.options(
+            joinedload(CompanyVerification.verification_status)
+        ).filter_by(
+            company_profile_id=profile_id
+        ).order_by(CompanyVerification.id.desc()).first()
+
+        profile_data = {
+            'profile': profile_db,
+            'verification': verification_db
+        }
+        cache.set(profile_data_cache_key, profile_data, timeout=300)
+
+    # Merge objects back into active session to avoid session detachment errors
+    profile = db.session.merge(profile_data['profile'], load=False)
+    verification = db.session.merge(profile_data['verification'], load=False) if profile_data['verification'] else None
+
     return render_template('company/profile.html', profile=profile, locations=locations, verification=verification)
+
+def clear_company_profile_cache():
+    from app.extensions import cache
+    if current_user.is_authenticated and current_user.company_profile:
+        cache.delete(f"company_profile_data_{current_user.company_profile.id}")
 
 @bp.route('/profile/info', methods=['POST'])
 @company_required
@@ -152,6 +250,7 @@ def profile_info():
         profile.founding_year = int(founding_year)
         
     db.session.commit()
+    clear_company_profile_cache()
     flash('Informasi perusahaan berhasil diperbarui.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -199,6 +298,7 @@ def profile_logo():
                 
         profile.company_logo_file_id = new_asset.id
         db.session.commit()
+        clear_company_profile_cache()
         flash('Logo perusahaan berhasil diperbarui.', 'success')
     except Exception as e:
         db.session.rollback()
@@ -215,6 +315,7 @@ def profile_address():
     if location_id and location_id.isdigit():
         profile.location_id = int(location_id)
     db.session.commit()
+    clear_company_profile_cache()
     flash('Alamat perusahaan berhasil diperbarui.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -224,6 +325,7 @@ def profile_website():
     profile = current_user.company_profile
     profile.website_url = request.form.get('website_url')
     db.session.commit()
+    clear_company_profile_cache()
     flash('Tautan website berhasil diperbarui.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -242,6 +344,7 @@ def profile_social():
         )
         db.session.add(new_link)
         db.session.commit()
+        clear_company_profile_cache()
         flash('Tautan media sosial berhasil ditambahkan.', 'success')
     else:
         flash('Platform dan URL harus diisi.', 'danger')
@@ -258,6 +361,7 @@ def profile_social_delete(id):
         
     db.session.delete(link)
     db.session.commit()
+    clear_company_profile_cache()
     flash('Tautan media sosial berhasil dihapus.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -380,7 +484,12 @@ def internships():
         
     status_filter = request.args.get('status', 'all')
     
-    query = Internship.query.filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
+    from sqlalchemy.orm import joinedload
+    query = Internship.query.options(
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category)
+    ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
     
     if status_filter == 'active':
         query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
@@ -742,6 +851,20 @@ def schedule_interview(application_id):
             flash('Format tanggal dan waktu tidak valid.', 'error')
             return redirect(request.url)
             
+        location_or_link = location_or_link.strip() if location_or_link else None
+        
+        # Validation
+        if interview_format == 'offline' and not location_or_link:
+            flash('Alamat / Lokasi Wawancara wajib diisi untuk format Tatap Muka.', 'danger')
+            return redirect(request.url)
+            
+        if interview_format == 'online' and location_or_link:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(location_or_link)
+            if not (parsed_url.scheme and parsed_url.netloc) or parsed_url.scheme not in ['http', 'https']:
+                flash('Tautan rapat (Meeting Link) harus berupa URL yang valid (misal: https://meet.google.com/...).', 'danger')
+                return redirect(request.url)
+            
         from app.models.lookups import InterviewStatus
         interview_status_obj = InterviewStatus.query.filter_by(status_code='scheduled').first()
         
@@ -766,7 +889,11 @@ def schedule_interview(application_id):
                 title = f"Undangan Wawancara: {application.internship.internship_title}"
                 format_display = "Online" if interview_format == "online" else "Tatap Muka (Offline)"
                 dt_display = scheduled_at.strftime('%d %B %Y, %H:%M')
-                message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}."
+                
+                if interview_format == "online" and not location_or_link:
+                    message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}. Tautan rapat akan dikirim kemudian."
+                else:
+                    message = f"Perusahaan {profile.company_name} mengundang Anda untuk wawancara pada {dt_display} secara {format_display}."
                 
                 payload = {
                     "title": title,
@@ -790,23 +917,137 @@ def schedule_interview(application_id):
         
     return render_template('company/interview_form.html', application=application)
 
+@bp.route('/interviews/<int:interview_id>/edit', methods=['GET', 'POST'])
+@login_required
+@company_required
+def edit_interview(interview_id):
+    from app.models.internship import ApplicationInterview
+    from app.models.identity import CompanyProfile
+    from app.models.lookups import NotificationType
+    from app.models.system import Notification
+    from datetime import datetime
+    
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    interview = ApplicationInterview.query.get_or_404(interview_id)
+    
+    # Verify ownership
+    if interview.application.internship.company_profile_id != profile.id:
+        abort(403)
+        
+    if request.method == 'POST':
+        scheduled_at_str = request.form.get('scheduled_at') # YYYY-MM-DDTHH:MM
+        interview_format = request.form.get('interview_format')
+        location_or_link = request.form.get('location_or_link')
+        notes = request.form.get('notes')
+        
+        try:
+            scheduled_at = datetime.fromisoformat(scheduled_at_str)
+        except ValueError:
+            flash('Format tanggal dan waktu tidak valid.', 'error')
+            return redirect(request.url)
+            
+        location_or_link = location_or_link.strip() if location_or_link else None
+        
+        # Validation
+        if interview_format == 'offline' and not location_or_link:
+            flash('Alamat / Lokasi Wawancara wajib diisi untuk format Tatap Muka.', 'danger')
+            return redirect(request.url)
+            
+        if interview_format == 'online' and location_or_link:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(location_or_link)
+            if not (parsed_url.scheme and parsed_url.netloc) or parsed_url.scheme not in ['http', 'https']:
+                flash('Tautan rapat (Meeting Link) harus berupa URL yang valid (misal: https://meet.google.com/...).', 'danger')
+                return redirect(request.url)
+                
+        # Check if meeting link is added or updated
+        old_link = interview.meeting_link
+        
+        interview.scheduled_at = scheduled_at
+        interview.meeting_link = location_or_link
+        interview.interview_notes = f"Format: {interview_format}\nNotes: {notes}"
+        
+        # If meeting link changed
+        if location_or_link and location_or_link != old_link:
+            # Send notification to student
+            try:
+                notif_type = NotificationType.query.filter_by(type_code='application').first()
+                if notif_type:
+                    title = f"Pembaruan Wawancara: {interview.application.internship.internship_title}"
+                    dt_display = scheduled_at.strftime('%d %B %Y, %H:%M')
+                    message = f"Tautan rapat/lokasi untuk wawancara Anda pada {dt_display} telah ditambahkan atau diperbarui."
+                    
+                    payload = {
+                        "title": title,
+                        "message": message,
+                        "internship_title": interview.application.internship.internship_title,
+                        "company_name": profile.company_name,
+                        "meeting_link": location_or_link,
+                        "application_id": interview.application.id
+                    }
+                    notification = Notification(
+                        recipient_user_id=interview.application.student_profile.user_account_id,
+                        notification_type_id=notif_type.id,
+                        payload_json=payload
+                    )
+                    db.session.add(notification)
+            except Exception as e:
+                print(f"Error creating notification: {e}")
+                pass
+                
+        db.session.commit()
+        flash('Jadwal wawancara berhasil diperbarui.', 'success')
+        return redirect(url_for('company.interviews'))
+        
+    # Parse format and notes from interview_notes
+    interview_format = 'online'
+    notes = ''
+    if interview.interview_notes:
+        parts = interview.interview_notes.split('\n', 1)
+        if len(parts) > 0 and parts[0].startswith('Format: '):
+            interview_format = parts[0].replace('Format: ', '').strip()
+        if len(parts) > 1 and parts[1].startswith('Notes: '):
+            notes = parts[1].replace('Notes: ', '').strip()
+        elif len(parts) > 1:
+            notes = parts[1]
+            
+    scheduled_at_iso = interview.scheduled_at.isoformat()[:16]
+            
+    return render_template(
+        'company/interview_form.html', 
+        application=interview.application, 
+        interview=interview,
+        interview_format=interview_format,
+        notes=notes,
+        scheduled_at_iso=scheduled_at_iso
+    )
+
 @bp.route('/interviews', methods=['GET'])
 @login_required
 @company_required
 def interviews():
-    from app.models.identity import CompanyProfile
     from app.models.internship import ApplicationInterview, InternshipApplication, Internship
+    from app.models.identity import StudentProfile
+    from app.models.lookups import InterviewStatus
     from sqlalchemy import desc
+    from sqlalchemy.orm import joinedload
     
-    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+    profile = current_user.company_profile
     if not profile:
         abort(404)
         
     status_filter = request.args.get('status', 'all')
     
-    from app.models.lookups import InterviewStatus
-    
-    query = ApplicationInterview.query.join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
+    query = ApplicationInterview.query.options(
+        joinedload(ApplicationInterview.interview_status),
+        joinedload(ApplicationInterview.application).options(
+            joinedload(InternshipApplication.internship),
+            joinedload(InternshipApplication.student_profile).options(
+                joinedload(StudentProfile.user),
+                joinedload(StudentProfile.profile_photo)
+            )
+        )
+    ).join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
         Internship.company_profile_id == profile.id
     )
     

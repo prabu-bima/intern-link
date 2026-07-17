@@ -20,7 +20,11 @@ class UserAccount(db.Model, UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return UserAccount.query.get(int(user_id))
+    from sqlalchemy.orm import joinedload
+    return UserAccount.query.options(
+        joinedload(UserAccount.student_profile),
+        joinedload(UserAccount.company_profile)
+    ).filter_by(id=int(user_id)).first()
 
 class FileAsset(db.Model):
     __tablename__ = 'file_asset'

@@ -4,13 +4,24 @@ from flask import current_app
 from supabase import create_client, Client
 import uuid
 
+# Cache satu Supabase client per (url, key). Membuat client baru tiap panggilan
+# sangat mahal: setiap create_client memuat sertifikat SSL dari disk
+# (load_verify_locations ~300ms) dan membangun beberapa sub-client HTTP.
+# Dulu ini dipanggil per-file saat render daftar -> render bisa 2-6 detik.
+_client_cache: dict[tuple[str, str], Client] = {}
+
 def get_supabase_client() -> Client:
-    """Initialize and return a Supabase client using current app configuration."""
+    """Return a cached Supabase client for the current app configuration."""
     url = current_app.config.get("SUPABASE_URL")
     key = current_app.config.get("SUPABASE_KEY")
     if not url or not key:
         raise ValueError("Supabase belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_KEY di file .env.")
-    return create_client(url, key)
+    cache_key = (url, key)
+    client = _client_cache.get(cache_key)
+    if client is None:
+        client = create_client(url, key)
+        _client_cache[cache_key] = client
+    return client
 
 BUCKET_MAPPING = {
     'profile_photo': 'photos',
@@ -101,14 +112,17 @@ def get_file_url(bucket_name: str, object_key: str, public: bool = True) -> str:
     Returns:
         The URL string.
     """
-    supabase = get_supabase_client()
-    
     if public:
-        return supabase.storage.from_(bucket_name).get_public_url(object_key)
-    else:
-        # Default to 1 hour expiration for signed URLs
-        res = supabase.storage.from_(bucket_name).create_signed_url(object_key, 3600)
-        return res.get('signedURL', '')
+        # URL publik Supabase bersifat deterministik, jadi rakit sebagai string.
+        # Tidak perlu membuat/memakai client (hindari overhead SSL + HTTP) — ini
+        # dipanggil per-file saat render daftar, jadi harus semurah mungkin.
+        base = (current_app.config.get("SUPABASE_URL") or "").rstrip('/')
+        return f"{base}/storage/v1/object/public/{bucket_name}/{object_key}"
+
+    # Signed URL tetap butuh client (butuh penandatanganan di sisi server).
+    supabase = get_supabase_client()
+    res = supabase.storage.from_(bucket_name).create_signed_url(object_key, 3600)
+    return res.get('signedURL', '')
 
 def delete_file(bucket_name: str, object_key: str) -> bool:
     """

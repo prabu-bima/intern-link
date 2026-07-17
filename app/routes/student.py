@@ -14,64 +14,138 @@ bp = Blueprint('student', __name__, url_prefix='/student')
 @bp.route('/dashboard')
 @student_required
 def dashboard():
+    from app.models.identity import StudentProfile, CompanyProfile
+    from app.models.student import StudentEducationRecord, StudentSkill, StudentTechStackItem
+    from app.models.internship import SavedInternship, InternshipApplication
+    from app.models.lookups import ApplicationStatus
+    
+    from app.extensions import cache
+    from sqlalchemy.orm import joinedload
+    
+    # 0. Get the profile from current_user (already eagerly loaded by user_loader)
+    profile = current_user.student_profile
+
     # Make sure we have a student profile
-    if not current_user.student_profile:
+    if not profile:
         # Failsafe if profile wasn't created
         profile_completeness = 0
         total_applications = 0
         upcoming_interviews = 0
         saved_internships_count = 0
         status_counts = {}
+        notifications = []
+        recommendations = []
     else:
-        # 1. Total Applications
-        total_applications = InternshipApplication.query.filter_by(student_profile_id=current_user.student_profile.id).count()
-        
-        # 2. Upcoming Interviews
-        interview_status = ApplicationStatus.query.filter_by(status_name='Interview').first()
-        upcoming_interviews = 0
-        if interview_status:
-            upcoming_interviews = InternshipApplication.query.filter_by(
-                student_profile_id=current_user.student_profile.id,
-                application_status_id=interview_status.id
-            ).count()
+        latest_run = None
+        # 1. Caching Dashboard Stats (60 seconds)
+        stats_cache_key = f"student_dashboard_stats_{profile.id}"
+        stats = cache.get(stats_cache_key)
+        if not stats:
+            # Fetch counts for education, skills, tech stack, and saved internships in a single fast subquery count
+            counts = db.session.query(
+                db.session.query(db.func.count(StudentEducationRecord.id)).filter(StudentEducationRecord.student_profile_id == profile.id, StudentEducationRecord.deleted_at.is_(None)).as_scalar(),
+                db.session.query(db.func.count(StudentSkill.id)).filter(StudentSkill.student_profile_id == profile.id, StudentSkill.deleted_at.is_(None)).as_scalar(),
+                db.session.query(db.func.count(StudentTechStackItem.id)).filter(StudentTechStackItem.student_profile_id == profile.id, StudentTechStackItem.deleted_at.is_(None)).as_scalar(),
+                db.session.query(db.func.count(SavedInternship.id)).filter(SavedInternship.student_profile_id == profile.id, SavedInternship.deleted_at.is_(None)).as_scalar()
+            ).first()
             
-        # 3. Saved Internships
-        saved_internships_count = SavedInternship.query.filter_by(student_profile_id=current_user.student_profile.id).count()
-        
-        # 4. Profile Completeness Calculation
-        profile = current_user.student_profile
-        completeness = 20 # Base for having an account
-        if profile.bio: completeness += 20
-        if profile.phone_number: completeness += 10
-        if profile.date_of_birth: completeness += 10
-        if profile.education_records: completeness += 20
-        if profile.skills or profile.tech_stack_items: completeness += 20
-        profile_completeness = min(100, completeness)
-        
-        # 5. Application Status Pipeline
-        status_counts = {
-            'submitted': 0,
-            'under_review': 0,
-            'interview': 0,
-            'accepted': 0,
-            'rejected': 0
-        }
-        applications = InternshipApplication.query.filter_by(student_profile_id=current_user.student_profile.id).all()
-        for app in applications:
-            status_name = app.application_status.status_name.lower().replace(' ', '_')
-            if status_name in status_counts:
-                status_counts[status_name] += 1
-                
-    # 6. Latest Internships
-    active_lifecycle = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
+            edu_count, skill_count, tech_count, saved_internships_count = counts or (0, 0, 0, 0)
+
+            # Fetch application status counts in a single GROUP BY query (no massive joins)
+            results = db.session.query(
+                ApplicationStatus.status_code,
+                db.func.count(InternshipApplication.id)
+            ).join(
+                InternshipApplication,
+                InternshipApplication.application_status_id == ApplicationStatus.id
+            ).filter(
+                InternshipApplication.student_profile_id == profile.id,
+                InternshipApplication.deleted_at.is_(None)
+            ).group_by(ApplicationStatus.status_code).all()
+
+            status_counts = {
+                'applied': 0,
+                'reviewing': 0,
+                'interviewing': 0,
+                'accepted': 0,
+                'rejected': 0,
+            }
+            for code, count in results:
+                if code in status_counts:
+                    status_counts[code] = count
+
+            total_applications = sum(status_counts.values())
+            upcoming_interviews = status_counts['interviewing']
+
+            # Profile Completeness Calculation
+            completeness = 20 # Base for having an account
+            if profile.bio: completeness += 20
+            if profile.phone_number: completeness += 10
+            if profile.date_of_birth: completeness += 10
+            if edu_count > 0: completeness += 20
+            if skill_count > 0 or tech_count > 0: completeness += 20
+            profile_completeness = min(100, completeness)
+            
+            stats = {
+                'profile_completeness': profile_completeness,
+                'total_applications': total_applications,
+                'upcoming_interviews': upcoming_interviews,
+                'saved_internships_count': saved_internships_count,
+                'status_counts': status_counts
+            }
+            cache.set(stats_cache_key, stats, timeout=60)
+            
+        profile_completeness = stats['profile_completeness']
+        total_applications = stats['total_applications']
+        upcoming_interviews = stats['upcoming_interviews']
+        saved_internships_count = stats['saved_internships_count']
+        status_counts = stats['status_counts']
+
+        # 2. Caching Notifications (30 seconds)
+        notif_cache_key = f"student_notifications_{current_user.id}"
+        notifications = cache.get(notif_cache_key)
+        if notifications is None:
+            notifications = Notification.query.filter_by(recipient_user_id=current_user.id, is_read=False)\
+                .order_by(Notification.event_at.desc()).limit(5).all()
+            cache.set(notif_cache_key, notifications, timeout=30)
+
+        # 3. Caching AI Recommendations (10 minutes)
+        recs_cache_key = f"student_recommendations_{profile.id}"
+        recommendations = cache.get(recs_cache_key)
+        if recommendations is None:
+            from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
+            recommendations = []
+            latest_run = AIJobRecommendationRun.query.filter_by(
+                student_profile_id=profile.id,
+                generation_status='success'
+            ).order_by(AIJobRecommendationRun.id.desc()).first()
+            if latest_run:
+                recommendations = AIJobRecommendationItem.query.options(
+                    joinedload(AIJobRecommendationItem.internship)
+                    .joinedload(Internship.company_profile)
+                ).filter_by(ai_job_recommendation_run_id=latest_run.id)\
+                    .order_by(AIJobRecommendationItem.rank_no).limit(3).all()
+            cache.set(recs_cache_key, recommendations, timeout=600)
+
+    # 4. Latest Internships — Cache the query and eager load relationships
+    active_lifecycle = cache.get('active_lifecycle_status')
+    if not active_lifecycle:
+        active_lifecycle = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
+        if active_lifecycle:
+            cache.set('active_lifecycle_status', active_lifecycle, timeout=86400)
+            
     latest_internships = []
     if active_lifecycle:
-        latest_internships = Internship.query.filter_by(lifecycle_status_id=active_lifecycle.id)\
-            .order_by(Internship.id.desc()).limit(5).all()
-            
-    # 7. Notifications
-    notifications = Notification.query.filter_by(recipient_user_id=current_user.id, is_read=False)\
-        .order_by(Notification.event_at.desc()).limit(5).all()
+        cache_key = f'dashboard_latest_internships_{active_lifecycle.id}'
+        latest_internships = cache.get(cache_key)
+        if not latest_internships:
+            latest_internships = Internship.query.options(
+                joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+                joinedload(Internship.location),
+                joinedload(Internship.technology_category),
+            ).filter_by(lifecycle_status_id=active_lifecycle.id)\
+                .order_by(Internship.id.desc()).limit(5).all()
+            cache.set(cache_key, latest_internships, timeout=300)
         
     return render_template(
         'student/dashboard.html',
@@ -81,8 +155,79 @@ def dashboard():
         profile_completeness=profile_completeness,
         status_counts=status_counts,
         latest_internships=latest_internships,
-        notifications=notifications
+        notifications=notifications,
+        recommendations=recommendations,
+        latest_run=latest_run
     )
+
+@bp.route('/recommendations', methods=['GET'])
+@student_required
+def recommendations():
+    from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
+    sort_order = request.args.get('sort', 'desc') # desc or asc
+    
+    profile = current_user.student_profile
+    if not profile:
+        flash('Silakan lengkapi profil Anda terlebih dahulu.', 'warning')
+        return redirect(url_for('student.profile'))
+        
+    latest_run = AIJobRecommendationRun.query.filter_by(
+        student_profile_id=profile.id,
+        generation_status='success'
+    ).order_by(AIJobRecommendationRun.id.desc()).first()
+    
+    recommendation_items = []
+    if latest_run:
+        from sqlalchemy.orm import joinedload
+        from app.models.identity import CompanyProfile
+        
+        query = AIJobRecommendationItem.query.options(
+            joinedload(AIJobRecommendationItem.internship).options(
+                joinedload(Internship.company_profile).options(
+                    joinedload(CompanyProfile.company_logo)
+                ),
+                joinedload(Internship.location),
+                joinedload(Internship.technology_category)
+            )
+        ).filter_by(ai_job_recommendation_run_id=latest_run.id)
+        
+        if sort_order == 'asc':
+            query = query.order_by(AIJobRecommendationItem.match_score.asc())
+        else:
+            query = query.order_by(AIJobRecommendationItem.match_score.desc())
+        recommendation_items = query.all()
+        
+    return render_template(
+        'student/recommendations.html',
+        latest_run=latest_run,
+        recommendations=recommendation_items,
+        sort_order=sort_order
+    )
+
+@bp.route('/recommendations/refresh', methods=['POST'])
+@student_required
+def refresh_recommendations():
+    from flask import current_app
+    from app.services.ai_job_recommendation import run_job_recommendation
+    profile = current_user.student_profile
+    if not profile:
+        return jsonify({'status': 'error', 'message': 'Student profile not found.'}), 404
+        
+    try:
+        new_run = run_job_recommendation(profile.id)
+        if not new_run or new_run.generation_status == 'failed':
+            return jsonify({
+                'status': 'error',
+                'message': 'Gagal menghitung rekomendasi magang menggunakan AI. Pastikan profil Anda lengkap dan coba lagi.'
+            }), 500
+            
+        return jsonify({
+            'status': 'success',
+            'message': 'Rekomendasi magang berhasil diperbarui!'
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error in refresh_recommendations: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @bp.route('/profile', methods=['GET'])
 @student_required
@@ -1256,12 +1401,20 @@ def internships():
     cat_id = request.args.get('cat', type=int)
     loc_id = request.args.get('loc', type=int)
     
+    page = request.args.get('page', 1, type=int)
+    
     # 1. Base Query: Only show active/published internships
     active_status = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
     if not active_status:
         active_status = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%open%')).first()
         
-    query = Internship.query
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    query = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category)
+    )
     if active_status:
         query = query.filter(Internship.lifecycle_status_id == active_status.id)
     query = query.filter(Internship.deleted_at.is_(None))
@@ -1282,7 +1435,11 @@ def internships():
         
     # Order by newest
     query = query.order_by(Internship.id.desc())
-    internships_list = query.all()
+    
+    # Paginate results (9 items per page)
+    per_page = 9
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    internships_list = pagination.items
     
     # 3. Get Saved Internships for the current user
     saved_internships = SavedInternship.query.filter_by(
@@ -1290,13 +1447,24 @@ def internships():
     ).filter(SavedInternship.deleted_at.is_(None)).all()
     saved_internship_ids = [s.internship_id for s in saved_internships]
     
-    # 4. Filter Options for Dropdowns
-    categories = TechnologyCategory.query.all()
-    locations = Location.query.all()
+    # 4. Filter Options for Dropdowns (Cached)
+    from app.extensions import cache
+    
+    @cache.cached(timeout=3600, key_prefix='student_filter_categories')
+    def _filter_categories():
+        return TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+
+    @cache.cached(timeout=3600, key_prefix='student_filter_locations')
+    def _filter_locations():
+        return Location.query.order_by(Location.city).all()
+        
+    categories = _filter_categories()
+    locations = _filter_locations()
     
     return render_template(
         'student/internships.html',
         internships=internships_list,
+        pagination=pagination,
         saved_internship_ids=saved_internship_ids,
         categories=categories,
         locations=locations,
@@ -1360,7 +1528,13 @@ def saved_internships():
     page = request.args.get('page', 1, type=int)
     profile_id = current_user.student_profile.id
     
-    query = SavedInternship.query.filter_by(
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    query = SavedInternship.query.options(
+        joinedload(SavedInternship.internship).joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(SavedInternship.internship).joinedload(Internship.location),
+        joinedload(SavedInternship.internship).joinedload(Internship.technology_category)
+    ).filter_by(
         student_profile_id=profile_id
     ).filter(SavedInternship.deleted_at.is_(None)).order_by(SavedInternship.id.desc())
     
@@ -1375,7 +1549,18 @@ def saved_internships():
 @bp.route('/internships/<int:id>', methods=['GET'])
 @student_required
 def internship_detail(id):
-    internship = Internship.query.get_or_404(id)
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    from app.models.internship import InternshipRequiredSkill, InternshipRequiredTechStackItem
+    
+    internship = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
+        joinedload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
+    ).filter_by(id=id).first_or_404()
+    
     profile_id = current_user.student_profile.id
     
     # Check if saved
@@ -1403,15 +1588,35 @@ def internship_detail(id):
 @student_required
 def internship_ai_match(id):
     from app.services.ai_skill_match import run_skill_match
-    
+    from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
+
     profile_id = current_user.student_profile.id
-    
+
     # Call the robust service
     match_run = run_skill_match(profile_id, id)
-    
+
     if not match_run:
         return jsonify({'status': 'error', 'message': 'Gagal melakukan analisis'})
-        
+
+    # Selaraskan skor dengan halaman rekomendasi: jika lowongan ini muncul di
+    # run rekomendasi terakhir yang sukses, pakai skor tersebut sebagai sumber
+    # kebenaran. Override hanya di memori (tanpa commit) agar data skill match
+    # asli tidak berubah.
+    if match_run.generation_status == 'success':
+        latest_reco = AIJobRecommendationRun.query.filter_by(
+            student_profile_id=profile_id,
+            generation_status='success',
+            deleted_at=None
+        ).order_by(AIJobRecommendationRun.id.desc()).first()
+        if latest_reco:
+            reco_item = AIJobRecommendationItem.query.filter_by(
+                ai_job_recommendation_run_id=latest_reco.id,
+                internship_id=id,
+                deleted_at=None
+            ).first()
+            if reco_item is not None:
+                match_run.match_percentage = reco_item.match_score
+
     # Render the partial
     html = render_template('student/_ai_match_partial.html', match_run=match_run)
     
@@ -1510,7 +1715,14 @@ def applications():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status')
     
-    query = InternshipApplication.query.filter_by(
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    query = InternshipApplication.query.options(
+        joinedload(InternshipApplication.application_status),
+        joinedload(InternshipApplication.internship).joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(InternshipApplication.internship).joinedload(Internship.location),
+        joinedload(InternshipApplication.internship).joinedload(Internship.technology_category)
+    ).filter_by(
         student_profile_id=current_user.student_profile.id,
         deleted_at=None
     )

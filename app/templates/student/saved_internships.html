@@ -24,8 +24,8 @@
         <div class="p-6 flex-grow flex flex-col">
             <!-- Company Header -->
             <div class="flex items-center gap-4 mb-4">
-                {% if job.company_profile.logo_path %}
-                    <img src="{{ job.company_profile.logo_path }}" alt="{{ job.company_profile.company_name }}" class="w-12 h-12 rounded-lg object-contain border border-gray-100 bg-white">
+                {% if job.company_profile.company_logo %}
+                    <img src="{{ job.company_profile.company_logo.url }}" alt="{{ job.company_profile.company_name }}" class="w-12 h-12 rounded-lg object-contain border border-gray-100 bg-white">
                 {% else %}
                     <div class="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
                         {{ icon.building_office(class="w-6 h-6") }}
@@ -33,7 +33,7 @@
                 {% endif %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-900 line-clamp-1">{{ job.company_profile.company_name }}</h3>
-                    <p class="text-xs text-gray-500">{{ job.location.city_name }}</p>
+                    <p class="text-xs text-gray-500">{{ job.location.city }}</p>
                 </div>
             </div>
 
