@@ -53,17 +53,15 @@
     <div class="w-full">
 
         <!-- Active Filters Display -->
-        {% if current_q or current_category or current_location %}
+        {% if current_q %}
         <div class="flex items-center flex-wrap gap-2 mb-6">
             <span class="text-sm text-gray-500 mr-2">Menampilkan hasil untuk:</span>
-            {% if current_q %}
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200">
                 "{{ current_q }}"
-                <a href="{{ url_for('guest.internships', q=current_q) }}" class="ml-2 inline-flex items-center p-0.5 rounded-full text-primary-400 hover:bg-primary-200 hover:text-primary-600 focus:outline-none">
+                <a href="{{ url_for('guest.internships', category_id=current_category, location_id=current_location) }}" class="ml-2 inline-flex items-center p-0.5 rounded-full text-primary-400 hover:bg-primary-200 hover:text-primary-600 focus:outline-none">
                     {{ icon.x_mark(class="h-4 w-4") }}
                 </a>
             </span>
-            {% endif %}
         </div>
         {% endif %}
 
