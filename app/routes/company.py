@@ -23,6 +23,15 @@ def inject_unread_notifications_count():
         return dict(unread_notifications_count=count)
     return dict(unread_notifications_count=0)
 
+class VerificationStatusInfo:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+class VerificationInfo:
+    def __init__(self, status_code, admin_note):
+        self.verification_status = VerificationStatusInfo(status_code)
+        self.admin_note = admin_note
+
 @bp.route('/dashboard')
 @company_required
 def dashboard():
@@ -31,81 +40,130 @@ def dashboard():
         # Failsafe if company profile doesn't exist
         return "Company profile not found", 404
 
-    # 1. Company Verification Status
-    verification = CompanyVerification.query.filter_by(
-        company_profile_id=profile.id
-    ).order_by(CompanyVerification.id.desc()).first()
-
-    # 2. Job Statistics
-    # Total postings
-    total_jobs = Internship.query.filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None)).count()
-    
-    # Pre-fetch status codes to easily count
-    active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
-    closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
-    pending_moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
-
-    active_jobs = Internship.query.filter_by(
-        company_profile_id=profile.id, 
-        lifecycle_status_id=active_lifecycle.id if active_lifecycle else 0
-    ).filter(Internship.deleted_at.is_(None)).count()
-
-    closed_jobs = Internship.query.filter_by(
-        company_profile_id=profile.id, 
-        lifecycle_status_id=closed_lifecycle.id if closed_lifecycle else 0
-    ).filter(Internship.deleted_at.is_(None)).count()
-
-    pending_jobs = Internship.query.filter_by(
-        company_profile_id=profile.id,
-        moderation_status_id=pending_moderation.id if pending_moderation else 0
-    ).filter(Internship.deleted_at.is_(None)).count()
-
-    # 3. Applicant Statistics
-    # Total applicants
-    total_applicants = InternshipApplication.query.join(Internship).filter(
-        Internship.company_profile_id == profile.id
-    ).filter(InternshipApplication.deleted_at.is_(None)).count()
-    
-    # Applicants by status
-    # query: SELECT status.status_code, status.status_name, COUNT(app.id) FROM application_status 
-    # LEFT JOIN internship_application app ON ... 
-    # We can just group by application_status_id.
-    status_counts_query = db.session.query(
-        ApplicationStatus.status_code, 
-        ApplicationStatus.status_name, 
-        func.count(InternshipApplication.id)
-    ).select_from(InternshipApplication).join(Internship).join(ApplicationStatus, InternshipApplication.application_status_id == ApplicationStatus.id).filter(
-        Internship.company_profile_id == profile.id,
-        InternshipApplication.deleted_at.is_(None)
-    ).group_by(ApplicationStatus.status_code, ApplicationStatus.status_name).all()
-
-    applicant_stats = {code: {'name': name, 'count': count} for code, name, count in status_counts_query}
-    # Ensure some defaults exist
-    for code, default_name in [('applied', 'Dikirim'), ('reviewing', 'Direview'), ('interviewing', 'Wawancara'), ('accepted', 'Diterima'), ('rejected', 'Ditolak')]:
-        if code not in applicant_stats:
-            applicant_stats[code] = {'name': default_name, 'count': 0}
-
+    from app.extensions import cache
+    from sqlalchemy.orm import joinedload, selectinload
+    from sqlalchemy import case
     from app.models.identity import StudentProfile
-    from sqlalchemy.orm import joinedload
 
-    # 4. Active Jobs list (limit 5)
-    active_jobs_list = Internship.query.options(
-        joinedload(Internship.location),
-        joinedload(Internship.technology_category),
-        joinedload(Internship.applications)
-    ).filter_by(
-        company_profile_id=profile.id,
-        lifecycle_status_id=active_lifecycle.id if active_lifecycle else 0
-    ).filter(Internship.deleted_at.is_(None)).order_by(Internship.id.desc()).limit(5).all()
+    # 2. Caching Status Lookups (IDs only to avoid session detachment errors)
+    active_lifecycle_id = cache.get('status_lifecycle_active_id')
+    if not active_lifecycle_id:
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        if active_lifecycle:
+            active_lifecycle_id = active_lifecycle.id
+            cache.set('status_lifecycle_active_id', active_lifecycle_id, timeout=86400)
+            
+    closed_lifecycle_id = cache.get('status_lifecycle_closed_id')
+    if not closed_lifecycle_id:
+        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
+        if closed_lifecycle:
+            closed_lifecycle_id = closed_lifecycle.id
+            cache.set('status_lifecycle_closed_id', closed_lifecycle_id, timeout=86400)
+            
+    pending_moderation_id = cache.get('status_moderation_pending_id')
+    if not pending_moderation_id:
+        pending_moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
+        if pending_moderation:
+            pending_moderation_id = pending_moderation.id
+            cache.set('status_moderation_pending_id', pending_moderation_id, timeout=86400)
 
-    # 5. Latest Applicants feed (limit 5)
-    latest_applicants = InternshipApplication.query.options(
-        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
-        joinedload(InternshipApplication.internship),
-        joinedload(InternshipApplication.application_status)
-    ).join(Internship).filter(
-        Internship.company_profile_id == profile.id
-    ).filter(InternshipApplication.deleted_at.is_(None)).order_by(InternshipApplication.submitted_at.desc()).limit(5).all()
+    # 3. Caching Dashboard Stats (60 seconds)
+    stats_cache_key = f"company_dashboard_stats_{profile.id}"
+    stats = cache.get(stats_cache_key)
+    if not stats:
+        # 3a. Company Verification Status
+        verification_db = CompanyVerification.query.options(
+            joinedload(CompanyVerification.verification_status)
+        ).filter_by(
+            company_profile_id=profile.id
+        ).order_by(CompanyVerification.id.desc()).first()
+        
+        verification = None
+        if verification_db:
+            verification = VerificationInfo(
+                verification_db.verification_status.status_code if verification_db.verification_status else None,
+                verification_db.admin_note
+            )
+
+        # Job Statistics in a single combined query with conditional aggregation
+        counts = db.session.query(
+            func.count(Internship.id),
+            func.sum(case((Internship.lifecycle_status_id == (active_lifecycle_id or 0), 1), else_=0)),
+            func.sum(case((Internship.lifecycle_status_id == (closed_lifecycle_id or 0), 1), else_=0)),
+            func.sum(case((Internship.moderation_status_id == (pending_moderation_id or 0), 1), else_=0))
+        ).filter(
+            Internship.company_profile_id == profile.id,
+            Internship.deleted_at.is_(None)
+        ).first()
+        
+        total_jobs, active_jobs, closed_jobs, pending_jobs = counts or (0, 0, 0, 0)
+        total_jobs = int(total_jobs or 0)
+        active_jobs = int(active_jobs or 0)
+        closed_jobs = int(closed_jobs or 0)
+        pending_jobs = int(pending_jobs or 0)
+
+        # Applicant Statistics GROUP BY
+        status_counts_query = db.session.query(
+            ApplicationStatus.status_code, 
+            ApplicationStatus.status_name, 
+            func.count(InternshipApplication.id)
+        ).select_from(InternshipApplication).join(Internship).join(ApplicationStatus, InternshipApplication.application_status_id == ApplicationStatus.id).filter(
+            Internship.company_profile_id == profile.id,
+            InternshipApplication.deleted_at.is_(None)
+        ).group_by(ApplicationStatus.status_code, ApplicationStatus.status_name).all()
+
+        applicant_stats = {code: {'name': name, 'count': count} for code, name, count in status_counts_query}
+        # Ensure some defaults exist
+        for code, default_name in [('applied', 'Dikirim'), ('reviewing', 'Direview'), ('interviewing', 'Wawancara'), ('accepted', 'Diterima'), ('rejected', 'Ditolak')]:
+            if code not in applicant_stats:
+                applicant_stats[code] = {'name': default_name, 'count': 0}
+
+        total_applicants = sum(item['count'] for item in applicant_stats.values())
+
+        # 4. Active Jobs list (limit 5) - use selectinload for applications collection
+        active_jobs_list = Internship.query.options(
+            joinedload(Internship.location),
+            joinedload(Internship.technology_category),
+            selectinload(Internship.applications)
+        ).filter_by(
+            company_profile_id=profile.id,
+            lifecycle_status_id=active_lifecycle_id or 0
+        ).filter(Internship.deleted_at.is_(None)).order_by(Internship.id.desc()).limit(5).all()
+
+        # 5. Latest Applicants feed (limit 5) - eager load student_profile, user, and profile_photo to prevent N+1 queries
+        latest_applicants = InternshipApplication.query.options(
+            joinedload(InternshipApplication.student_profile).options(
+                joinedload(StudentProfile.user),
+                joinedload(StudentProfile.profile_photo)
+            ),
+            joinedload(InternshipApplication.internship),
+            joinedload(InternshipApplication.application_status)
+        ).join(Internship).filter(
+            Internship.company_profile_id == profile.id
+        ).filter(InternshipApplication.deleted_at.is_(None)).order_by(InternshipApplication.submitted_at.desc()).limit(5).all()
+
+        stats = {
+            'verification': verification,
+            'total_jobs': total_jobs,
+            'active_jobs': active_jobs,
+            'closed_jobs': closed_jobs,
+            'pending_jobs': pending_jobs,
+            'total_applicants': total_applicants,
+            'applicant_stats': applicant_stats,
+            'active_jobs_list': active_jobs_list,
+            'latest_applicants': latest_applicants
+        }
+        cache.set(stats_cache_key, stats, timeout=60)
+
+    verification = stats['verification']
+    total_jobs = stats['total_jobs']
+    active_jobs = stats['active_jobs']
+    closed_jobs = stats['closed_jobs']
+    pending_jobs = stats['pending_jobs']
+    total_applicants = stats['total_applicants']
+    applicant_stats = stats['applicant_stats']
+    active_jobs_list = stats['active_jobs_list']
+    latest_applicants = stats['latest_applicants']
 
     return render_template(
         'company/dashboard.html',
