@@ -14,15 +14,16 @@ bp = Blueprint('student', __name__, url_prefix='/student')
 @bp.route('/dashboard')
 @student_required
 def dashboard():
-    from sqlalchemy.orm import joinedload
-    from app.models.identity import StudentProfile
+    from app.models.identity import StudentProfile, CompanyProfile
+    from app.models.student import StudentEducationRecord, StudentSkill, StudentTechStackItem
+    from app.models.internship import SavedInternship, InternshipApplication
+    from app.models.lookups import ApplicationStatus
     
-    # 0. Eager load student profile and nested records to avoid 4 nested lazy loads
-    profile = StudentProfile.query.options(
-        joinedload(StudentProfile.education_records),
-        joinedload(StudentProfile.skills),
-        joinedload(StudentProfile.tech_stack_items)
-    ).filter_by(user_account_id=current_user.id).first()
+    from app.extensions import cache
+    from sqlalchemy.orm import joinedload
+    
+    # 0. Get the profile from current_user (already eagerly loaded by user_loader)
+    profile = current_user.student_profile
 
     # Make sure we have a student profile
     if not profile:
@@ -32,75 +33,119 @@ def dashboard():
         upcoming_interviews = 0
         saved_internships_count = 0
         status_counts = {}
+        notifications = []
+        recommendations = []
     else:
-        # 1 & 2 & 5. Ambil semua lamaran SEKALI dengan status ter-eager-load,
-        # lalu turunkan total, pipeline status, dan jumlah interview dari data
-        # yang sama. Dulu ini 3+ query terpisah + N+1 (akses .application_status
-        # per baris). Sekarang 1 query.
-        applications = InternshipApplication.query.options(
-            joinedload(InternshipApplication.application_status)
-        ).filter_by(student_profile_id=profile.id).all()
+        latest_run = None
+        # 1. Caching Dashboard Stats (60 seconds)
+        stats_cache_key = f"student_dashboard_stats_{profile.id}"
+        stats = cache.get(stats_cache_key)
+        if not stats:
+            # Fetch counts for education, skills, tech stack, and saved internships in a single fast subquery count
+            counts = db.session.query(
+                db.session.query(db.func.count(StudentEducationRecord.id)).filter(StudentEducationRecord.student_profile_id == profile.id, StudentEducationRecord.deleted_at.is_(None)).as_scalar(),
+                db.session.query(db.func.count(StudentSkill.id)).filter(StudentSkill.student_profile_id == profile.id, StudentSkill.deleted_at.is_(None)).as_scalar(),
+                db.session.query(db.func.count(StudentTechStackItem.id)).filter(StudentTechStackItem.student_profile_id == profile.id, StudentTechStackItem.deleted_at.is_(None)).as_scalar(),
+                db.session.query(db.func.count(SavedInternship.id)).filter(SavedInternship.student_profile_id == profile.id, SavedInternship.deleted_at.is_(None)).as_scalar()
+            ).first()
+            
+            edu_count, skill_count, tech_count, saved_internships_count = counts or (0, 0, 0, 0)
 
-        total_applications = len(applications)
+            # Fetch application status counts in a single GROUP BY query (no massive joins)
+            results = db.session.query(
+                ApplicationStatus.status_code,
+                db.func.count(InternshipApplication.id)
+            ).join(
+                InternshipApplication,
+                InternshipApplication.application_status_id == ApplicationStatus.id
+            ).filter(
+                InternshipApplication.student_profile_id == profile.id,
+                InternshipApplication.deleted_at.is_(None)
+            ).group_by(ApplicationStatus.status_code).all()
 
-        status_counts = {
-            'applied': 0,
-            'reviewing': 0,
-            'interviewing': 0,
-            'accepted': 0,
-            'rejected': 0,
-        }
-        for app in applications:
-            status_code = app.application_status.status_code if app.application_status else None
-            if status_code in status_counts:
-                status_counts[status_code] += 1
+            status_counts = {
+                'applied': 0,
+                'reviewing': 0,
+                'interviewing': 0,
+                'accepted': 0,
+                'rejected': 0,
+            }
+            for code, count in results:
+                if code in status_counts:
+                    status_counts[code] = count
 
-        upcoming_interviews = status_counts['interviewing']
+            total_applications = sum(status_counts.values())
+            upcoming_interviews = status_counts['interviewing']
 
-        # 3. Saved Internships
-        saved_internships_count = SavedInternship.query.filter_by(student_profile_id=profile.id).count()
+            # Profile Completeness Calculation
+            completeness = 20 # Base for having an account
+            if profile.bio: completeness += 20
+            if profile.phone_number: completeness += 10
+            if profile.date_of_birth: completeness += 10
+            if edu_count > 0: completeness += 20
+            if skill_count > 0 or tech_count > 0: completeness += 20
+            profile_completeness = min(100, completeness)
+            
+            stats = {
+                'profile_completeness': profile_completeness,
+                'total_applications': total_applications,
+                'upcoming_interviews': upcoming_interviews,
+                'saved_internships_count': saved_internships_count,
+                'status_counts': status_counts
+            }
+            cache.set(stats_cache_key, stats, timeout=60)
+            
+        profile_completeness = stats['profile_completeness']
+        total_applications = stats['total_applications']
+        upcoming_interviews = stats['upcoming_interviews']
+        saved_internships_count = stats['saved_internships_count']
+        status_counts = stats['status_counts']
 
-        # 4. Profile Completeness Calculation
-        completeness = 20 # Base for having an account
-        if profile.bio: completeness += 20
-        if profile.phone_number: completeness += 10
-        if profile.date_of_birth: completeness += 10
-        if profile.education_records: completeness += 20
-        if profile.skills or profile.tech_stack_items: completeness += 20
-        profile_completeness = min(100, completeness)
+        # 2. Caching Notifications (30 seconds)
+        notif_cache_key = f"student_notifications_{current_user.id}"
+        notifications = cache.get(notif_cache_key)
+        if notifications is None:
+            notifications = Notification.query.filter_by(recipient_user_id=current_user.id, is_read=False)\
+                .order_by(Notification.event_at.desc()).limit(5).all()
+            cache.set(notif_cache_key, notifications, timeout=30)
 
-    # 6. Latest Internships — eager load relasi yang dirender kartu
-    # (company_profile, location, technology_category) untuk hindari N+1.
-    from sqlalchemy.orm import joinedload
-    active_lifecycle = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
+        # 3. Caching AI Recommendations (10 minutes)
+        recs_cache_key = f"student_recommendations_{profile.id}"
+        recommendations = cache.get(recs_cache_key)
+        if recommendations is None:
+            from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
+            recommendations = []
+            latest_run = AIJobRecommendationRun.query.filter_by(
+                student_profile_id=profile.id,
+                generation_status='success'
+            ).order_by(AIJobRecommendationRun.id.desc()).first()
+            if latest_run:
+                recommendations = AIJobRecommendationItem.query.options(
+                    joinedload(AIJobRecommendationItem.internship)
+                    .joinedload(Internship.company_profile)
+                ).filter_by(ai_job_recommendation_run_id=latest_run.id)\
+                    .order_by(AIJobRecommendationItem.rank_no).limit(3).all()
+            cache.set(recs_cache_key, recommendations, timeout=600)
+
+    # 4. Latest Internships — Cache the query and eager load relationships
+    active_lifecycle = cache.get('active_lifecycle_status')
+    if not active_lifecycle:
+        active_lifecycle = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
+        if active_lifecycle:
+            cache.set('active_lifecycle_status', active_lifecycle, timeout=86400)
+            
     latest_internships = []
     if active_lifecycle:
-        latest_internships = Internship.query.options(
-            joinedload(Internship.company_profile),
-            joinedload(Internship.location),
-            joinedload(Internship.technology_category),
-        ).filter_by(lifecycle_status_id=active_lifecycle.id)\
-            .order_by(Internship.id.desc()).limit(5).all()
-
-    # 7. Notifications
-    notifications = Notification.query.filter_by(recipient_user_id=current_user.id, is_read=False)\
-        .order_by(Notification.event_at.desc()).limit(5).all()
-
-    # 8. AI Recommendations — eager load internship + company untuk kartu rekomendasi
-    from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
-    recommendations = []
-    latest_run = None
-    if profile:
-        latest_run = AIJobRecommendationRun.query.filter_by(
-            student_profile_id=profile.id,
-            generation_status='success'
-        ).order_by(AIJobRecommendationRun.id.desc()).first()
-        if latest_run:
-            recommendations = AIJobRecommendationItem.query.options(
-                joinedload(AIJobRecommendationItem.internship)
-                .joinedload(Internship.company_profile)
-            ).filter_by(ai_job_recommendation_run_id=latest_run.id)\
-                .order_by(AIJobRecommendationItem.rank_no).limit(3).all()
+        cache_key = f'dashboard_latest_internships_{active_lifecycle.id}'
+        latest_internships = cache.get(cache_key)
+        if not latest_internships:
+            latest_internships = Internship.query.options(
+                joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+                joinedload(Internship.location),
+                joinedload(Internship.technology_category),
+            ).filter_by(lifecycle_status_id=active_lifecycle.id)\
+                .order_by(Internship.id.desc()).limit(5).all()
+            cache.set(cache_key, latest_internships, timeout=300)
         
     return render_template(
         'student/dashboard.html',
