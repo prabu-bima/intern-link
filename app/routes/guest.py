@@ -124,7 +124,17 @@ def internship_detail(id):
     if current_user.is_authenticated and current_user.role == 'student':
         return redirect(url_for('student.internship_detail', id=id))
         
-    internship = Internship.query.get_or_404(id)
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    from app.models.internship import InternshipRequiredSkill, InternshipRequiredTechStackItem
+    
+    internship = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
+        joinedload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
+    ).filter_by(id=id).first_or_404()
     
     # We only want to show it if it's active or if the user somehow has the link.
     # For now, it's fine to just show whatever is in the DB, or we can optionally check status.

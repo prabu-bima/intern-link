@@ -14,8 +14,18 @@ bp = Blueprint('student', __name__, url_prefix='/student')
 @bp.route('/dashboard')
 @student_required
 def dashboard():
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import StudentProfile
+    
+    # 0. Eager load student profile and nested records to avoid 4 nested lazy loads
+    profile = StudentProfile.query.options(
+        joinedload(StudentProfile.education_records),
+        joinedload(StudentProfile.skills),
+        joinedload(StudentProfile.tech_stack_items)
+    ).filter_by(user_account_id=current_user.id).first()
+
     # Make sure we have a student profile
-    if not current_user.student_profile:
+    if not profile:
         # Failsafe if profile wasn't created
         profile_completeness = 0
         total_applications = 0
@@ -23,10 +33,6 @@ def dashboard():
         saved_internships_count = 0
         status_counts = {}
     else:
-        from sqlalchemy.orm import joinedload
-
-        profile = current_user.student_profile
-
         # 1 & 2 & 5. Ambil semua lamaran SEKALI dengan status ter-eager-load,
         # lalu turunkan total, pipeline status, dan jumlah interview dari data
         # yang sama. Dulu ini 3+ query terpisah + N+1 (akses .application_status
@@ -84,9 +90,9 @@ def dashboard():
     from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
     recommendations = []
     latest_run = None
-    if current_user.student_profile:
+    if profile:
         latest_run = AIJobRecommendationRun.query.filter_by(
-            student_profile_id=current_user.student_profile.id,
+            student_profile_id=profile.id,
             generation_status='success'
         ).order_by(AIJobRecommendationRun.id.desc()).first()
         if latest_run:
@@ -1338,12 +1344,20 @@ def internships():
     cat_id = request.args.get('cat', type=int)
     loc_id = request.args.get('loc', type=int)
     
+    page = request.args.get('page', 1, type=int)
+    
     # 1. Base Query: Only show active/published internships
     active_status = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%active%')).first()
     if not active_status:
         active_status = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_name.ilike('%open%')).first()
         
-    query = Internship.query
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    query = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category)
+    )
     if active_status:
         query = query.filter(Internship.lifecycle_status_id == active_status.id)
     query = query.filter(Internship.deleted_at.is_(None))
@@ -1364,7 +1378,11 @@ def internships():
         
     # Order by newest
     query = query.order_by(Internship.id.desc())
-    internships_list = query.all()
+    
+    # Paginate results (9 items per page)
+    per_page = 9
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    internships_list = pagination.items
     
     # 3. Get Saved Internships for the current user
     saved_internships = SavedInternship.query.filter_by(
@@ -1372,13 +1390,24 @@ def internships():
     ).filter(SavedInternship.deleted_at.is_(None)).all()
     saved_internship_ids = [s.internship_id for s in saved_internships]
     
-    # 4. Filter Options for Dropdowns
-    categories = TechnologyCategory.query.all()
-    locations = Location.query.all()
+    # 4. Filter Options for Dropdowns (Cached)
+    from app.extensions import cache
+    
+    @cache.cached(timeout=3600, key_prefix='student_filter_categories')
+    def _filter_categories():
+        return TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+
+    @cache.cached(timeout=3600, key_prefix='student_filter_locations')
+    def _filter_locations():
+        return Location.query.order_by(Location.city).all()
+        
+    categories = _filter_categories()
+    locations = _filter_locations()
     
     return render_template(
         'student/internships.html',
         internships=internships_list,
+        pagination=pagination,
         saved_internship_ids=saved_internship_ids,
         categories=categories,
         locations=locations,
@@ -1442,7 +1471,13 @@ def saved_internships():
     page = request.args.get('page', 1, type=int)
     profile_id = current_user.student_profile.id
     
-    query = SavedInternship.query.filter_by(
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    query = SavedInternship.query.options(
+        joinedload(SavedInternship.internship).joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(SavedInternship.internship).joinedload(Internship.location),
+        joinedload(SavedInternship.internship).joinedload(Internship.technology_category)
+    ).filter_by(
         student_profile_id=profile_id
     ).filter(SavedInternship.deleted_at.is_(None)).order_by(SavedInternship.id.desc())
     
@@ -1457,7 +1492,18 @@ def saved_internships():
 @bp.route('/internships/<int:id>', methods=['GET'])
 @student_required
 def internship_detail(id):
-    internship = Internship.query.get_or_404(id)
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    from app.models.internship import InternshipRequiredSkill, InternshipRequiredTechStackItem
+    
+    internship = Internship.query.options(
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        joinedload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
+        joinedload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
+    ).filter_by(id=id).first_or_404()
+    
     profile_id = current_user.student_profile.id
     
     # Check if saved
@@ -1612,7 +1658,14 @@ def applications():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status')
     
-    query = InternshipApplication.query.filter_by(
+    from sqlalchemy.orm import joinedload
+    from app.models.identity import CompanyProfile
+    query = InternshipApplication.query.options(
+        joinedload(InternshipApplication.application_status),
+        joinedload(InternshipApplication.internship).joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(InternshipApplication.internship).joinedload(Internship.location),
+        joinedload(InternshipApplication.internship).joinedload(Internship.technology_category)
+    ).filter_by(
         student_profile_id=current_user.student_profile.id,
         deleted_at=None
     )

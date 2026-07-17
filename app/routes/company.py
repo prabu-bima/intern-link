@@ -380,7 +380,12 @@ def internships():
         
     status_filter = request.args.get('status', 'all')
     
-    query = Internship.query.filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
+    from sqlalchemy.orm import joinedload
+    query = Internship.query.options(
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category)
+    ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
     
     if status_filter == 'active':
         query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
