@@ -178,7 +178,19 @@ def recommendations():
     
     recommendation_items = []
     if latest_run:
-        query = AIJobRecommendationItem.query.filter_by(ai_job_recommendation_run_id=latest_run.id)
+        from sqlalchemy.orm import joinedload
+        from app.models.identity import CompanyProfile
+        
+        query = AIJobRecommendationItem.query.options(
+            joinedload(AIJobRecommendationItem.internship).options(
+                joinedload(Internship.company_profile).options(
+                    joinedload(CompanyProfile.company_logo)
+                ),
+                joinedload(Internship.location),
+                joinedload(Internship.technology_category)
+            )
+        ).filter_by(ai_job_recommendation_run_id=latest_run.id)
+        
         if sort_order == 'asc':
             query = query.order_by(AIJobRecommendationItem.match_score.asc())
         else:
