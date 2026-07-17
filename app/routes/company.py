@@ -189,12 +189,52 @@ from werkzeug.utils import secure_filename
 @bp.route('/profile')
 @company_required
 def profile():
-    profile = current_user.company_profile
-    locations = Location.query.all()
-    verification = CompanyVerification.query.filter_by(
-        company_profile_id=profile.id
-    ).order_by(CompanyVerification.id.desc()).first()
+    from app.extensions import cache
+    from sqlalchemy.orm import joinedload, selectinload
+    from app.models.identity import CompanyProfile
+
+    # 1. Cache locations dropdown
+    locations = cache.get('all_locations')
+    if not locations:
+        locations = Location.query.all()
+        cache.set('all_locations', locations, timeout=86400)
+
+    # 2. Cache profile page data
+    profile_id = current_user.company_profile.id
+    profile_data_cache_key = f"company_profile_data_{profile_id}"
+    profile_data = cache.get(profile_data_cache_key)
+    
+    if not profile_data:
+        # Reload profile with all nested relationships pre-fetched
+        profile_db = CompanyProfile.query.options(
+            joinedload(CompanyProfile.company_logo),
+            joinedload(CompanyProfile.location),
+            selectinload(CompanyProfile.social_links)
+        ).filter_by(id=profile_id).first()
+
+        # Eager load verification status
+        verification_db = CompanyVerification.query.options(
+            joinedload(CompanyVerification.verification_status)
+        ).filter_by(
+            company_profile_id=profile_id
+        ).order_by(CompanyVerification.id.desc()).first()
+
+        profile_data = {
+            'profile': profile_db,
+            'verification': verification_db
+        }
+        cache.set(profile_data_cache_key, profile_data, timeout=300)
+
+    # Merge objects back into active session to avoid session detachment errors
+    profile = db.session.merge(profile_data['profile'], load=False)
+    verification = db.session.merge(profile_data['verification'], load=False) if profile_data['verification'] else None
+
     return render_template('company/profile.html', profile=profile, locations=locations, verification=verification)
+
+def clear_company_profile_cache():
+    from app.extensions import cache
+    if current_user.is_authenticated and current_user.company_profile:
+        cache.delete(f"company_profile_data_{current_user.company_profile.id}")
 
 @bp.route('/profile/info', methods=['POST'])
 @company_required
@@ -210,6 +250,7 @@ def profile_info():
         profile.founding_year = int(founding_year)
         
     db.session.commit()
+    clear_company_profile_cache()
     flash('Informasi perusahaan berhasil diperbarui.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -257,6 +298,7 @@ def profile_logo():
                 
         profile.company_logo_file_id = new_asset.id
         db.session.commit()
+        clear_company_profile_cache()
         flash('Logo perusahaan berhasil diperbarui.', 'success')
     except Exception as e:
         db.session.rollback()
@@ -273,6 +315,7 @@ def profile_address():
     if location_id and location_id.isdigit():
         profile.location_id = int(location_id)
     db.session.commit()
+    clear_company_profile_cache()
     flash('Alamat perusahaan berhasil diperbarui.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -282,6 +325,7 @@ def profile_website():
     profile = current_user.company_profile
     profile.website_url = request.form.get('website_url')
     db.session.commit()
+    clear_company_profile_cache()
     flash('Tautan website berhasil diperbarui.', 'success')
     return redirect(url_for('company.profile'))
 
@@ -300,6 +344,7 @@ def profile_social():
         )
         db.session.add(new_link)
         db.session.commit()
+        clear_company_profile_cache()
         flash('Tautan media sosial berhasil ditambahkan.', 'success')
     else:
         flash('Platform dan URL harus diisi.', 'danger')
@@ -316,6 +361,7 @@ def profile_social_delete(id):
         
     db.session.delete(link)
     db.session.commit()
+    clear_company_profile_cache()
     flash('Tautan media sosial berhasil dihapus.', 'success')
     return redirect(url_for('company.profile'))
 
