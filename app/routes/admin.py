@@ -621,14 +621,28 @@ def internships():
     from app.models.identity import CompanyProfile
     from app.models.lookups import InternshipLifecycleStatus, InternshipModerationStatus
     from sqlalchemy.orm import joinedload
+    from app.extensions import cache
     
     q = request.args.get('q', '').strip()
     status_filter = request.args.get('status', 'all')
     mod_filter = request.args.get('mod', 'all')
     page = request.args.get('page', 1, type=int)
     
+    # 1. Cache lookup lists to avoid redundant DB queries
+    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    if not lifecycle_statuses:
+        lifecycle_statuses = InternshipLifecycleStatus.query.all()
+        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+        
+    mod_statuses = cache.get('all_moderation_statuses')
+    if not mod_statuses:
+        mod_statuses = InternshipModerationStatus.query.all()
+        cache.set('all_moderation_statuses', mod_statuses, timeout=86400)
+
+    # 2. Base query with eager loading of all relationship fields (including company logo and technology category)
     query = Internship.query.options(
-        joinedload(Internship.company_profile),
+        joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(Internship.technology_category),
         joinedload(Internship.lifecycle_status),
         joinedload(Internship.moderation_status)
     ).filter(Internship.deleted_at.is_(None))
@@ -642,21 +656,18 @@ def internships():
         )
         
     if status_filter != 'all':
-        status_obj = InternshipLifecycleStatus.query.filter_by(status_code=status_filter).first()
+        status_obj = next((s for s in lifecycle_statuses if s.status_code == status_filter), None)
         if status_obj:
             query = query.filter(Internship.lifecycle_status_id == status_obj.id)
             
     if mod_filter != 'all':
-        mod_obj = InternshipModerationStatus.query.filter_by(status_code=mod_filter).first()
+        mod_obj = next((m for m in mod_statuses if m.status_code == mod_filter), None)
         if mod_obj:
             query = query.filter(Internship.moderation_status_id == mod_obj.id)
             
     pagination = query.order_by(Internship.id.desc()).paginate(
         page=page, per_page=20, error_out=False
     )
-    
-    lifecycle_statuses = InternshipLifecycleStatus.query.all()
-    mod_statuses = InternshipModerationStatus.query.all()
     
     return render_template(
         'admin/internships.html',
