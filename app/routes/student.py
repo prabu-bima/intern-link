@@ -1485,15 +1485,35 @@ def internship_detail(id):
 @student_required
 def internship_ai_match(id):
     from app.services.ai_skill_match import run_skill_match
-    
+    from app.models.ai import AIJobRecommendationRun, AIJobRecommendationItem
+
     profile_id = current_user.student_profile.id
-    
+
     # Call the robust service
     match_run = run_skill_match(profile_id, id)
-    
+
     if not match_run:
         return jsonify({'status': 'error', 'message': 'Gagal melakukan analisis'})
-        
+
+    # Selaraskan skor dengan halaman rekomendasi: jika lowongan ini muncul di
+    # run rekomendasi terakhir yang sukses, pakai skor tersebut sebagai sumber
+    # kebenaran. Override hanya di memori (tanpa commit) agar data skill match
+    # asli tidak berubah.
+    if match_run.generation_status == 'success':
+        latest_reco = AIJobRecommendationRun.query.filter_by(
+            student_profile_id=profile_id,
+            generation_status='success',
+            deleted_at=None
+        ).order_by(AIJobRecommendationRun.id.desc()).first()
+        if latest_reco:
+            reco_item = AIJobRecommendationItem.query.filter_by(
+                ai_job_recommendation_run_id=latest_reco.id,
+                internship_id=id,
+                deleted_at=None
+            ).first()
+            if reco_item is not None:
+                match_run.match_percentage = reco_item.match_score
+
     # Render the partial
     html = render_template('student/_ai_match_partial.html', match_run=match_run)
     
