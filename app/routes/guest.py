@@ -141,3 +141,43 @@ def internship_detail(id):
     # For simplicity, we just render it.
     
     return render_template('guest/internship_detail.html', internship=internship)
+
+@bp.route('/companies')
+def companies():
+    from flask import request
+    from app.models.identity import CompanyProfile
+    from sqlalchemy.orm import joinedload
+    
+    # Base query. Eager load company_logo & location, filter out soft-deleted
+    query = CompanyProfile.query.options(
+        joinedload(CompanyProfile.company_logo),
+        joinedload(CompanyProfile.location)
+    ).filter(CompanyProfile.deleted_at.is_(None))
+    
+    # Search by company name (q)
+    q = request.args.get('q', '').strip()
+    if q:
+        search_term = f"%{q}%"
+        query = query.filter(CompanyProfile.company_name.ilike(search_term))
+        
+    # Sort alphabetically by company name
+    query = query.order_by(CompanyProfile.company_name.asc())
+    
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 9
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return render_template(
+        'guest/companies.html',
+        pagination=pagination,
+        companies=pagination.items,
+        current_q=q
+    )
+
+@bp.route('/companies/<int:id>')
+def company_detail(id):
+    from flask import abort
+    abort(404)
+
+
