@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as icon %}
+
+{% block title %}{{ company.company_name }} - Profil Perusahaan - InternLink{% endblock %}
+
+{% block content %}
+<!-- Back Button -->
+<div class="mb-6">
+    <a href="{{ url_for('guest.companies') }}" class="inline-flex items-center text-sm font-medium text-mute hover:text-ink transition-colors">
+        {{ icon.chevron_left_solid(class="mr-2 h-4 w-4") }}
+        Kembali ke Daftar Perusahaan
+    </a>
+</div>
+
+<!-- Company Header Profile Card -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
+    <div class="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+        <!-- Logo -->
+        <div class="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-4xl font-bold text-gray-400 overflow-hidden flex-shrink-0">
+            {% if company.company_logo %}
+                <img src="{{ company.company_logo.url }}" alt="{{ company.company_name }}" class="w-full h-full object-contain bg-white">
+            {% else %}
+                {{ company.company_name[:1].upper() }}
+            {% endif %}
+        </div>
+        
+        <!-- Details -->
+        <div class="flex-grow">
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight font-outfit">
+                    {{ company.company_name }}
+                </h1>
+                {% if company.industry_category %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100">
+                    {{ company.industry_category }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="flex flex-wrap gap-y-2 gap-x-6 text-sm text-gray-500 mb-6 font-medium">
+                <div class="flex items-center">
+                    {{ icon.map_pin(class="mr-2 h-4 w-4 text-gray-400") }}
+                    {% if company.location %}
+                        {{ company.location.city }}{% if company.location.region %}, {{ company.location.region }}{% endif %}
+                    {% else %}
+                        Lokasi tidak ditentukan
+                    {% endif %}
+                </div>
+                {% if company.company_size %}
+                <div class="flex items-center">
+                    {{ icon.users(class="mr-2 h-4 w-4 text-gray-400") }}
+                    {{ company.company_size }} Karyawan
+                </div>
+                {% endif %}
+                {% if company.founding_year %}
+                <div class="flex items-center">
+                    {{ icon.calendar(class="mr-2 h-4 w-4 text-gray-400") }}
+                    Berdiri sejak {{ company.founding_year }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="prose prose-sm text-gray-600 max-w-none mb-6">
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2">Tentang Perusahaan</h3>
+                <div class="leading-relaxed whitespace-pre-line">
+                    {% if company.company_description %}
+                        {{ company.company_description | safe }}
+                    {% else %}
+                        Perusahaan ini belum menambahkan informasi deskripsi profil.
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if company.website_url %}
+            <div class="mt-4">
+                <a href="{{ company.website_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2.5 border border-gray-200 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm gap-2">
+                    {{ icon.globe(class="h-4 w-4 text-gray-500") }}
+                    Kunjungi Website Resmi
+                    {{ icon.external_link(class="h-3 w-3 text-gray-400") }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Active Internships Section -->
+<div class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 tracking-tight font-outfit mb-6">Lowongan Magang Aktif</h2>
+    
+    {% if active_internships %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for job in active_internships %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group flex flex-col h-full relative overflow-hidden">
+            <!-- Card Header -->
+            <div class="p-6 flex-grow">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-bold text-gray-400 overflow-hidden">
+                        {% if company.company_logo %}
+                            <img src="{{ company.company_logo.url }}" alt="{{ company.company_name }}" class="w-full h-full object-contain bg-white">
+                        {% else %}
+                            {{ company.company_name[:1].upper() }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            Aktif
+                        </span>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors line-clamp-1">
+                    {{ job.internship_title }}
+                </h3>
+                <p class="text-gray-500 font-medium text-sm mb-4">
+                    {{ company.company_name }}
+                </p>
+                
+                <div class="flex flex-wrap gap-4 mb-4">
+                    <div class="flex items-center text-sm text-gray-500">
+                        {{ icon.map_pin(class="mr-1.5 h-3.5 w-3.5 text-gray-400") }}
+                        {{ job.location.city }}{% if job.location.region %}, {{ job.location.region }}{% endif %}
+                    </div>
+                    <div class="flex items-center text-sm text-gray-500">
+                        {{ icon.briefcase(class="mr-1.5 h-3.5 w-3.5 text-gray-400") }}
+                        {{ job.internship_type or 'Magang' }}
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600 line-clamp-2">
+                    {{ job.internship_description | striptags }}
+                </p>
+            </div>
+            
+            <!-- Card Footer (Skills) -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center mt-auto">
+                <div class="flex flex-wrap gap-1">
+                    {% if job.required_skills %}
+                        {% for skill_req in job.required_skills[:2] %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-gray-200 text-gray-600 shadow-sm">
+                            {{ skill_req.skill.skill_name }}
+                        </span>
+                        {% endfor %}
+                        {% if job.required_skills|length > 2 %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-gray-200 text-gray-400 shadow-sm">
+                            +{{ job.required_skills|length - 2 }}
+                        </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-xs text-gray-400 italic">Tidak ada spesifikasi keahlian</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Overlay link to Detail Page -->
+                <a href="{{ url_for('guest.internship_detail', id=job.id) }}" class="absolute inset-0 z-10">
+                    <span class="sr-only">Lihat detail lowongan {{ job.internship_title }}</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gray-50 mb-6 border border-gray-100">
+            {{ icon.briefcase(class="w-10 h-10 text-gray-400") }}
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Belum Ada Lowongan Magang Aktif</h3>
+        <p class="text-gray-500">Perusahaan ini saat ini belum membuka atau memiliki lowongan magang yang aktif.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

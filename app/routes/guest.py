@@ -178,6 +178,36 @@ def companies():
 @bp.route('/companies/<int:id>')
 def company_detail(id):
     from flask import abort
-    abort(404)
+    from app.models.identity import CompanyProfile
+    from app.models.internship import Internship, InternshipRequiredSkill
+    from app.models.lookups import InternshipLifecycleStatus
+    from sqlalchemy.orm import joinedload, selectinload
+    
+    # 1. Query CompanyProfile. Eager load logo and location. Must not be soft-deleted.
+    company = CompanyProfile.query.options(
+        joinedload(CompanyProfile.company_logo),
+        joinedload(CompanyProfile.location)
+    ).filter(
+        CompanyProfile.id == id,
+        CompanyProfile.deleted_at.is_(None)
+    ).first_or_404()
+    
+    # 2. Query active internships for this company.
+    active_internships = Internship.query.options(
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        selectinload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
+    ).join(InternshipLifecycleStatus).filter(
+        Internship.company_profile_id == id,
+        Internship.deleted_at.is_(None),
+        InternshipLifecycleStatus.status_name.ilike('%active%')
+    ).order_by(Internship.id.desc()).all()
+    
+    return render_template(
+        'guest/company_detail.html',
+        company=company,
+        active_internships=active_internships
+    )
+
 
 
