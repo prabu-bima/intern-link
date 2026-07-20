@@ -14,7 +14,7 @@
                     <a href="{% if current_user.is_authenticated and current_user.role == 'student' %}{{ url_for('student.internships') }}{% else %}{{ url_for('guest.internships') }}{% endif %}" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
                         Cari Lowongan
                     </a>
-                    <a href="/companies" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
+                    <a href="{{ url_for('guest.companies') }}" class="border-transparent text-mute hover:border-hairline hover:text-ink inline-flex items-center px-1 pt-1 border-b-2 text-body-md font-medium transition-colors">
                         Daftar Perusahaan
                     </a>
                 </div>
