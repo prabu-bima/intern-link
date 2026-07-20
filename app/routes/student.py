@@ -209,11 +209,15 @@ def recommendations():
 def refresh_recommendations():
     from flask import current_app
     from app.services.ai_job_recommendation import run_job_recommendation
+    from app.extensions import cache
     profile = current_user.student_profile
     if not profile:
         return jsonify({'status': 'error', 'message': 'Student profile not found.'}), 404
         
     try:
+        # Clear recommendation cache to force loading newly generated recommendations
+        cache.delete(f"student_recommendations_{profile.id}")
+        
         new_run = run_job_recommendation(profile.id)
         if not new_run or new_run.generation_status == 'failed':
             return jsonify({
