@@ -33,9 +33,9 @@
             <div>
                 <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase">Legal</h3>
                 <ul class="mt-4 space-y-3">
-                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Syarat & Ketentuan</a></li>
-                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Kebijakan Privasi</a></li>
-                    <li><a href="#" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Cookie Policy</a></li>
+                    <li><a href="{{ url_for('guest.terms') }}" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Syarat & Ketentuan</a></li>
+                    <li><a href="{{ url_for('guest.privacy') }}" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Kebijakan Privasi</a></li>
+                    <li><a href="{{ url_for('guest.cookies') }}" class="text-sm text-gray-500 hover:text-primary-600 transition-colors">Cookie Policy</a></li>
                 </ul>
             </div>
             

@@ -209,5 +209,18 @@ def company_detail(id):
         active_internships=active_internships
     )
 
+@bp.route('/terms')
+def terms():
+    return render_template('guest/terms.html')
+
+@bp.route('/privacy')
+def privacy():
+    return render_template('guest/privacy.html')
+
+@bp.route('/cookies')
+def cookies():
+    return render_template('guest/cookies.html')
+
+
 
 
