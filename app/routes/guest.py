@@ -10,12 +10,25 @@ def index():
     # Menghindari 3x round-trip ke Supabase tiap kali halaman dibuka.
     @cache.cached(timeout=300, key_prefix='landing_stats')
     def _get_landing_stats():
-        from app.models.identity import StudentProfile, CompanyProfile
+        from app.models.identity import StudentProfile, CompanyProfile, UserAccount
+        from app.models.lookups import UserAccountStatus
         from app.models.internship import Internship
         from app.models.lookups import InternshipLifecycleStatus
+        from app.extensions import db
 
         student_count = StudentProfile.query.count()
-        company_count = CompanyProfile.query.count()
+        company_count = CompanyProfile.query.join(
+            UserAccount, CompanyProfile.user_account_id == UserAccount.id
+        ).outerjoin(
+            UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
+        ).filter(
+            CompanyProfile.deleted_at.is_(None),
+            UserAccount.deleted_at.is_(None),
+            db.or_(
+                UserAccountStatus.status_code == 'active',
+                UserAccount.account_status_id.is_(None)
+            )
+        ).count()
 
         # Query internships that are active (assuming 'Active' is the status name, fallback to all if empty)
         internships = Internship.query.join(InternshipLifecycleStatus).filter(
@@ -145,14 +158,25 @@ def internship_detail(id):
 @bp.route('/companies')
 def companies():
     from flask import request
-    from app.models.identity import CompanyProfile
+    from app.models.identity import CompanyProfile, UserAccount
+    from app.models.lookups import UserAccountStatus
     from sqlalchemy.orm import joinedload
+    from app.extensions import db
     
-    # Base query. Eager load company_logo & location, filter out soft-deleted
+    # Base query. Eager load company_logo & location, filter out soft-deleted & inactive company accounts
     query = CompanyProfile.query.options(
         joinedload(CompanyProfile.company_logo),
         joinedload(CompanyProfile.location)
-    ).filter(CompanyProfile.deleted_at.is_(None))
+    ).join(UserAccount, CompanyProfile.user_account_id == UserAccount.id
+    ).outerjoin(UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
+    ).filter(
+        CompanyProfile.deleted_at.is_(None),
+        UserAccount.deleted_at.is_(None),
+        db.or_(
+            UserAccountStatus.status_code == 'active',
+            UserAccount.account_status_id.is_(None)
+        )
+    )
     
     # Search by company name (q)
     q = request.args.get('q', '').strip()
@@ -178,18 +202,27 @@ def companies():
 @bp.route('/companies/<int:id>')
 def company_detail(id):
     from flask import abort
-    from app.models.identity import CompanyProfile
+    from app.models.identity import CompanyProfile, UserAccount
+    from app.models.lookups import UserAccountStatus
     from app.models.internship import Internship, InternshipRequiredSkill
     from app.models.lookups import InternshipLifecycleStatus
     from sqlalchemy.orm import joinedload, selectinload
+    from app.extensions import db
     
-    # 1. Query CompanyProfile. Eager load logo and location. Must not be soft-deleted.
+    # 1. Query CompanyProfile. Eager load logo and location. Must not be soft-deleted or inactive.
     company = CompanyProfile.query.options(
         joinedload(CompanyProfile.company_logo),
         joinedload(CompanyProfile.location)
+    ).join(UserAccount, CompanyProfile.user_account_id == UserAccount.id
+    ).outerjoin(UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
     ).filter(
         CompanyProfile.id == id,
-        CompanyProfile.deleted_at.is_(None)
+        CompanyProfile.deleted_at.is_(None),
+        UserAccount.deleted_at.is_(None),
+        db.or_(
+            UserAccountStatus.status_code == 'active',
+            UserAccount.account_status_id.is_(None)
+        )
     ).first_or_404()
     
     # 2. Query active internships for this company.
