@@ -1130,6 +1130,35 @@ def mark_notification_read(id):
 
     return redirect(url_for('company.notifications'))
 
+@bp.route('/notifications/<int:id>/view', methods=['GET'])
+@company_required
+def view_notification(id):
+    """Mark notification as read, then redirect to its detail URL."""
+    notif = Notification.query.filter_by(
+        id=id,
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).first_or_404()
+
+    if not notif.is_read:
+        notif.is_read = True
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+
+    payload = notif.payload_json or {}
+    application_id = payload.get('application_id')
+    internship_id = payload.get('internship_id')
+
+    if application_id:
+        target = url_for('company.applicant_detail', application_id=application_id)
+    elif internship_id:
+        target = url_for('company.internship_applicants', id=internship_id)
+    else:
+        target = url_for('company.notifications')
+
+    return redirect(target)
+
+
 
 @bp.route('/notifications/read-all', methods=['POST'])
 @company_required

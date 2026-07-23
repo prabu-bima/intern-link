@@ -81,16 +81,11 @@
                     </p>
 
                     <div class="mt-3 flex items-center gap-4">
-                        {# Link ke detail pelamar jika ada application_id #}
-                        {% if notif.payload_json.get('application_id') %}
-                        <a href="{{ url_for('company.applicant_detail', application_id=notif.payload_json.get('application_id')) }}"
+                        {# Link ke detail menggunakan view_notification agar otomatis tandai dibaca #}
+                        {% if notif.payload_json.get('application_id') or notif.payload_json.get('internship_id') %}
+                        <a href="{{ url_for('company.view_notification', id=notif.id) }}"
                            class="text-xs font-medium text-primary-600 hover:text-primary-700">
-                            Lihat Pelamar &rarr;
-                        </a>
-                        {% elif notif.payload_json.get('internship_id') %}
-                        <a href="{{ url_for('company.internship_applicants', id=notif.payload_json.get('internship_id')) }}"
-                           class="text-xs font-medium text-primary-600 hover:text-primary-700">
-                            Lihat Lowongan &rarr;
+                            Lihat Detail &rarr;
                         </a>
                         {% endif %}
 
