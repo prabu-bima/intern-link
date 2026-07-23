@@ -649,7 +649,15 @@
         // Delete Photo Logic
         if (btnDeletePhoto) {
             btnDeletePhoto.addEventListener('click', async () => {
-                if (!confirm('Apakah Anda yakin ingin menghapus foto profil?')) return;
+                const res = await confirmAction({
+                    title: 'Hapus Foto Profil',
+                    text: 'Apakah Anda yakin ingin menghapus foto profil?',
+                    icon: 'warning',
+                    confirmText: 'Ya, Hapus',
+                    cancelText: 'Batal',
+                    isDanger: true
+                });
+                if (!res.isConfirmed) return;
                 
                 // Show loading
                 photoLoading.classList.remove('hidden');
@@ -765,10 +773,18 @@
             });
     };
     
-    window.deleteEducationFromModal = function() {
+    window.deleteEducationFromModal = async function() {
         const id = document.getElementById('edu_id').value;
         if (!id) return;
-        if (!confirm('Apakah Anda yakin ingin menghapus riwayat pendidikan ini?')) return;
+        const res = await confirmAction({
+            title: 'Hapus Pendidikan',
+            text: 'Apakah Anda yakin ingin menghapus riwayat pendidikan ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
         
         const btnDelete = document.getElementById('btnDeleteEduModal');
         btnDelete.disabled = true;
@@ -885,8 +901,16 @@
             });
     }
     
-    window.deleteSkill = function(id) {
-        if (!confirm('Hapus keahlian ini?')) return;
+    window.deleteSkill = async function(id) {
+        const res = await confirmAction({
+            title: 'Hapus Keahlian',
+            text: 'Apakah Anda yakin ingin menghapus keahlian ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
         
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/skills/${id}/delete`, {
@@ -993,8 +1017,16 @@
             });
     }
     
-    window.deleteTechStack = function(id) {
-        if (!confirm('Hapus tech stack ini?')) return;
+    window.deleteTechStack = async function(id) {
+        const res = await confirmAction({
+            title: 'Hapus Tech Stack',
+            text: 'Apakah Anda yakin ingin menghapus tech stack ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
         
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/tech-stack/${id}/delete`, {
@@ -1128,8 +1160,16 @@
             });
     };
     
-    window.deleteExperience = function(id) {
-        if (!confirm('Hapus pengalaman ini?')) return;
+    window.deleteExperience = async function(id) {
+        const res = await confirmAction({
+            title: 'Hapus Pengalaman',
+            text: 'Apakah Anda yakin ingin menghapus pengalaman kerja ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
         
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/experience/${id}/delete`, {
@@ -1272,8 +1312,16 @@
             });
     };
     
-    window.deleteOrganization = function(id) {
-        if (!confirm('Hapus organisasi ini?')) return;
+    window.deleteOrganization = async function(id) {
+        const res = await confirmAction({
+            title: 'Hapus Organisasi',
+            text: 'Apakah Anda yakin ingin menghapus pengalaman organisasi ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
         
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/organization/${id}/delete`, {
@@ -1435,10 +1483,18 @@
         portfolioModal.classList.remove('flex');
     };
 
-    window.deletePortfolioFromModal = function() {
+    window.deletePortfolioFromModal = async function() {
         const id = document.getElementById('port_id').value;
         if (!id) return;
-        if (!confirm('Hapus portofolio ini?')) return;
+        const res = await confirmAction({
+            title: 'Hapus Portofolio',
+            text: 'Apakah Anda yakin ingin menghapus portofolio ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
 
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/portfolio/${id}/delete`, {
@@ -1659,10 +1715,18 @@
         });
     };
 
-    window.deleteCertificateFromModal = function() {
+    window.deleteCertificateFromModal = async function() {
         const id = document.getElementById('cert_id').value;
         if (!id) return;
-        if (!confirm('Hapus sertifikat ini?')) return;
+        const res = await confirmAction({
+            title: 'Hapus Sertifikat',
+            text: 'Apakah Anda yakin ingin menghapus sertifikat ini?',
+            icon: 'warning',
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            isDanger: true
+        });
+        if (!res.isConfirmed) return;
 
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/certificates/${id}/delete`, {

@@ -37,8 +37,71 @@
     {% endblock %}
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Prefetch halaman saat hover agar navigasi terasa instan -->
     <script src="{{ url_for('static', filename='js/prefetch.js') }}" defer></script>
+    <script>
+    // Global confirm modal handler for forms with data-confirm
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        const confirmMsg = form.getAttribute('data-confirm');
+        if (confirmMsg) {
+            e.preventDefault();
+            const confirmTitle = form.getAttribute('data-confirm-title') || 'Konfirmasi Tindakan';
+            const confirmBtn = form.getAttribute('data-confirm-btn') || 'Ya, Lanjutkan';
+            const cancelBtn = form.getAttribute('data-confirm-cancel') || 'Batal';
+            const isDanger = form.getAttribute('data-confirm-danger') !== 'false';
+
+            Swal.fire({
+                title: confirmTitle,
+                text: confirmMsg,
+                icon: isDanger ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonText: confirmBtn,
+                cancelButtonText: cancelBtn,
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-2xl shadow-xl border border-gray-100 font-sans p-6',
+                    title: 'text-lg font-bold text-gray-900 mt-2',
+                    htmlContainer: 'text-sm text-gray-600 my-3',
+                    confirmButton: isDanger 
+                        ? 'px-5 py-2.5 rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none transition-colors'
+                        : 'px-5 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors',
+                    cancelButton: 'px-5 py-2.5 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors mr-3'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.removeAttribute('data-confirm');
+                    form.submit();
+                }
+            });
+        }
+    });
+
+    // Helper for JS confirmation modals
+    window.confirmAction = function({ title = 'Konfirmasi', text, icon = 'warning', confirmText = 'Ya, Lanjutkan', cancelText = 'Batal', isDanger = true }) {
+        return Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: cancelText,
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-2xl shadow-xl border border-gray-100 font-sans p-6',
+                title: 'text-lg font-bold text-gray-900 mt-2',
+                htmlContainer: 'text-sm text-gray-600 my-3',
+                confirmButton: isDanger 
+                    ? 'px-5 py-2.5 rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none transition-colors'
+                    : 'px-5 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors',
+                cancelButton: 'px-5 py-2.5 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors mr-3'
+            },
+            buttonsStyling: false
+        });
+    };
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

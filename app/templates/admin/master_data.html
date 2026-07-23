@@ -394,11 +394,31 @@ document.getElementById('form-loc').addEventListener('submit', async function(e)
 
 // ── Generic Delete ──
 async function deleteItem(type, id, btn) {
-    if (!confirm('Hapus item ini? Tindakan ini tidak dapat dibatalkan.')) return;
+    const res = await confirmAction({
+        title: 'Hapus Item',
+        text: 'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.',
+        icon: 'warning',
+        confirmText: 'Ya, Hapus',
+        cancelText: 'Batal',
+        isDanger: true
+    });
+    if (!res.isConfirmed) return;
     const urlMap = {cat:'categories', skill:'skills', tech:'tech-stack', loc:'locations'};
     const data = await postForm('/admin/master-data/' + urlMap[type] + '/' + id + '/delete', new FormData());
     if (data.success) { btn.closest('tr').remove(); }
-    else alert(data.error);
+    else {
+        Swal.fire({
+            title: 'Gagal Hapus',
+            text: data.error,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            customClass: {
+                popup: 'rounded-2xl shadow-xl border border-gray-100 font-sans p-6',
+                confirmButton: 'px-5 py-2.5 rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none transition-colors'
+            },
+            buttonsStyling: false
+        });
+    }
 }
 </script>
 {% endblock %}

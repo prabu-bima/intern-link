@@ -72,7 +72,10 @@
         <div class="flex-shrink-0">
             {% if is_active %}
             <form action="{{ url_for('admin.disable_student', id=student.id) }}" method="POST"
-                  onsubmit="return confirm('Nonaktifkan akun {{ student.display_name }}?')">
+                  data-confirm="Nonaktifkan akun {{ student.display_name }}?"
+                  data-confirm-title="Konfirmasi Nonaktifkan Akun"
+                  data-confirm-btn="Ya, Nonaktifkan"
+                  data-confirm-danger="true">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                         class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-xl text-red-600 bg-white hover:bg-red-50 transition-colors">
@@ -82,7 +85,10 @@
             </form>
             {% elif is_disabled %}
             <form action="{{ url_for('admin.enable_student', id=student.id) }}" method="POST"
-                  onsubmit="return confirm('Aktifkan kembali akun {{ student.display_name }}?')">
+                  data-confirm="Aktifkan kembali akun {{ student.display_name }}?"
+                  data-confirm-title="Konfirmasi Aktifkan Akun"
+                  data-confirm-btn="Ya, Aktifkan"
+                  data-confirm-danger="false">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                         class="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-xl text-green-600 bg-white hover:bg-green-50 transition-colors">

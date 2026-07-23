@@ -124,7 +124,11 @@
                             <a href="{{ link.url }}" target="_blank" class="text-xs text-gray-500 hover:text-primary-600 truncate">{{ link.url }}</a>
                         </div>
                     </div>
-                    <form action="{{ url_for('company.profile_social_delete', id=link.id) }}" method="POST" onsubmit="return confirm('Hapus tautan ini?');">
+                    <form action="{{ url_for('company.profile_social_delete', id=link.id) }}" method="POST"
+                          data-confirm="Apakah Anda yakin ingin menghapus tautan media sosial ini?"
+                          data-confirm-title="Hapus Media Sosial"
+                          data-confirm-btn="Ya, Hapus"
+                          data-confirm-danger="true">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Hapus">
                             {{ icon.trash(class="w-4 h-4") }}

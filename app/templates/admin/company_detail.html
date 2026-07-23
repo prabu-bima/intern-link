@@ -106,7 +106,10 @@
             {% if is_active_account %}
             <!-- Disable -->
             <form action="{{ url_for('admin.disable_company', id=company.id) }}" method="POST"
-                  onsubmit="return confirm('Nonaktifkan perusahaan ini? Semua lowongan aktif akan ditutup.')">
+                  data-confirm="Nonaktifkan perusahaan ini? Semua lowongan aktif akan ditutup."
+                  data-confirm-title="Konfirmasi Nonaktifkan Perusahaan"
+                  data-confirm-btn="Ya, Nonaktifkan"
+                  data-confirm-danger="true">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                         class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-xl text-gray-600 bg-white hover:bg-gray-50 transition-colors">
@@ -117,7 +120,10 @@
             {% else %}
             <!-- Enable -->
             <form action="{{ url_for('admin.enable_company', id=company.id) }}" method="POST"
-                  onsubmit="return confirm('Aktifkan kembali akun perusahaan ini?')">
+                  data-confirm="Aktifkan kembali akun perusahaan ini?"
+                  data-confirm-title="Konfirmasi Aktifkan Perusahaan"
+                  data-confirm-btn="Ya, Aktifkan"
+                  data-confirm-danger="false">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                         class="w-full inline-flex items-center justify-center px-4 py-2 border border-green-300 text-sm font-medium rounded-xl text-green-600 bg-white hover:bg-green-50 transition-colors">
