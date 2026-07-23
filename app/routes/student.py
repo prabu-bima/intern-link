@@ -1621,6 +1621,12 @@ def internship_ai_match(id):
             if reco_item is not None:
                 match_run.match_percentage = reco_item.match_score
 
+        # Selaraskan persentase yang tertulis di dalam deskripsi teks dengan match_percentage
+        import re
+        if match_run.ai_explanation:
+            score_int = int(round(match_run.match_percentage))
+            match_run.ai_explanation = re.sub(r'\b\d{1,3}%', f"{score_int}%", match_run.ai_explanation)
+
     # Render the partial
     html = render_template('student/_ai_match_partial.html', match_run=match_run)
     

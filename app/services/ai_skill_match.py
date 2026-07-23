@@ -105,6 +105,9 @@ def run_skill_match(student_profile_id: int, internship_id: int) -> Optional[AIS
     
     if existing_run and existing_run.generation_status == 'success':
         logger.info(f"Returning cached AI Skill Match for Student {student_profile_id} and Internship {internship_id}")
+        import re
+        if existing_run.ai_explanation and existing_run.match_percentage is not None:
+            existing_run.ai_explanation = re.sub(r'\b\d{1,3}%', f"{int(round(existing_run.match_percentage))}%", existing_run.ai_explanation)
         return existing_run
 
     # 2. Call Groq API
