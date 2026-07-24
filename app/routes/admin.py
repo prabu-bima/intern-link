@@ -417,24 +417,36 @@ def companies():
     if status_filter != 'all':
         ver_status = CompanyVerificationStatus.query.filter_by(status_code=status_filter).first()
         if ver_status:
-            # Subquery: company_profile_ids whose latest verification has this status
-            from sqlalchemy import select
             latest_ver = db.session.query(
                 CompanyVerification.company_profile_id,
                 db.func.max(CompanyVerification.id).label('max_id')
             ).group_by(CompanyVerification.company_profile_id).subquery()
 
-            matching_ids = db.session.query(CompanyProfile.user_account_id).join(
-                latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
-            ).join(
-                CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
-            ).filter(
-                CompanyVerification.verification_status_id == ver_status.id
-            ).subquery()
+            if status_filter == 'pending':
+                matching_user_ids = db.session.query(UserAccount.id).join(
+                    CompanyProfile, CompanyProfile.user_account_id == UserAccount.id
+                ).outerjoin(
+                    latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
+                ).outerjoin(
+                    CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
+                ).filter(
+                    db.or_(
+                        CompanyVerification.verification_status_id == ver_status.id,
+                        CompanyVerification.id.is_(None)
+                    )
+                )
+            else:
+                matching_user_ids = db.session.query(UserAccount.id).join(
+                    CompanyProfile, CompanyProfile.user_account_id == UserAccount.id
+                ).join(
+                    latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
+                ).join(
+                    CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
+                ).filter(
+                    CompanyVerification.verification_status_id == ver_status.id
+                )
 
-            query = query.filter(UserAccount.id.in_(
-                db.session.query(matching_ids)
-            ))
+            query = query.filter(UserAccount.id.in_(matching_user_ids))
 
     verification_statuses = CompanyVerificationStatus.query.all()
     pagination = query.order_by(UserAccount.id.desc()).paginate(
@@ -459,7 +471,11 @@ def company_detail(id):
     from app.models.internship import Internship
     from sqlalchemy.orm import joinedload
 
-    company = UserAccount.query.filter_by(
+    company = UserAccount.query.options(
+        joinedload(UserAccount.status),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.location),
+    ).filter_by(
         id=id, role='company', deleted_at=None
     ).first_or_404()
 

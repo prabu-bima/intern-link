@@ -99,7 +99,7 @@ def register_company():
         db.session.flush()
         
         # Create Verification Record (Status Pending)
-        pending_status = CompanyVerificationStatus.query.filter_by(status_name='Pending').first()
+        pending_status = CompanyVerificationStatus.query.filter_by(status_code='pending').first()
         if pending_status:
             verification = CompanyVerification(
                 company_profile_id=profile.id,
