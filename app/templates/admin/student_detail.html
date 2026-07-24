@@ -5,7 +5,7 @@
 
 {% block admin_content %}
 {% set profile = student.student_profile %}
-{% set is_active = student.status and student.status.status_code == 'active' %}
+{% set is_active = not student.status or student.status.status_code == 'active' %}
 {% set is_disabled = student.status and student.status.status_code == 'inactive' %}
 
 <!-- Header -->
@@ -36,14 +36,10 @@
         <div class="flex-grow min-w-0">
             <div class="flex flex-wrap items-center gap-3 mb-1">
                 <h1 class="text-xl font-bold text-gray-900 font-outfit">{{ student.display_name }}</h1>
-                {% if is_active %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
-                {% elif is_disabled %}
+                {% if is_disabled %}
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Nonaktif</span>
                 {% else %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                    {{ student.status.status_name if student.status else 'Tidak diketahui' }}
-                </span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
                 {% endif %}
             </div>
             <p class="text-sm text-gray-500 mb-3">{{ student.email }}</p>
@@ -68,8 +64,8 @@
             {% endif %}
         </div>
 
-        <!-- Disable / Enable Button -->
-        <div class="flex-shrink-0">
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
             {% if is_active %}
             <form action="{{ url_for('admin.disable_student', id=student.id) }}" method="POST"
                   data-confirm="Nonaktifkan akun {{ student.display_name }}?"
@@ -78,8 +74,8 @@
                   data-confirm-danger="true">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
-                        class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-xl text-red-600 bg-white hover:bg-red-50 transition-colors">
-                    {{ icon.x_circle(class="w-4 h-4 mr-1.5") }}
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    {{ icon.x_circle(class="w-4 h-4 mr-1.5 text-gray-500") }}
                     Nonaktifkan
                 </button>
             </form>
@@ -91,13 +87,56 @@
                   data-confirm-danger="false">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
-                        class="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-xl text-green-600 bg-white hover:bg-green-50 transition-colors">
+                        class="inline-flex items-center px-3.5 py-2 border border-green-300 text-sm font-medium rounded-xl text-green-700 bg-white hover:bg-green-50 transition-colors">
                     {{ icon.check_circle(class="w-4 h-4 mr-1.5") }}
                     Aktifkan
                 </button>
             </form>
             {% endif %}
+
+            <form action="{{ url_for('admin.delete_student', id=student.id) }}" method="POST"
+                  data-confirm="Apakah Anda yakin ingin menghapus akun {{ student.display_name }}? Tindakan ini tidak dapat dibatalkan."
+                  data-confirm-title="Konfirmasi Hapus Akun Mahasiswa"
+                  data-confirm-btn="Ya, Hapus Akun"
+                  data-confirm-danger="true">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-xl text-red-600 bg-white hover:bg-red-50 transition-colors">
+                    {{ icon.trash(class="w-4 h-4 mr-1.5") }}
+                    Hapus Akun
+                </button>
+            </form>
         </div>
+    </div>
+</div>
+
+<!-- Dokumen CV / Resume Section -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600 flex-shrink-0">
+                {{ icon.document_text(class="w-5 h-5") }}
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-gray-900">Dokumen CV / Resume</h2>
+                {% if cv_version and cv_version.cv_file %}
+                <p class="text-xs text-gray-500 mt-0.5">
+                    {{ cv_version.cv_file.file_name }}
+                    <span class="text-gray-400">· Versi {{ cv_version.version_no }}</span>
+                </p>
+                {% else %}
+                <p class="text-xs text-gray-400 italic mt-0.5">Belum mengunggah CV.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if cv_version and cv_version.cv_file and cv_version.cv_file.url %}
+        <a href="{{ cv_version.cv_file.url }}" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm self-start sm:self-auto">
+            {{ icon.arrow_down_tray(class="w-4 h-4 mr-1.5") }}
+            Lihat / Unduh CV
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -109,8 +148,10 @@
         </div>
         <div class="p-6">
             {% if profile and profile.education_records %}
+            {% set active_edus = profile.education_records | selectattr('deleted_at', 'none') | list if profile.education_records else [] %}
+            {% if active_edus %}
             <div class="space-y-4">
-                {% for edu in profile.education_records %}
+                {% for edu in active_edus %}
                 <div class="flex gap-3">
                     <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                         {{ icon.academic_cap(class="w-4 h-4 text-blue-500") }}
@@ -128,6 +169,9 @@
             {% else %}
             <p class="text-sm text-gray-400 italic">Belum diisi.</p>
             {% endif %}
+            {% else %}
+            <p class="text-sm text-gray-400 italic">Belum diisi.</p>
+            {% endif %}
         </div>
     </div>
 
@@ -138,24 +182,31 @@
         </div>
         <div class="p-6 space-y-4">
             {% if profile and profile.skills %}
+            {% set active_skills = profile.skills | selectattr('deleted_at', 'none') | list if profile.skills else [] %}
+            {% if active_skills %}
             <div>
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Keahlian</p>
                 <div class="flex flex-wrap gap-2">
-                    {% for s in profile.skills %}
+                    {% for s in active_skills %}
                     <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">
                         {{ s.skill.skill_name }}
+                        {% if s.proficiency_level %}
                         <span class="ml-1 text-blue-400">· {{ s.proficiency_level }}</span>
+                        {% endif %}
                     </span>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
+            {% endif %}
 
             {% if profile and profile.tech_stack_items %}
+            {% set active_tech = profile.tech_stack_items | selectattr('deleted_at', 'none') | list if profile.tech_stack_items else [] %}
+            {% if active_tech %}
             <div>
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tech Stack</p>
                 <div class="flex flex-wrap gap-2">
-                    {% for t in profile.tech_stack_items %}
+                    {% for t in active_tech %}
                     <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
                         {{ t.tech_stack_item.tech_stack_name }}
                     </span>
@@ -163,8 +214,87 @@
                 </div>
             </div>
             {% endif %}
+            {% endif %}
 
             {% if (not profile or (not profile.skills and not profile.tech_stack_items)) %}
+            <p class="text-sm text-gray-400 italic">Belum diisi.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Work Experience -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-base font-bold text-gray-900">Pengalaman Kerja / Proyek</h2>
+        </div>
+        <div class="p-6">
+            {% if profile and profile.experiences %}
+            {% set active_experiences = profile.experiences | selectattr('deleted_at', 'none') | list if profile.experiences else [] %}
+            {% if active_experiences %}
+            <div class="space-y-4">
+                {% for exp in active_experiences %}
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        {{ icon.briefcase(class="w-4 h-4 text-emerald-600") }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">{{ exp.title }}</p>
+                        <p class="text-xs text-gray-600 font-medium">{{ exp.organization_name }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            {{ exp.start_date.strftime('%b %Y') if exp.start_date else '' }} - 
+                            {{ exp.end_date.strftime('%b %Y') if exp.end_date else 'Sekarang' }}
+                        </p>
+                        {% if exp.description %}
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{ exp.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-400 italic">Belum diisi.</p>
+            {% endif %}
+            {% else %}
+            <p class="text-sm text-gray-400 italic">Belum diisi.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Organization Experience -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-base font-bold text-gray-900">Pengalaman Organisasi</h2>
+        </div>
+        <div class="p-6">
+            {% if profile and profile.organizations %}
+            {% set active_orgs = profile.organizations | selectattr('deleted_at', 'none') | list if profile.organizations else [] %}
+            {% if active_orgs %}
+            <div class="space-y-4">
+                {% for org in active_orgs %}
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                        {{ icon.user_group(class="w-4 h-4 text-purple-600") }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">{{ org.role_title }}</p>
+                        <p class="text-xs text-gray-600 font-medium">{{ org.organization_name }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            {{ org.start_date.strftime('%b %Y') if org.start_date else '' }} - 
+                            {{ org.end_date.strftime('%b %Y') if org.end_date else 'Sekarang' }}
+                        </p>
+                        {% if org.description %}
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{ org.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-400 italic">Belum diisi.</p>
+            {% endif %}
+            {% else %}
             <p class="text-sm text-gray-400 italic">Belum diisi.</p>
             {% endif %}
         </div>
@@ -220,3 +350,4 @@
     {% endif %}
 </div>
 {% endblock %}
+

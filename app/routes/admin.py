@@ -237,24 +237,44 @@ def students():
 @admin_required
 def student_detail(id):
     from app.models.identity import UserAccount, StudentProfile
+    from app.models.student import StudentCvVersion
     from app.models.internship import InternshipApplication
     from sqlalchemy.orm import joinedload
 
-    student = UserAccount.query.filter_by(
+    student = UserAccount.query.options(
+        joinedload(UserAccount.status),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.education_records),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.skills),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.tech_stack_items),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.experiences),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.organizations),
+    ).filter_by(
         id=id, role='student', deleted_at=None
     ).first_or_404()
+
+    profile = student.student_profile
+    cv_version = None
+    if profile:
+        cv_version = StudentCvVersion.query.options(
+            joinedload(StudentCvVersion.cv_file)
+        ).filter_by(
+            student_profile_id=profile.id,
+            is_current=True,
+            deleted_at=None
+        ).first()
 
     applications = InternshipApplication.query.options(
         joinedload(InternshipApplication.internship),
         joinedload(InternshipApplication.application_status),
     ).filter_by(
-        student_profile_id=student.student_profile.id if student.student_profile else 0,
+        student_profile_id=profile.id if profile else 0,
         deleted_at=None
     ).order_by(InternshipApplication.submitted_at.desc()).all()
 
     return render_template(
         'admin/student_detail.html',
         student=student,
+        cv_version=cv_version,
         applications=applications,
     )
 
@@ -330,6 +350,38 @@ def enable_student(id):
 
     flash(f'Akun {student.display_name} berhasil diaktifkan kembali.', 'success')
     return redirect(url_for('admin.student_detail', id=id))
+
+
+@bp.route('/students/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_student(id):
+    from flask import redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+
+    student = UserAccount.query.filter_by(
+        id=id, role='student', deleted_at=None
+    ).first_or_404()
+
+    student.deleted_at = datetime.utcnow()
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_student',
+        target_type='UserAccount',
+        target_id=student.id,
+        details_json={
+            'student_email': student.email,
+            'student_name': student.display_name,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Akun mahasiswa {student.display_name} berhasil dihapus.', 'success')
+    return redirect(url_for('admin.students'))
+
 
 
 # ── Company Management ───────────────────────────────────────────
