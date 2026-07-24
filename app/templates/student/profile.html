@@ -9,37 +9,46 @@
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
         <div class="flex items-center space-x-4">
             <!-- Profile Photo Container -->
-            <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-2xl font-bold overflow-hidden relative group cursor-pointer" onclick="document.getElementById('profilePhotoInput').click()">
+            <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-2xl font-bold overflow-hidden relative group cursor-pointer"
+                onclick="document.getElementById('profilePhotoInput').click()">
                 {% if current_user.student_profile and current_user.student_profile.profile_photo %}
-                    <img id="profilePhotoImg" src="{{ current_user.student_profile.profile_photo.url }}" alt="Profile Photo" class="w-full h-full object-cover">
-                    <span id="profilePhotoInitials" class="hidden">{{ current_user.display_name[:1].upper() }}</span>
+                <img id="profilePhotoImg" src="{{ current_user.student_profile.profile_photo.url }}" alt="Profile Photo"
+                    class="w-full h-full object-cover">
+                <span id="profilePhotoInitials" class="hidden">{{ current_user.display_name[:1].upper() }}</span>
                 {% else %}
-                    <img id="profilePhotoImg" src="" alt="Profile Photo" class="w-full h-full object-cover hidden">
-                    <span id="profilePhotoInitials">{{ current_user.display_name[:1].upper() }}</span>
+                <img id="profilePhotoImg" src="" alt="Profile Photo" class="w-full h-full object-cover hidden">
+                <span id="profilePhotoInitials">{{ current_user.display_name[:1].upper() }}</span>
                 {% endif %}
-                
-                <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all">
+
+                <div
+                    class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all">
                     {{ icon.camera(class="w-6 h-6 text-white") }}
                 </div>
-                
+
                 <!-- Loading Overlay -->
-                <div id="profilePhotoLoading" class="absolute inset-0 bg-black/50 hidden items-center justify-center transition-all z-10">
-                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <div id="profilePhotoLoading"
+                    class="absolute inset-0 bg-black/50 hidden items-center justify-center transition-all z-10">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
                     </svg>
                 </div>
             </div>
-            
+
             <input type="file" id="profilePhotoInput" accept="image/png, image/jpeg" class="hidden">
-            
+
             <div>
                 <h1 class="text-2xl font-extrabold text-gray-900 font-outfit">{{ current_user.display_name }}</h1>
                 <p class="text-sm text-gray-500">{{ current_user.email }}</p>
             </div>
         </div>
-        
-        <button type="button" id="btnDeletePhoto" class="{% if not current_user.student_profile or not current_user.student_profile.profile_photo %}hidden{% endif %} px-3 py-3 text-sm border border-red-500 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl font-medium transition-colors">
+
+        <button type="button" id="btnDeletePhoto"
+            class="{% if not current_user.student_profile or not current_user.student_profile.profile_photo %}hidden{% endif %} px-3 py-3 text-sm border border-red-500 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl font-medium transition-colors">
             Hapus Foto
         </button>
     </div>
@@ -48,11 +57,21 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <!-- Tabs Nav -->
         <div class="border-b border-gray-100 bg-gray-50/50 px-6 pt-4 flex space-x-6 overflow-x-auto scrollbar-hide">
-            <a href="#" class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-primary-600 text-primary-600" data-target="personal">Informasi Personal</a>
-            <a href="#" class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700" data-target="education">Pendidikan</a>
-            <a href="#" class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700" data-target="skills">Keahlian & Tech Stack</a>
-            <a href="#" class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700" data-target="experience">Pengalaman</a>
-            <a href="#" class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700" data-target="portfolio">Portofolio & Sertifikat</a>
+            <a href="#"
+                class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-primary-600 text-primary-600"
+                data-target="personal">Informasi Personal</a>
+            <a href="#"
+                class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700"
+                data-target="education">Pendidikan</a>
+            <a href="#"
+                class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700"
+                data-target="skills">Keahlian & Tech Stack</a>
+            <a href="#"
+                class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700"
+                data-target="experience">Pengalaman</a>
+            <a href="#"
+                class="tab-btn pb-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700"
+                data-target="portfolio">Portofolio & Sertifikat</a>
         </div>
 
         <!-- Tab Content -->
@@ -61,84 +80,114 @@
             <div id="personal" class="tab-content block">
                 <form method="POST" action="{{ url_for('student.update_personal_info') }}" class="space-y-6 max-w-2xl">
                     {{ personal_form.hidden_tag() }}
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.full_name.label }}</label>
-                            {{ personal_form.full_name(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm") }}
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.full_name.label
+                                }}</label>
+                            {{ personal_form.full_name(class="w-full rounded-lg border border-gray-300 px-4 py-2.5
+                            focus:border-primary-500 focus:ring-primary-500 sm:text-sm") }}
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.email.label }}</label>
-                            {{ personal_form.email(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm bg-gray-50", readonly=True) }}
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.email.label
+                                }}</label>
+                            {{ personal_form.email(class="w-full rounded-lg border border-gray-300 px-4 py-2.5
+                            focus:border-primary-500 focus:ring-primary-500 sm:text-sm bg-gray-50", readonly=True) }}
                             <p class="text-xs text-gray-400 mt-1">Email tidak dapat diubah (digunakan untuk login).</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.phone_number.label }}</label>
-                            {{ personal_form.phone_number(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm") }}
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                personal_form.phone_number.label }}</label>
+                            {{ personal_form.phone_number(class="w-full rounded-lg border border-gray-300 px-4 py-2.5
+                            focus:border-primary-500 focus:ring-primary-500 sm:text-sm") }}
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.date_of_birth.label }}</label>
-                            {{ personal_form.date_of_birth(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm", type="date") }}
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                personal_form.date_of_birth.label }}</label>
+                            {{ personal_form.date_of_birth(class="w-full rounded-lg border border-gray-300 px-4 py-2.5
+                            focus:border-primary-500 focus:ring-primary-500 sm:text-sm", type="date") }}
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.gender.label }}</label>
-                            {{ personal_form.gender(class="form-select w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm") }}
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.gender.label
+                                }}</label>
+                            {{ personal_form.gender(class="form-select w-full rounded-lg border border-gray-300 px-4
+                            py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm") }}
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.bio.label }}</label>
-                            {{ personal_form.bio(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:ring-primary-500 sm:text-sm", rows=4) }}
-                            <p class="text-xs text-gray-500 mt-1">Tulis ringkasan singkat tentang diri Anda, minat karir, dan tujuan magang.</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ personal_form.bio.label
+                                }}</label>
+                            {{ personal_form.bio(class="w-full rounded-lg border border-gray-300 px-4 py-2.5
+                            focus:border-primary-500 focus:ring-primary-500 sm:text-sm", rows=4) }}
+                            <p class="text-xs text-gray-500 mt-1">Tulis ringkasan singkat tentang diri Anda, minat
+                                karir, dan tujuan magang.</p>
                         </div>
                     </div>
-                    
+
                     <div class="flex justify-end pt-4 border-t border-gray-100">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                             Simpan Perubahan
                         </button>
                     </div>
                 </form>
-                
+
                 <hr class="my-10 border-gray-100">
-                
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl">
                     <!-- GitHub Profile -->
                     <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                         <div class="flex items-center gap-3 mb-5">
-                            <svg class="w-6 h-6 text-gray-900" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                            <svg class="w-6 h-6 text-gray-900" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" clip-rule="evenodd"
+                                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" />
+                            </svg>
                             <h3 class="text-lg font-bold text-gray-900 font-outfit">Profil GitHub</h3>
                         </div>
                         <form method="POST" action="{{ url_for('student.save_github_profile') }}" class="space-y-4">
                             {{ github_form.hidden_tag() }}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ github_form.github_username.label }}</label>
-                                {{ github_form.github_username(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-gray-900 focus:ring-gray-900 sm:text-sm", placeholder="johndoe") }}
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                    github_form.github_username.label }}</label>
+                                {{ github_form.github_username(class="w-full rounded-lg border border-gray-300 px-4
+                                py-2.5 focus:border-gray-900 focus:ring-gray-900 sm:text-sm", placeholder="johndoe") }}
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ github_form.github_url.label }}</label>
-                                {{ github_form.github_url(class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-gray-900 focus:ring-gray-900 sm:text-sm", placeholder="https://github.com/johndoe") }}
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                    github_form.github_url.label }}</label>
+                                {{ github_form.github_url(class="w-full rounded-lg border border-gray-300 px-4 py-2.5
+                                focus:border-gray-900 focus:ring-gray-900 sm:text-sm",
+                                placeholder="https://github.com/johndoe") }}
                             </div>
                             <div class="flex justify-end pt-2">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
+                                <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
                                     Simpan GitHub
                                 </button>
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- LinkedIn Profile -->
                     <div class="bg-blue-50/50 rounded-2xl p-6 border border-blue-100">
                         <div class="flex items-center gap-3 mb-5">
-                            <svg class="w-6 h-6 text-blue-700" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            <svg class="w-6 h-6 text-blue-700" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                            </svg>
                             <h3 class="text-lg font-bold text-gray-900 font-outfit">Profil LinkedIn</h3>
                         </div>
                         <form method="POST" action="{{ url_for('student.save_linkedin_profile') }}" class="space-y-4">
                             {{ linkedin_form.hidden_tag() }}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ linkedin_form.linkedin_url.label }}</label>
-                                {{ linkedin_form.linkedin_url(class="w-full rounded-lg border border-blue-200 px-4 py-2.5 focus:border-blue-600 focus:ring-blue-600 sm:text-sm", placeholder="https://linkedin.com/in/johndoe") }}
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                    linkedin_form.linkedin_url.label }}</label>
+                                {{ linkedin_form.linkedin_url(class="w-full rounded-lg border border-blue-200 px-4
+                                py-2.5 focus:border-blue-600 focus:ring-blue-600 sm:text-sm",
+                                placeholder="https://linkedin.com/in/johndoe") }}
                             </div>
                             <div class="flex justify-end pt-2">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition-colors">
+                                <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition-colors">
                                     Simpan LinkedIn
                                 </button>
                             </div>
@@ -146,16 +195,17 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Other tabs placeholders -->
             <div id="education" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-bold text-gray-900 font-outfit">Riwayat Pendidikan</h3>
-                    <button type="button" onclick="openEducationModal()" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                    <button type="button" onclick="openEducationModal()"
+                        class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
                         + Tambah Pendidikan
                     </button>
                 </div>
-                
+
                 <div id="educationList" class="space-y-4">
                     <div class="text-center py-12 text-gray-500">Memuat data...</div>
                 </div>
@@ -163,27 +213,30 @@
             <div id="skills" class="tab-content hidden">
                 <div class="mb-6">
                     <h3 class="text-lg font-bold text-gray-900 font-outfit mb-4">Keahlian & Tech Stack</h3>
-                    
+
                     <form id="skillForm" class="flex flex-col md:flex-row gap-3">
                         <div class="flex-grow">
-                            <select id="skillSelect" name="skill_id" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                            <select id="skillSelect" name="skill_id" required
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
                                 <option value="">-- Pilih Keahlian --</option>
                             </select>
                         </div>
                         <div class="w-full md:w-48">
-                            <select id="proficiencySelect" name="proficiency_level" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                            <select id="proficiencySelect" name="proficiency_level" required
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
                                 <option value="">-- Tingkat --</option>
                                 <option value="Beginner">Beginner</option>
                                 <option value="Intermediate">Intermediate</option>
                                 <option value="Advanced">Advanced</option>
                             </select>
                         </div>
-                        <button type="submit" id="btnSaveSkill" class="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap">
+                        <button type="submit" id="btnSaveSkill"
+                            class="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap">
                             + Tambah
                         </button>
                     </form>
                 </div>
-                
+
                 <div class="bg-white border border-gray-100 rounded-2xl p-5 min-h-[120px]">
                     <div id="skillsList" class="flex flex-wrap gap-2">
                         <div class="w-full text-center py-6 text-gray-500 text-sm">Memuat data...</div>
@@ -193,27 +246,30 @@
                 <!-- Tech Stack Section -->
                 <div class="mt-8 mb-6">
                     <h3 class="text-lg font-bold text-gray-900 font-outfit mb-4">Tech Stack & Tools</h3>
-                    
+
                     <form id="techStackForm" class="flex flex-col md:flex-row gap-3">
                         <div class="flex-grow">
-                            <select id="techStackSelect" name="tech_stack_item_id" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                            <select id="techStackSelect" name="tech_stack_item_id" required
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
                                 <option value="">-- Pilih Tech Stack --</option>
                             </select>
                         </div>
                         <div class="w-full md:w-48">
-                            <select id="techProficiencySelect" name="proficiency_level" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
+                            <select id="techProficiencySelect" name="proficiency_level" required
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm appearance-none">
                                 <option value="">-- Tingkat --</option>
                                 <option value="Beginner">Beginner</option>
                                 <option value="Intermediate">Intermediate</option>
                                 <option value="Advanced">Advanced</option>
                             </select>
                         </div>
-                        <button type="submit" id="btnSaveTechStack" class="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap">
+                        <button type="submit" id="btnSaveTechStack"
+                            class="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap">
                             + Tambah
                         </button>
                     </form>
                 </div>
-                
+
                 <div class="bg-white border border-gray-100 rounded-2xl p-5 min-h-[120px]">
                     <div id="techStackList" class="flex flex-wrap gap-2">
                         <div class="w-full text-center py-6 text-gray-500 text-sm">Memuat data...</div>
@@ -224,11 +280,12 @@
                 <!-- Pengalaman Kerja -->
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900 font-outfit">Pengalaman Kerja</h3>
-                    <button type="button" onclick="openExperienceModal()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                    <button type="button" onclick="openExperienceModal()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
                         + Tambah Pengalaman
                     </button>
                 </div>
-                
+
                 <div id="experienceList" class="space-y-4 mb-8">
                     <div class="text-center py-12 text-gray-500">Memuat data...</div>
                 </div>
@@ -236,11 +293,12 @@
                 <!-- Pengalaman Organisasi -->
                 <div class="border-t border-gray-100 pt-8 flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900 font-outfit">Pengalaman Organisasi</h3>
-                    <button type="button" onclick="openOrganizationModal()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                    <button type="button" onclick="openOrganizationModal()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
                         + Tambah Organisasi
                     </button>
                 </div>
-                
+
                 <div id="organizationList" class="space-y-4">
                     <div class="text-center py-12 text-gray-500">Memuat data...</div>
                 </div>
@@ -249,7 +307,8 @@
                 <!-- Portofolio -->
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900 font-outfit">Portofolio & Proyek</h3>
-                    <button type="button" onclick="openPortfolioModal()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                    <button type="button" onclick="openPortfolioModal()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
                         + Tambah Portofolio
                     </button>
                 </div>
@@ -261,7 +320,8 @@
                 <!-- Sertifikat -->
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900 font-outfit">Sertifikat</h3>
-                    <button type="button" onclick="openCertificateModal()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
+                    <button type="button" onclick="openCertificateModal()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">
                         + Tambah Sertifikat
                     </button>
                 </div>
@@ -283,47 +343,56 @@
                 {{ icon.x_mark(class="w-5 h-5") }}
             </button>
         </div>
-        
+
         <form id="educationForm" class="p-6 space-y-4">
             <input type="hidden" id="edu_id" name="edu_id" value="">
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Institusi / Universitas *</label>
-                <input type="text" id="edu_institution" name="institution_name" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="edu_institution" name="institution_name" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Program Studi / Jurusan *</label>
-                    <input type="text" id="edu_field" name="field_of_study" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="text" id="edu_field" name="field_of_study" required
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Gelar *</label>
-                    <input type="text" id="edu_degree" name="degree_name" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="text" id="edu_degree" name="degree_name" required
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai *</label>
-                    <input type="date" id="edu_start" name="start_date" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="date" id="edu_start" name="start_date" required
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lulus (Atau Perkiraan)</label>
-                    <input type="date" id="edu_end" name="end_date" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="date" id="edu_end" name="end_date"
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">IPK / Nilai</label>
-                <input type="text" id="edu_grade" name="grade" placeholder="Contoh: 3.8/4.0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="edu_grade" name="grade" placeholder="Contoh: 3.8/4.0"
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
-            
+
             <div class="pt-4 flex items-center justify-between">
-                <button type="button" id="btnDeleteEduModal" onclick="deleteEducationFromModal()" class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
+                <button type="button" id="btnDeleteEduModal" onclick="deleteEducationFromModal()"
+                    class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
                 <div class="flex space-x-3 ml-auto">
-                    <button type="button" onclick="closeEducationModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-                    <button type="submit" id="btnSaveEducation" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+                    <button type="button" onclick="closeEducationModal()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                    <button type="submit" id="btnSaveEducation"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
                 </div>
             </div>
         </form>
@@ -335,45 +404,57 @@
     <div class="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 m-4">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-2xl font-bold text-gray-900 font-outfit" id="experienceModalTitle">Tambah Pengalaman</h3>
-            <button type="button" onclick="closeExperienceModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" onclick="closeExperienceModal()"
+                class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
-        
+
         <form id="experienceForm" class="space-y-5">
             <input type="hidden" id="exp_id" name="exp_id" value="">
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Jabatan / Posisi *</label>
-                <input type="text" id="exp_title" name="title" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="exp_title" name="title" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Perusahaan / Organisasi *</label>
-                <input type="text" id="exp_org" name="organization_name" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="exp_org" name="organization_name" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai *</label>
-                    <input type="date" id="exp_start" name="start_date" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="date" id="exp_start" name="start_date" required
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai </label>
-                    <input type="date" id="exp_end" name="end_date" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="date" id="exp_end" name="end_date"
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Pekerjaan</label>
-                <textarea id="exp_desc" name="description" rows="4" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"></textarea>
+                <textarea id="exp_desc" name="description" rows="4"
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"></textarea>
             </div>
-            
+
             <div class="pt-4 flex items-center justify-between">
-                <button type="button" id="btnDeleteExpModal" onclick="deleteExperienceFromModal()" class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
+                <button type="button" id="btnDeleteExpModal" onclick="deleteExperienceFromModal()"
+                    class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
                 <div class="flex space-x-3 ml-auto">
-                    <button type="button" onclick="closeExperienceModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-                    <button type="submit" id="btnSaveExperience" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+                    <button type="button" onclick="closeExperienceModal()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                    <button type="submit" id="btnSaveExperience"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
                 </div>
             </div>
         </form>
@@ -381,49 +462,62 @@
 </div>
 
 <!-- Organization Modal -->
-<div id="organizationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+<div id="organizationModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
     <div class="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 m-4">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-2xl font-bold text-gray-900 font-outfit" id="organizationModalTitle">Tambah Organisasi</h3>
-            <button type="button" onclick="closeOrganizationModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" onclick="closeOrganizationModal()"
+                class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
-        
+
         <form id="organizationForm" class="space-y-5">
             <input type="hidden" id="org_id" name="org_id" value="">
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Organisasi *</label>
-                <input type="text" id="org_name" name="organization_name" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="org_name" name="organization_name" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Jabatan / Peran *</label>
-                <input type="text" id="org_role" name="role_title" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="org_role" name="role_title" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai *</label>
-                    <input type="date" id="org_start" name="start_date" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="date" id="org_start" name="start_date" required
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
-                    <input type="date" id="org_end" name="end_date" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <input type="date" id="org_end" name="end_date"
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Kegiatan</label>
-                <textarea id="org_desc" name="description" rows="4" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"></textarea>
+                <textarea id="org_desc" name="description" rows="4"
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"></textarea>
             </div>
-            
+
             <div class="pt-4 flex items-center justify-between">
-                <button type="button" id="btnDeleteOrgModal" onclick="deleteOrganizationFromModal()" class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
+                <button type="button" id="btnDeleteOrgModal" onclick="deleteOrganizationFromModal()"
+                    class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
                 <div class="flex space-x-3 ml-auto">
-                    <button type="button" onclick="closeOrganizationModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-                    <button type="submit" id="btnSaveOrganization" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+                    <button type="button" onclick="closeOrganizationModal()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                    <button type="submit" id="btnSaveOrganization"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
                 </div>
             </div>
         </form>
@@ -435,8 +529,12 @@
     <div class="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 m-4">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-2xl font-bold text-gray-900 font-outfit" id="portfolioModalTitle">Tambah Portofolio</h3>
-            <button type="button" onclick="closePortfolioModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" onclick="closePortfolioModal()"
+                class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
@@ -445,24 +543,32 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Judul Proyek / Portofolio *</label>
-                <input type="text" id="port_title" name="portfolio_title" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="port_title" name="portfolio_title" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL Proyek <span class="text-gray-400">(Opsional)</span></label>
-                <input type="url" id="port_url" name="portfolio_url" placeholder="https://github.com/..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL Proyek <span
+                        class="text-gray-400">(Opsional)</span></label>
+                <input type="url" id="port_url" name="portfolio_url" placeholder="https://github.com/..."
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Proyek <span class="text-gray-400">(Opsional)</span></label>
-                <textarea id="port_desc" name="description" rows="4" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Proyek <span
+                        class="text-gray-400">(Opsional)</span></label>
+                <textarea id="port_desc" name="description" rows="4"
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"></textarea>
             </div>
 
             <div class="pt-4 flex items-center justify-between">
-                <button type="button" id="btnDeletePortModal" onclick="deletePortfolioFromModal()" class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
+                <button type="button" id="btnDeletePortModal" onclick="deletePortfolioFromModal()"
+                    class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
                 <div class="flex space-x-3 ml-auto">
-                    <button type="button" onclick="closePortfolioModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-                    <button type="submit" id="btnSavePortfolio" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+                    <button type="button" onclick="closePortfolioModal()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                    <button type="submit" id="btnSavePortfolio"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
                 </div>
             </div>
         </form>
@@ -470,12 +576,17 @@
 </div>
 
 <!-- Certificate Modal -->
-<div id="certificateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+<div id="certificateModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/50 backdrop-blur-sm">
     <div class="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 m-4">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-2xl font-bold text-gray-900 font-outfit" id="certificateModalTitle">Tambah Sertifikat</h3>
-            <button type="button" onclick="closeCertificateModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" onclick="closeCertificateModal()"
+                class="text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
@@ -483,60 +594,84 @@
             <input type="hidden" id="cert_id" name="cert_id" value="">
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL Kredensial <span class="text-gray-400">(Opsional, untuk auto-fill)</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL Kredensial <span
+                        class="text-gray-400">(Opsional, untuk auto-fill)</span></label>
                 <div class="flex gap-2">
-                    <input type="url" id="cert_credential_url" name="credential_url" placeholder="https://www.hackerrank.com/certificates/..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
-                    <button type="button" onclick="fetchCertificateMetadata()" id="btnFetchMetadata" class="px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 border border-gray-200 transition-colors text-sm whitespace-nowrap">Tarik Data</button>
+                    <input type="url" id="cert_credential_url" name="credential_url"
+                        placeholder="https://www.hackerrank.com/certificates/..."
+                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                    <button type="button" onclick="fetchCertificateMetadata()" id="btnFetchMetadata"
+                        class="px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 border border-gray-200 transition-colors text-sm whitespace-nowrap">Tarik
+                        Data</button>
                 </div>
                 <p id="certFetchError" class="text-red-500 text-xs mt-1 hidden"></p>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Sertifikat *</label>
-                <input type="text" id="cert_title" name="certificate_title" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="cert_title" name="certificate_title" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Lembaga Penerbit *</label>
-                <input type="text" id="cert_issuer" name="issuer" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="text" id="cert_issuer" name="issuer" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Diterbitkan *</label>
-                <input type="date" id="cert_date" name="issue_date" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
+                <input type="date" id="cert_date" name="issue_date" required
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">File Sertifikat <span class="text-gray-400">(Opsional, PDF/JPG/PNG, maks. 5MB)</span></label>
-                <div id="certFileDropzone" class="relative border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-primary-400 transition-colors cursor-pointer bg-gray-50">
-                    <input type="file" id="cert_file" name="certificate_file" accept=".pdf,.jpg,.jpeg,.png" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                <label class="block text-sm font-medium text-gray-700 mb-1">File Sertifikat <span
+                        class="text-gray-400">(Opsional, PDF/JPG/PNG, maks. 5MB)</span></label>
+                <div id="certFileDropzone"
+                    class="relative border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-primary-400 transition-colors cursor-pointer bg-gray-50">
+                    <input type="file" id="cert_file" name="certificate_file" accept=".pdf,.jpg,.jpeg,.png"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                     <div id="certFileDefaultMsg">
-                        <svg class="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        <svg class="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <p class="text-sm text-gray-500">Klik atau drag & drop file di sini</p>
                         <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG hingga 5MB</p>
                     </div>
                     <div id="certFileSelectedMsg" class="hidden">
-                        <svg class="mx-auto h-8 w-8 text-primary-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <svg class="mx-auto h-8 w-8 text-primary-500 mb-2" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p id="certFileName" class="text-sm font-medium text-gray-700"></p>
                         <p class="text-xs text-gray-400 mt-1">Klik untuk ganti file</p>
                     </div>
                 </div>
-                <div id="certExistingFile" class="hidden mt-2 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
-                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                <div id="certExistingFile"
+                    class="hidden mt-2 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
                     <span>File sertifikat sudah ada. Upload file baru untuk mengganti.</span>
-                    <a id="certExistingFileLink" href="#" target="_blank" class="ml-auto text-blue-600 hover:underline font-medium whitespace-nowrap">Lihat File</a>
+                    <a id="certExistingFileLink" href="#" target="_blank"
+                        class="ml-auto text-blue-600 hover:underline font-medium whitespace-nowrap">Lihat File</a>
                 </div>
             </div>
 
             <div class="pt-4 flex items-center justify-between">
-                <button type="button" id="btnDeleteCertModal" onclick="deleteCertificateFromModal()" class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
+                <button type="button" id="btnDeleteCertModal" onclick="deleteCertificateFromModal()"
+                    class="hidden px-5 py-2.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors">Hapus</button>
                 <div class="flex space-x-3 ml-auto">
-                    <button type="button" onclick="closeCertificateModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-                    <button type="submit" id="btnSaveCertificate" class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
+                    <button type="button" onclick="closeCertificateModal()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
+                    <button type="submit" id="btnSaveCertificate"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors shadow-sm">Simpan</button>
                 </div>
             </div>
         </form>
@@ -554,13 +689,13 @@
         tabBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                
+
                 // Remove active class from all buttons
                 tabBtns.forEach(b => {
                     b.classList.remove('border-primary-600', 'text-primary-600');
                     b.classList.add('border-transparent', 'text-gray-500');
                 });
-                
+
                 // Add active class to clicked button
                 btn.classList.remove('border-transparent', 'text-gray-500');
                 btn.classList.add('border-primary-600', 'text-primary-600');
@@ -585,27 +720,27 @@
         const photoInitials = document.getElementById('profilePhotoInitials');
         const photoLoading = document.getElementById('profilePhotoLoading');
         const btnDeletePhoto = document.getElementById('btnDeletePhoto');
-        
+
         if (photoInput) {
             photoInput.addEventListener('change', async (e) => {
                 if (!e.target.files || e.target.files.length === 0) return;
-                
+
                 const file = e.target.files[0];
-                
+
                 // Validate file size on client side (2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     alert('Ukuran file terlalu besar. Maksimal 2MB.');
                     photoInput.value = '';
                     return;
                 }
-                
+
                 // Show loading
                 photoLoading.classList.remove('hidden');
                 photoLoading.classList.add('flex');
-                
+
                 const formData = new FormData();
                 formData.append('photo', file);
-                
+
                 try {
                     const csrfToken = "{{ csrf_token() }}";
                     const response = await fetch("{{ url_for('student.upload_profile_photo') }}", {
@@ -615,16 +750,16 @@
                         },
                         body: formData
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (response.ok) {
                         // Update photo
                         photoImg.src = result.url;
                         photoImg.classList.remove('hidden');
                         if (photoInitials) photoInitials.classList.add('hidden');
                         if (btnDeletePhoto) btnDeletePhoto.classList.remove('hidden');
-                        
+
                         // Show success message briefly
                         const successMsg = document.createElement('div');
                         successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
@@ -658,11 +793,11 @@
                     isDanger: true
                 });
                 if (!res.isConfirmed) return;
-                
+
                 // Show loading
                 photoLoading.classList.remove('hidden');
                 photoLoading.classList.add('flex');
-                
+
                 try {
                     const csrfToken = "{{ csrf_token() }}";
                     const response = await fetch("{{ url_for('student.delete_profile_photo') }}", {
@@ -671,16 +806,16 @@
                             'X-CSRFToken': csrfToken
                         }
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (response.ok) {
                         // Update UI
                         photoImg.src = '';
                         photoImg.classList.add('hidden');
                         if (photoInitials) photoInitials.classList.remove('hidden');
                         btnDeletePhoto.classList.add('hidden');
-                        
+
                         const successMsg = document.createElement('div');
                         successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
                         successMsg.textContent = 'Foto profil berhasil dihapus';
@@ -707,20 +842,20 @@
             .then(data => {
                 const list = document.getElementById('educationList');
                 list.innerHTML = '';
-                
+
                 if (data.length === 0) {
                     list.innerHTML = '<div class="text-center py-12 text-gray-500 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">Belum ada riwayat pendidikan yang ditambahkan.</div>';
                     return;
                 }
-                
+
                 data.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'bg-white p-5 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors';
                     div.setAttribute('onclick', `editEducation(${item.id})`);
-                    
+
                     const startYear = new Date(item.start_date).getFullYear();
                     const endYear = item.end_date ? new Date(item.end_date).getFullYear() : 'Sekarang';
-                    
+
                     div.innerHTML = `
                         <div class="w-full">
                             <h4 class="font-bold text-gray-900 font-outfit text-base">${item.institution_name}</h4>
@@ -744,8 +879,8 @@
 
     const educationModal = document.getElementById('educationModal');
     const educationForm = document.getElementById('educationForm');
-    
-    window.openEducationModal = function() {
+
+    window.openEducationModal = function () {
         educationForm.reset();
         document.getElementById('edu_id').value = '';
         document.getElementById('educationModalTitle').textContent = 'Tambah Pendidikan';
@@ -753,13 +888,13 @@
         educationModal.classList.remove('hidden');
         educationModal.classList.add('flex');
     };
-    
-    window.closeEducationModal = function() {
+
+    window.closeEducationModal = function () {
         educationModal.classList.add('hidden');
         educationModal.classList.remove('flex');
     };
-    
-    window.editEducation = function(id) {
+
+    window.editEducation = function (id) {
         fetch(`{{ url_for('student.get_educations') }}?id=${id}`)
             .then(res => res.json())
             .then(data => {
@@ -770,15 +905,15 @@
                 document.getElementById('edu_start').value = data.start_date;
                 document.getElementById('edu_end').value = data.end_date;
                 document.getElementById('edu_grade').value = data.grade || '';
-                
+
                 document.getElementById('educationModalTitle').textContent = 'Ubah Pendidikan';
                 document.getElementById('btnDeleteEduModal').classList.remove('hidden');
                 educationModal.classList.remove('hidden');
                 educationModal.classList.add('flex');
             });
     };
-    
-    window.deleteEducationFromModal = async function() {
+
+    window.deleteEducationFromModal = async function () {
         const id = document.getElementById('edu_id').value;
         if (!id) return;
         const res = await confirmAction({
@@ -790,11 +925,11 @@
             isDanger: true
         });
         if (!res.isConfirmed) return;
-        
+
         const btnDelete = document.getElementById('btnDeleteEduModal');
         btnDelete.disabled = true;
         btnDelete.textContent = 'Menghapus...';
-        
+
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/education/${id}/delete`, {
             method: 'POST',
@@ -802,33 +937,33 @@
                 'X-CSRFToken': csrfToken
             }
         }).then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                closeEducationModal();
-                loadEducations();
-            } else {
-                alert(data.error || 'Gagal menghapus data.');
-            }
-        })
-        .finally(() => {
-            btnDelete.disabled = false;
-            btnDelete.textContent = 'Hapus';
-        });
+            .then(data => {
+                if (data.success) {
+                    closeEducationModal();
+                    loadEducations();
+                } else {
+                    alert(data.error || 'Gagal menghapus data.');
+                }
+            })
+            .finally(() => {
+                btnDelete.disabled = false;
+                btnDelete.textContent = 'Hapus';
+            });
     };
-    
-    educationForm.addEventListener('submit', function(e) {
+
+    educationForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         const id = document.getElementById('edu_id').value;
         const url = id ? `/student/profile/education/${id}` : `{{ url_for('student.add_education') }}`;
-        
+
         const formData = new FormData(educationForm);
         const csrfToken = "{{ csrf_token() }}";
-        
+
         const btnSave = document.getElementById('btnSaveEducation');
         btnSave.disabled = true;
         btnSave.textContent = 'Menyimpan...';
-        
+
         fetch(url, {
             method: 'POST',
             headers: {
@@ -836,20 +971,20 @@
             },
             body: formData
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                closeEducationModal();
-                loadEducations();
-            } else {
-                alert(data.error || 'Terjadi kesalahan validasi.');
-                console.error(data.errors);
-            }
-        })
-        .finally(() => {
-            btnSave.disabled = false;
-            btnSave.textContent = 'Simpan';
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeEducationModal();
+                    loadEducations();
+                } else {
+                    alert(data.error || 'Terjadi kesalahan validasi.');
+                    console.error(data.errors);
+                }
+            })
+            .finally(() => {
+                btnSave.disabled = false;
+                btnSave.textContent = 'Simpan';
+            });
     });
 
     // Load initial data
@@ -869,25 +1004,25 @@
                 });
             });
     }
-    
+
     function loadSkills() {
         fetch("{{ url_for('student.get_student_skills') }}")
             .then(res => res.json())
             .then(data => {
                 const list = document.getElementById('skillsList');
                 list.innerHTML = '';
-                
+
                 if (data.length === 0) {
                     list.innerHTML = '<div class="w-full text-center py-6 text-gray-500 text-sm">Belum ada keahlian yang ditambahkan.</div>';
                     return;
                 }
-                
+
                 data.forEach(item => {
                     let levelColor = 'bg-gray-100 text-gray-700';
                     if (item.proficiency_level === 'Beginner') levelColor = 'bg-blue-100 text-blue-700';
                     if (item.proficiency_level === 'Intermediate') levelColor = 'bg-green-100 text-green-700';
                     if (item.proficiency_level === 'Advanced') levelColor = 'bg-purple-100 text-purple-700';
-                    
+
                     const div = document.createElement('div');
                     div.className = `inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium ${levelColor}`;
                     div.innerHTML = `
@@ -905,8 +1040,8 @@
                 console.error('Error fetching skills:', error);
             });
     }
-    
-    window.deleteSkill = async function(id) {
+
+    window.deleteSkill = async function (id) {
         const res = await confirmAction({
             title: 'Hapus Keahlian',
             text: 'Apakah Anda yakin ingin menghapus keahlian ini?',
@@ -916,7 +1051,7 @@
             isDanger: true
         });
         if (!res.isConfirmed) return;
-        
+
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/skills/${id}/delete`, {
             method: 'POST',
@@ -924,27 +1059,27 @@
                 'X-CSRFToken': csrfToken
             }
         }).then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadSkills();
-            } else {
-                alert(data.error || 'Gagal menghapus keahlian.');
-            }
-        });
+            .then(data => {
+                if (data.success) {
+                    loadSkills();
+                } else {
+                    alert(data.error || 'Gagal menghapus keahlian.');
+                }
+            });
     };
-    
+
     const skillForm = document.getElementById('skillForm');
     if (skillForm) {
-        skillForm.addEventListener('submit', function(e) {
+        skillForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const btnSave = document.getElementById('btnSaveSkill');
             btnSave.disabled = true;
             btnSave.textContent = '...';
-            
+
             const formData = new FormData(skillForm);
             const csrfToken = "{{ csrf_token() }}";
-            
+
             fetch("{{ url_for('student.add_student_skill') }}", {
                 method: 'POST',
                 headers: {
@@ -952,22 +1087,22 @@
                 },
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    skillForm.reset();
-                    loadSkills();
-                } else {
-                    alert(data.error || 'Terjadi kesalahan.');
-                }
-            })
-            .finally(() => {
-                btnSave.disabled = false;
-                btnSave.textContent = '+ Tambah';
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        skillForm.reset();
+                        loadSkills();
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan.');
+                    }
+                })
+                .finally(() => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = '+ Tambah';
+                });
         });
     }
-    
+
     loadSkillOptions();
     loadSkills();
 
@@ -985,25 +1120,25 @@
                 });
             });
     }
-    
+
     function loadTechStack() {
         fetch("{{ url_for('student.get_student_tech_stack') }}")
             .then(res => res.json())
             .then(data => {
                 const list = document.getElementById('techStackList');
                 list.innerHTML = '';
-                
+
                 if (data.length === 0) {
                     list.innerHTML = '<div class="w-full text-center py-6 text-gray-500 text-sm">Belum ada tech stack yang ditambahkan.</div>';
                     return;
                 }
-                
+
                 data.forEach(item => {
                     let levelColor = 'bg-gray-100 text-gray-700';
                     if (item.proficiency_level === 'Beginner') levelColor = 'bg-blue-100 text-blue-700';
                     if (item.proficiency_level === 'Intermediate') levelColor = 'bg-green-100 text-green-700';
                     if (item.proficiency_level === 'Advanced') levelColor = 'bg-purple-100 text-purple-700';
-                    
+
                     const div = document.createElement('div');
                     div.className = `inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium ${levelColor}`;
                     div.innerHTML = `
@@ -1021,8 +1156,8 @@
                 console.error('Error fetching tech stack:', error);
             });
     }
-    
-    window.deleteTechStack = async function(id) {
+
+    window.deleteTechStack = async function (id) {
         const res = await confirmAction({
             title: 'Hapus Tech Stack',
             text: 'Apakah Anda yakin ingin menghapus tech stack ini?',
@@ -1032,7 +1167,7 @@
             isDanger: true
         });
         if (!res.isConfirmed) return;
-        
+
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/tech-stack/${id}/delete`, {
             method: 'POST',
@@ -1040,27 +1175,27 @@
                 'X-CSRFToken': csrfToken
             }
         }).then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadTechStack();
-            } else {
-                alert(data.error || 'Gagal menghapus tech stack.');
-            }
-        });
+            .then(data => {
+                if (data.success) {
+                    loadTechStack();
+                } else {
+                    alert(data.error || 'Gagal menghapus tech stack.');
+                }
+            });
     };
-    
+
     const techStackForm = document.getElementById('techStackForm');
     if (techStackForm) {
-        techStackForm.addEventListener('submit', function(e) {
+        techStackForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const btnSave = document.getElementById('btnSaveTechStack');
             btnSave.disabled = true;
             btnSave.textContent = '...';
-            
+
             const formData = new FormData(techStackForm);
             const csrfToken = "{{ csrf_token() }}";
-            
+
             fetch("{{ url_for('student.add_student_tech_stack') }}", {
                 method: 'POST',
                 headers: {
@@ -1068,22 +1203,22 @@
                 },
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    techStackForm.reset();
-                    loadTechStack();
-                } else {
-                    alert(data.error || 'Terjadi kesalahan.');
-                }
-            })
-            .finally(() => {
-                btnSave.disabled = false;
-                btnSave.textContent = '+ Tambah';
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        techStackForm.reset();
+                        loadTechStack();
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan.');
+                    }
+                })
+                .finally(() => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = '+ Tambah';
+                });
         });
     }
-    
+
     loadTechStackOptions();
     loadTechStack();
 
@@ -1094,20 +1229,20 @@
             .then(data => {
                 const list = document.getElementById('experienceList');
                 list.innerHTML = '';
-                
+
                 if (data.length === 0) {
                     list.innerHTML = '<div class="text-center py-12 text-gray-500 bg-white border border-gray-100 rounded-2xl">Belum ada data pengalaman kerja.</div>';
                     return;
                 }
-                
+
                 data.forEach(item => {
                     const startYear = new Date(item.start_date).getFullYear();
                     const endYear = item.end_date ? new Date(item.end_date).getFullYear() : 'Sekarang';
-                    
+
                     const div = document.createElement('div');
                     div.className = 'bg-white p-5 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors';
                     div.setAttribute('onclick', `editExperience(${item.id})`);
-                    
+
                     div.innerHTML = `
                         <div class="w-full">
                             <h4 class="font-bold text-gray-900 font-outfit text-base">${item.title}</h4>
@@ -1132,8 +1267,8 @@
 
     const experienceModal = document.getElementById('experienceModal');
     const experienceForm = document.getElementById('experienceForm');
-    
-    window.openExperienceModal = function() {
+
+    window.openExperienceModal = function () {
         experienceForm.reset();
         document.getElementById('exp_id').value = '';
         document.getElementById('experienceModalTitle').textContent = 'Tambah Pengalaman';
@@ -1141,17 +1276,17 @@
         experienceModal.classList.remove('hidden');
         experienceModal.classList.add('flex');
     };
-    
-    window.closeExperienceModal = function() {
+
+    window.closeExperienceModal = function () {
         experienceModal.classList.add('hidden');
         experienceModal.classList.remove('flex');
     };
-    
-    window.editExperience = function(id) {
+
+    window.editExperience = function (id) {
         fetch(`/student/profile/experience?id=${id}`)
             .then(res => res.json())
             .then(data => {
-                if(data.error) {
+                if (data.error) {
                     alert(data.error);
                     return;
                 }
@@ -1161,16 +1296,16 @@
                 document.getElementById('exp_start').value = data.start_date;
                 document.getElementById('exp_end').value = data.end_date || '';
                 document.getElementById('exp_desc').value = data.description || '';
-                
+
                 document.getElementById('experienceModalTitle').textContent = 'Ubah Pengalaman';
                 document.getElementById('btnDeleteExpModal').classList.remove('hidden');
-                
+
                 experienceModal.classList.remove('hidden');
                 experienceModal.classList.add('flex');
             });
     };
-    
-    window.deleteExperience = async function(id) {
+
+    window.deleteExperience = async function (id) {
         const res = await confirmAction({
             title: 'Hapus Pengalaman',
             text: 'Apakah Anda yakin ingin menghapus pengalaman kerja ini?',
@@ -1180,7 +1315,7 @@
             isDanger: true
         });
         if (!res.isConfirmed) return;
-        
+
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/experience/${id}/delete`, {
             method: 'POST',
@@ -1188,36 +1323,36 @@
                 'X-CSRFToken': csrfToken
             }
         }).then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadExperiences();
-            } else {
-                alert(data.error || 'Gagal menghapus pengalaman.');
-            }
-        });
+            .then(data => {
+                if (data.success) {
+                    loadExperiences();
+                } else {
+                    alert(data.error || 'Gagal menghapus pengalaman.');
+                }
+            });
     };
-    
-    window.deleteExperienceFromModal = function() {
+
+    window.deleteExperienceFromModal = function () {
         const id = document.getElementById('exp_id').value;
         if (id) {
             deleteExperience(id);
             closeExperienceModal();
         }
     };
-    
+
     if (experienceForm) {
-        experienceForm.addEventListener('submit', function(e) {
+        experienceForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const btnSave = document.getElementById('btnSaveExperience');
             btnSave.disabled = true;
             btnSave.textContent = 'Menyimpan...';
-            
+
             const id = document.getElementById('exp_id').value;
             const url = id ? `/student/profile/experience/${id}` : "{{ url_for('student.save_experience') }}";
             const formData = new FormData(experienceForm);
             const csrfToken = "{{ csrf_token() }}";
-            
+
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -1225,19 +1360,19 @@
                 },
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    closeExperienceModal();
-                    loadExperiences();
-                } else {
-                    alert(data.error || 'Terjadi kesalahan saat menyimpan.');
-                }
-            })
-            .finally(() => {
-                btnSave.disabled = false;
-                btnSave.textContent = 'Simpan';
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        closeExperienceModal();
+                        loadExperiences();
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan saat menyimpan.');
+                    }
+                })
+                .finally(() => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Simpan';
+                });
         });
     }
 
@@ -1251,20 +1386,20 @@
             .then(data => {
                 const list = document.getElementById('organizationList');
                 list.innerHTML = '';
-                
+
                 if (data.length === 0) {
                     list.innerHTML = '<div class="text-center py-12 text-gray-500 bg-white border border-gray-100 rounded-2xl">Belum ada data pengalaman organisasi.</div>';
                     return;
                 }
-                
+
                 data.forEach(item => {
                     const startYear = new Date(item.start_date).getFullYear();
                     const endYear = item.end_date ? new Date(item.end_date).getFullYear() : 'Sekarang';
-                    
+
                     const div = document.createElement('div');
                     div.className = 'bg-white p-5 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors';
                     div.setAttribute('onclick', `editOrganization(${item.id})`);
-                    
+
                     div.innerHTML = `
                         <div class="w-full">
                             <h4 class="font-bold text-gray-900 font-outfit text-base">${item.role_title}</h4>
@@ -1289,8 +1424,8 @@
 
     const organizationModal = document.getElementById('organizationModal');
     const organizationForm = document.getElementById('organizationForm');
-    
-    window.openOrganizationModal = function() {
+
+    window.openOrganizationModal = function () {
         organizationForm.reset();
         document.getElementById('org_id').value = '';
         document.getElementById('organizationModalTitle').textContent = 'Tambah Organisasi';
@@ -1298,17 +1433,17 @@
         organizationModal.classList.remove('hidden');
         organizationModal.classList.add('flex');
     };
-    
-    window.closeOrganizationModal = function() {
+
+    window.closeOrganizationModal = function () {
         organizationModal.classList.add('hidden');
         organizationModal.classList.remove('flex');
     };
-    
-    window.editOrganization = function(id) {
+
+    window.editOrganization = function (id) {
         fetch(`/student/profile/organization?id=${id}`)
             .then(res => res.json())
             .then(data => {
-                if(data.error) {
+                if (data.error) {
                     alert(data.error);
                     return;
                 }
@@ -1318,16 +1453,16 @@
                 document.getElementById('org_start').value = data.start_date;
                 document.getElementById('org_end').value = data.end_date || '';
                 document.getElementById('org_desc').value = data.description || '';
-                
+
                 document.getElementById('organizationModalTitle').textContent = 'Ubah Organisasi';
                 document.getElementById('btnDeleteOrgModal').classList.remove('hidden');
-                
+
                 organizationModal.classList.remove('hidden');
                 organizationModal.classList.add('flex');
             });
     };
-    
-    window.deleteOrganization = async function(id) {
+
+    window.deleteOrganization = async function (id) {
         const res = await confirmAction({
             title: 'Hapus Organisasi',
             text: 'Apakah Anda yakin ingin menghapus pengalaman organisasi ini?',
@@ -1337,7 +1472,7 @@
             isDanger: true
         });
         if (!res.isConfirmed) return;
-        
+
         const csrfToken = "{{ csrf_token() }}";
         fetch(`/student/profile/organization/${id}/delete`, {
             method: 'POST',
@@ -1345,36 +1480,36 @@
                 'X-CSRFToken': csrfToken
             }
         }).then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadOrganizations();
-            } else {
-                alert(data.error || 'Gagal menghapus organisasi.');
-            }
-        });
+            .then(data => {
+                if (data.success) {
+                    loadOrganizations();
+                } else {
+                    alert(data.error || 'Gagal menghapus organisasi.');
+                }
+            });
     };
-    
-    window.deleteOrganizationFromModal = function() {
+
+    window.deleteOrganizationFromModal = function () {
         const id = document.getElementById('org_id').value;
         if (id) {
             deleteOrganization(id);
             closeOrganizationModal();
         }
     };
-    
+
     if (organizationForm) {
-        organizationForm.addEventListener('submit', function(e) {
+        organizationForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const btnSave = document.getElementById('btnSaveOrganization');
             btnSave.disabled = true;
             btnSave.textContent = 'Menyimpan...';
-            
+
             const id = document.getElementById('org_id').value;
             const url = id ? `/student/profile/organization/${id}` : "{{ url_for('student.save_organization') }}";
             const formData = new FormData(organizationForm);
             const csrfToken = "{{ csrf_token() }}";
-            
+
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -1382,19 +1517,19 @@
                 },
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    closeOrganizationModal();
-                    loadOrganizations();
-                } else {
-                    alert(data.error || 'Terjadi kesalahan saat menyimpan.');
-                }
-            })
-            .finally(() => {
-                btnSave.disabled = false;
-                btnSave.textContent = 'Simpan';
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        closeOrganizationModal();
+                        loadOrganizations();
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan saat menyimpan.');
+                    }
+                })
+                .finally(() => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Simpan';
+                });
         });
     }
 
@@ -1407,7 +1542,7 @@
 
     // File input display
     if (certFileInput) {
-        certFileInput.addEventListener('change', function() {
+        certFileInput.addEventListener('change', function () {
             const file = this.files[0];
             if (file) {
                 document.getElementById('certFileDefaultMsg').classList.add('hidden');
@@ -1420,20 +1555,20 @@
         });
     }
 
-    window.loadPortfolios = function() {
+    window.loadPortfolios = function () {
         const csrfToken = "{{ csrf_token() }}";
         fetch("{{ url_for('student.get_portfolios') }}", {
             headers: { 'X-CSRFToken': csrfToken }
         })
-        .then(res => res.json())
-        .then(data => {
-            const list = document.getElementById('portfolioList');
-            if (data.error) {
-                list.innerHTML = `<div class="col-span-full text-center py-4 text-red-500">${data.error}</div>`;
-                return;
-            }
-            if (!data.length) {
-                list.innerHTML = `
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('portfolioList');
+                if (data.error) {
+                    list.innerHTML = `<div class="col-span-full text-center py-4 text-red-500">${data.error}</div>`;
+                    return;
+                }
+                if (!data.length) {
+                    list.innerHTML = `
                     <div class="col-span-full text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                         <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
@@ -1441,29 +1576,29 @@
                         <p class="text-gray-500 font-medium">Belum ada portofolio</p>
                         <p class="text-sm text-gray-400 mt-1">Tambahkan proyek atau hasil karya Anda.</p>
                     </div>`;
-                return;
-            }
-            list.innerHTML = data.map(port => {
-                const urlBtn = port.portfolio_url
-                    ? `<a href="${port.portfolio_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 text-sm font-medium mt-2">
+                    return;
+                }
+                list.innerHTML = data.map(port => {
+                    const urlBtn = port.portfolio_url
+                        ? `<a href="${port.portfolio_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 text-sm font-medium mt-2">
                             <span>Kunjungi Tautan</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                        </a>`
-                    : '';
-                return `
+                        : '';
+                    return `
                     <div onclick="openPortfolioModal(${port.id})" class="bg-white border border-gray-100 rounded-2xl p-5 hover:border-primary-200 hover:shadow-sm transition-all cursor-pointer flex flex-col h-full">
                         <h4 class="font-bold text-gray-900">${port.portfolio_title}</h4>
                         <p class="text-gray-500 text-sm mt-2 flex-grow">${port.description ? port.description.replace(/\\n/g, '<br>') : '-'}</p>
                         ${urlBtn}
                     </div>`;
-            }).join('');
-        });
+                }).join('');
+            });
     };
 
     const portfolioModal = document.getElementById('portfolioModal');
     const portfolioForm = document.getElementById('portfolioForm');
 
-    window.openPortfolioModal = function(id = null) {
+    window.openPortfolioModal = function (id = null) {
         if (portfolioForm) portfolioForm.reset();
         document.getElementById('port_id').value = '';
         document.getElementById('btnDeletePortModal').classList.add('hidden');
@@ -1474,31 +1609,31 @@
             fetch(`{{ url_for('student.get_portfolios') }}?id=${id}`, {
                 headers: { 'X-CSRFToken': csrfToken }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) { alert(data.error); return; }
-                document.getElementById('port_id').value = data.id;
-                document.getElementById('port_title').value = data.portfolio_title;
-                document.getElementById('port_url').value = data.portfolio_url || '';
-                document.getElementById('port_desc').value = data.description || '';
-                document.getElementById('portfolioModalTitle').textContent = 'Ubah Portofolio';
-                document.getElementById('btnDeletePortModal').classList.remove('hidden');
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) { alert(data.error); return; }
+                    document.getElementById('port_id').value = data.id;
+                    document.getElementById('port_title').value = data.portfolio_title;
+                    document.getElementById('port_url').value = data.portfolio_url || '';
+                    document.getElementById('port_desc').value = data.description || '';
+                    document.getElementById('portfolioModalTitle').textContent = 'Ubah Portofolio';
+                    document.getElementById('btnDeletePortModal').classList.remove('hidden');
 
-                portfolioModal.classList.remove('hidden');
-                portfolioModal.classList.add('flex');
-            });
+                    portfolioModal.classList.remove('hidden');
+                    portfolioModal.classList.add('flex');
+                });
         } else {
             portfolioModal.classList.remove('hidden');
             portfolioModal.classList.add('flex');
         }
     };
 
-    window.closePortfolioModal = function() {
+    window.closePortfolioModal = function () {
         portfolioModal.classList.add('hidden');
         portfolioModal.classList.remove('flex');
     };
 
-    window.deletePortfolioFromModal = async function() {
+    window.deletePortfolioFromModal = async function () {
         const id = document.getElementById('port_id').value;
         if (!id) return;
         const res = await confirmAction({
@@ -1516,19 +1651,19 @@
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                closePortfolioModal();
-                loadPortfolios();
-            } else {
-                alert(data.error || 'Gagal menghapus portofolio.');
-            }
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closePortfolioModal();
+                    loadPortfolios();
+                } else {
+                    alert(data.error || 'Gagal menghapus portofolio.');
+                }
+            });
     };
 
     if (portfolioForm) {
-        portfolioForm.addEventListener('submit', function(e) {
+        portfolioForm.addEventListener('submit', function (e) {
             e.preventDefault();
             const btnSave = document.getElementById('btnSavePortfolio');
             btnSave.disabled = true;
@@ -1541,39 +1676,39 @@
 
             const formData = new FormData(portfolioForm);
             const csrfToken = "{{ csrf_token() }}";
-            
+
             fetch(url, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': csrfToken },
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    closePortfolioModal();
-                    loadPortfolios();
-                } else {
-                    alert(data.error || 'Terjadi kesalahan saat menyimpan.');
-                }
-            })
-            .finally(() => {
-                btnSave.disabled = false;
-                btnSave.textContent = 'Simpan';
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        closePortfolioModal();
+                        loadPortfolios();
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan saat menyimpan.');
+                    }
+                })
+                .finally(() => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Simpan';
+                });
         });
     }
 
-    window.loadCertificates = function() {
+    window.loadCertificates = function () {
         const csrfToken = "{{ csrf_token() }}";
         fetch("{{ url_for('student.get_certificates') }}", {
             headers: { 'X-CSRFToken': csrfToken }
         })
-        .then(res => res.json())
-        .then(data => {
-            const list = document.getElementById('certificateList');
-            if (!list) return;
-            if (!data.length) {
-                list.innerHTML = `
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('certificateList');
+                if (!list) return;
+                if (!data.length) {
+                    list.innerHTML = `
                     <div class="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                         <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
@@ -1581,43 +1716,43 @@
                         <p class="text-gray-500 font-medium">Belum ada sertifikat</p>
                         <p class="text-sm text-gray-400 mt-1">Tambahkan sertifikat profesional atau kursus online Anda.</p>
                     </div>`;
-                return;
-            }
-            list.innerHTML = data.map(cert => {
-                const dateStr = cert.issue_date
-                    ? new Date(cert.issue_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
-                    : '-';
-                const fileBtn = cert.has_file && cert.file_url
-                    ? `<a href="${cert.file_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                    return;
+                }
+                list.innerHTML = data.map(cert => {
+                    const dateStr = cert.issue_date
+                        ? new Date(cert.issue_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : '-';
+                    const fileBtn = cert.has_file && cert.file_url
+                        ? `<a href="${cert.file_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Unduh File
                        </a>`
-                    : '';
-                const credentialBtn = cert.credential_url
-                    ? `<a href="${cert.credential_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
+                        : '';
+                    const credentialBtn = cert.credential_url
+                        ? `<a href="${cert.credential_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                             Lihat Kredensial
                        </a>`
-                    : '';
+                        : '';
 
-                const defaultSvg = `<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>`;
-                let logoContent = defaultSvg;
-                try {
-                    let domain = '';
-                    if (cert.credential_url) {
-                        domain = new URL(cert.credential_url).hostname;
-                    } else if (cert.issuer) {
-                        // Fallback: guess domain from issuer (e.g. "HackerRank" -> "hackerrank.com")
-                        domain = cert.issuer.toLowerCase().replace(/\s+/g, '') + '.com';
-                    }
-                    
-                    if (domain) {
-                        const escapedSvg = defaultSvg.replace(/"/g, '&quot;');
-                        logoContent = `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=128" onerror="this.outerHTML='${escapedSvg}'" class="w-full h-full object-contain rounded-xl p-1" alt="Logo">`;
-                    }
-                } catch(e) {}
+                    const defaultSvg = `<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>`;
+                    let logoContent = defaultSvg;
+                    try {
+                        let domain = '';
+                        if (cert.credential_url) {
+                            domain = new URL(cert.credential_url).hostname;
+                        } else if (cert.issuer) {
+                            // Fallback: guess domain from issuer (e.g. "HackerRank" -> "hackerrank.com")
+                            domain = cert.issuer.toLowerCase().replace(/\s+/g, '') + '.com';
+                        }
 
-                return `
+                        if (domain) {
+                            const escapedSvg = defaultSvg.replace(/"/g, '&quot;');
+                            logoContent = `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=128" onerror="this.outerHTML='${escapedSvg}'" class="w-full h-full object-contain rounded-xl p-1" alt="Logo">`;
+                        }
+                    } catch (e) { }
+
+                    return `
                     <div onclick="openCertificateModal(${cert.id})" class="flex items-start justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:border-primary-200 hover:shadow-sm transition-all cursor-pointer">
                         <div class="flex items-start gap-4">
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -1634,11 +1769,11 @@
                             </div>
                         </div>
                     </div>`;
-            }).join('');
-        });
+                }).join('');
+            });
     };
 
-    window.openCertificateModal = function(id = null) {
+    window.openCertificateModal = function (id = null) {
         // Reset form
         if (certificateForm) certificateForm.reset();
         document.getElementById('cert_id').value = '';
@@ -1653,84 +1788,84 @@
             fetch(`{{ url_for('student.get_certificates') }}?id=${id}`, {
                 headers: { 'X-CSRFToken': csrfToken }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) { alert(data.error); return; }
-                document.getElementById('cert_id').value = data.id;
-                document.getElementById('cert_credential_url').value = data.credential_url || '';
-                document.getElementById('cert_title').value = data.certificate_title;
-                document.getElementById('cert_issuer').value = data.issuer;
-                document.getElementById('cert_date').value = data.issue_date;
-                document.getElementById('certificateModalTitle').textContent = 'Ubah Sertifikat';
-                document.getElementById('btnDeleteCertModal').classList.remove('hidden');
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) { alert(data.error); return; }
+                    document.getElementById('cert_id').value = data.id;
+                    document.getElementById('cert_credential_url').value = data.credential_url || '';
+                    document.getElementById('cert_title').value = data.certificate_title;
+                    document.getElementById('cert_issuer').value = data.issuer;
+                    document.getElementById('cert_date').value = data.issue_date;
+                    document.getElementById('certificateModalTitle').textContent = 'Ubah Sertifikat';
+                    document.getElementById('btnDeleteCertModal').classList.remove('hidden');
 
-                if (data.has_file && data.file_url) {
-                    const existingDiv = document.getElementById('certExistingFile');
-                    existingDiv.classList.remove('hidden');
-                    document.getElementById('certExistingFileLink').href = data.file_url;
-                }
+                    if (data.has_file && data.file_url) {
+                        const existingDiv = document.getElementById('certExistingFile');
+                        existingDiv.classList.remove('hidden');
+                        document.getElementById('certExistingFileLink').href = data.file_url;
+                    }
 
-                certificateModal.classList.remove('hidden');
-                certificateModal.classList.add('flex');
-            });
+                    certificateModal.classList.remove('hidden');
+                    certificateModal.classList.add('flex');
+                });
         } else {
             certificateModal.classList.remove('hidden');
             certificateModal.classList.add('flex');
         }
     };
 
-    window.closeCertificateModal = function() {
+    window.closeCertificateModal = function () {
         certificateModal.classList.add('hidden');
         certificateModal.classList.remove('flex');
     };
 
-    window.fetchCertificateMetadata = function() {
+    window.fetchCertificateMetadata = function () {
         const urlInput = document.getElementById('cert_credential_url');
         const url = urlInput.value.trim();
         const errorEl = document.getElementById('certFetchError');
         const btn = document.getElementById('btnFetchMetadata');
-        
+
         errorEl.classList.add('hidden');
-        
+
         if (!url) {
             errorEl.textContent = 'Masukkan URL kredensial terlebih dahulu.';
             errorEl.classList.remove('hidden');
             return;
         }
-        
+
         btn.disabled = true;
         btn.textContent = 'Menarik...';
-        
+
         const csrfToken = "{{ csrf_token() }}";
         fetch("{{ url_for('student.fetch_certificate_metadata') }}", {
             method: 'POST',
-            headers: { 
+            headers: {
                 'X-CSRFToken': csrfToken,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ url: url })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                if (data.title) document.getElementById('cert_title').value = data.title;
-                if (data.issuer) document.getElementById('cert_issuer').value = data.issuer;
-            } else {
-                errorEl.textContent = data.error || 'Gagal menarik data.';
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.title) document.getElementById('cert_title').value = data.title;
+                    if (data.issuer) document.getElementById('cert_issuer').value = data.issuer;
+                } else {
+                    errorEl.textContent = data.error || 'Gagal menarik data.';
+                    errorEl.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                errorEl.textContent = 'Terjadi kesalahan jaringan.';
                 errorEl.classList.remove('hidden');
-            }
-        })
-        .catch(err => {
-            errorEl.textContent = 'Terjadi kesalahan jaringan.';
-            errorEl.classList.remove('hidden');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.textContent = 'Tarik Data';
-        });
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Tarik Data';
+            });
     };
 
-    window.deleteCertificateFromModal = async function() {
+    window.deleteCertificateFromModal = async function () {
         const id = document.getElementById('cert_id').value;
         if (!id) return;
         const res = await confirmAction({
@@ -1748,19 +1883,19 @@
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                closeCertificateModal();
-                loadCertificates();
-            } else {
-                alert(data.error || 'Gagal menghapus sertifikat.');
-            }
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeCertificateModal();
+                    loadCertificates();
+                } else {
+                    alert(data.error || 'Gagal menghapus sertifikat.');
+                }
+            });
     };
 
     if (certificateForm) {
-        certificateForm.addEventListener('submit', function(e) {
+        certificateForm.addEventListener('submit', function (e) {
             e.preventDefault();
 
             const btnSave = document.getElementById('btnSaveCertificate');
@@ -1785,19 +1920,19 @@
                 headers: { 'X-CSRFToken': csrfToken },
                 body: formData
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    closeCertificateModal();
-                    loadCertificates();
-                } else {
-                    alert(data.error || 'Terjadi kesalahan saat menyimpan.');
-                }
-            })
-            .finally(() => {
-                btnSave.disabled = false;
-                btnSave.textContent = 'Simpan';
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        closeCertificateModal();
+                        loadCertificates();
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan saat menyimpan.');
+                    }
+                })
+                .finally(() => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Simpan';
+                });
         });
     }
 
