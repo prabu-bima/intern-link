@@ -53,8 +53,9 @@
         </select>
         <select name="status" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm">
             <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Semua Status</option>
+            {% set status_labels = {'active': 'Aktif', 'inactive': 'Nonaktif', 'suspended': 'Ditangguhkan'} %}
             {% for s in statuses %}
-            <option value="{{ s.status_code }}" {% if status_filter == s.status_code %}selected{% endif %}>{{ s.status_name }}</option>
+            <option value="{{ s.status_code }}" {% if status_filter == s.status_code %}selected{% endif %}>{{ status_labels.get(s.status_code, s.status_name) }}</option>
             {% endfor %}
         </select>
         <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors">Filter</button>
