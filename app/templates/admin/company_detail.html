@@ -1,7 +1,11 @@
 {% extends "layouts/admin_layout.html" %}
 {% import "components/icons.html" as icon %}
 
-{% block title %}Detail Perusahaan - {{ company.company_profile.company_name if company.company_profile else company.display_name }} - InternLink{% endblock %}
+{% block extra_css %}
+{% if company.company_profile and company.company_profile.company_logo %}
+<link rel="preload" as="image" href="{{ company.company_profile.company_logo.url }}" fetchpriority="high">
+{% endif %}
+{% endblock %}
 
 {% block admin_content %}
 {% set profile = company.company_profile %}
@@ -24,6 +28,7 @@
         <div class="flex-shrink-0">
             {% if profile and profile.company_logo %}
             <img src="{{ profile.company_logo.url }}" alt="{{ profile.company_name }}"
+                 fetchpriority="high" loading="eager"
                  class="w-20 h-20 rounded-2xl object-cover border border-gray-200">
             {% else %}
             <div class="w-20 h-20 rounded-2xl bg-violet-100 flex items-center justify-center text-violet-600 text-2xl font-bold">
@@ -204,7 +209,7 @@
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
-                    {{ job.applications|length }}
+                    {{ applicant_counts.get(job.id, 0) }}
                 </td>
             </tr>
             {% endfor %}

@@ -1,7 +1,11 @@
 {% extends "layouts/admin_layout.html" %}
 {% import "components/icons.html" as icon %}
 
-{% block title %}Detail Mahasiswa - {{ student.display_name }} - InternLink{% endblock %}
+{% block extra_css %}
+{% if student.student_profile and student.student_profile.profile_photo %}
+<link rel="preload" as="image" href="{{ student.student_profile.profile_photo.url }}" fetchpriority="high">
+{% endif %}
+{% endblock %}
 
 {% block admin_content %}
 {% set profile = student.student_profile %}
@@ -24,6 +28,7 @@
         <div class="flex-shrink-0">
             {% if profile and profile.profile_photo %}
             <img src="{{ profile.profile_photo.url }}" alt="{{ student.display_name }}"
+                 fetchpriority="high" loading="eager"
                  class="w-20 h-20 rounded-2xl object-cover border border-gray-200">
             {% else %}
             <div class="w-20 h-20 rounded-2xl bg-primary-100 flex items-center justify-center text-primary-600 text-2xl font-bold">

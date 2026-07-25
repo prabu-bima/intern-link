@@ -6,6 +6,10 @@
     <meta name="description" content="InternLink - Web-based Internship Recruitment Platform for Technology Students">
     <title>{% block title %}InternLink{% endblock %}</title>
     
+    <!-- Preconnect CDN -->
+    <link rel="preconnect" href="https://uqgppmwghzhsksekjvef.supabase.co" crossorigin>
+    <link rel="dns-prefetch" href="https://uqgppmwghzhsksekjvef.supabase.co">
+
     <!-- Font self-hosted (lihat static/css/input.css @font-face). Preload font
          utama agar teks LCP tampil cepat tanpa request ke domain eksternal. -->
     <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>

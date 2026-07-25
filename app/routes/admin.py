@@ -237,15 +237,16 @@ def students():
 @admin_required
 def student_detail(id):
     from app.models.identity import UserAccount, StudentProfile
-    from app.models.student import StudentCvVersion
-    from app.models.internship import InternshipApplication
+    from app.models.student import StudentCvVersion, StudentSkill, StudentTechStackItem
+    from app.models.internship import Internship, InternshipApplication
     from sqlalchemy.orm import joinedload
 
     student = UserAccount.query.options(
         joinedload(UserAccount.status),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.profile_photo),
         joinedload(UserAccount.student_profile).joinedload(StudentProfile.education_records),
-        joinedload(UserAccount.student_profile).joinedload(StudentProfile.skills),
-        joinedload(UserAccount.student_profile).joinedload(StudentProfile.tech_stack_items),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.skills).joinedload(StudentSkill.skill),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.tech_stack_items).joinedload(StudentTechStackItem.tech_stack_item),
         joinedload(UserAccount.student_profile).joinedload(StudentProfile.experiences),
         joinedload(UserAccount.student_profile).joinedload(StudentProfile.organizations),
     ).filter_by(
@@ -264,7 +265,7 @@ def student_detail(id):
         ).first()
 
     applications = InternshipApplication.query.options(
-        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.internship).joinedload(Internship.company_profile),
         joinedload(InternshipApplication.application_status),
     ).filter_by(
         student_profile_id=profile.id if profile else 0,
@@ -468,8 +469,9 @@ def companies():
 def company_detail(id):
     from app.models.identity import UserAccount, CompanyProfile
     from app.models.company import CompanyVerification
-    from app.models.internship import Internship
+    from app.models.internship import Internship, InternshipApplication
     from sqlalchemy.orm import joinedload
+    from sqlalchemy import func
 
     company = UserAccount.query.options(
         joinedload(UserAccount.status),
@@ -486,10 +488,26 @@ def company_detail(id):
         company_profile_id=company.company_profile.id if company.company_profile else 0
     ).order_by(CompanyVerification.id.desc()).all()
 
-    internships = Internship.query.filter_by(
+    internships = Internship.query.options(
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.technology_category),
+    ).filter_by(
         company_profile_id=company.company_profile.id if company.company_profile else 0,
         deleted_at=None
     ).order_by(Internship.id.desc()).limit(10).all()
+
+    # Hitung pelamar dengan 1 query (menghindari N+1)
+    internship_ids = [job.id for job in internships]
+    if internship_ids:
+        counts_q = db.session.query(
+            InternshipApplication.internship_id,
+            func.count(InternshipApplication.id).label('cnt')
+        ).filter(
+            InternshipApplication.internship_id.in_(internship_ids)
+        ).group_by(InternshipApplication.internship_id).all()
+        applicant_counts = {row.internship_id: row.cnt for row in counts_q}
+    else:
+        applicant_counts = {}
 
     latest_verification = verifications[0] if verifications else None
 
@@ -498,6 +516,7 @@ def company_detail(id):
         company=company,
         verifications=verifications,
         internships=internships,
+        applicant_counts=applicant_counts,
         latest_verification=latest_verification,
     )
 
