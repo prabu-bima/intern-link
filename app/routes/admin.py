@@ -1181,14 +1181,17 @@ def report_users():
     if role != 'all':
         query = query.filter(UserAccount.role == role)
     if status != 'all':
+        from sqlalchemy import or_
         st = UserAccountStatus.query.filter_by(status_code=status).first()
         if st:
-            query = query.filter(UserAccount.account_status_id == st.id)
-    if date_from:
-        try:
-            query = query.filter(UserAccount.id >= 0)  # placeholder; use created_at if column exists
-        except Exception:
-            pass
+            if status == 'active':
+                # User dengan status_id=None dianggap aktif (default)
+                query = query.filter(
+                    or_(UserAccount.account_status_id == st.id,
+                        UserAccount.account_status_id.is_(None))
+                )
+            else:
+                query = query.filter(UserAccount.account_status_id == st.id)
 
     users = query.order_by(UserAccount.id.desc()).all()
     statuses = UserAccountStatus.query.all()

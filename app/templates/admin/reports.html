@@ -79,10 +79,14 @@
             <td class="px-4 py-3 text-sm text-gray-500">{{ u.email }}</td>
             <td class="px-4 py-3 text-sm text-gray-600 capitalize">{{ u.role }}</td>
             <td class="px-4 py-3">
-                {% if u.status and u.status.status_code == 'active' %}
-                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{{ u.status.status_name }}</span>
+                {% if not u.status or u.status.status_code == 'active' %}
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
+                {% elif u.status.status_code == 'inactive' %}
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">Nonaktif</span>
+                {% elif u.status.status_code == 'suspended' %}
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Ditangguhkan</span>
                 {% else %}
-                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ u.status.status_name if u.status else '-' }}</span>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ u.status.status_name }}</span>
                 {% endif %}
             </td>
         </tr>
