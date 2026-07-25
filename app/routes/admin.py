@@ -1205,10 +1205,11 @@ def report_users():
 @admin_required
 def report_internships():
     from flask import request
-    from app.models.internship import Internship
+    from app.models.internship import Internship, InternshipApplication
     from app.models.lookups import InternshipLifecycleStatus
     from app.models.master import TechnologyCategory, Location
     from sqlalchemy.orm import joinedload
+    from sqlalchemy import func
 
     category_id = request.args.get('category_id', 'all')
     location_id = request.args.get('location_id', 'all')
@@ -1217,7 +1218,6 @@ def report_internships():
     query = Internship.query.options(
         joinedload(Internship.company_profile),
         joinedload(Internship.technology_category),
-        joinedload(Internship.location),
         joinedload(Internship.lifecycle_status),
     ).filter(Internship.deleted_at.is_(None))
 
@@ -1230,13 +1230,29 @@ def report_internships():
         if ls:
             query = query.filter(Internship.lifecycle_status_id == ls.id)
 
-    internships = query.order_by(Internship.id.desc()).all()
+    # Batasi 500 baris untuk mencegah halaman overload
+    internships = query.order_by(Internship.id.desc()).limit(500).all()
+
+    # Hitung jumlah pelamar dengan 1 query (menghindari N+1)
+    internship_ids = [job.id for job in internships]
+    if internship_ids:
+        counts_q = db.session.query(
+            InternshipApplication.internship_id,
+            func.count(InternshipApplication.id).label('cnt')
+        ).filter(
+            InternshipApplication.internship_id.in_(internship_ids)
+        ).group_by(InternshipApplication.internship_id).all()
+        applicant_counts = {row.internship_id: row.cnt for row in counts_q}
+    else:
+        applicant_counts = {}
+
     categories  = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
     locations   = Location.query.order_by(Location.city).all()
     lc_statuses = InternshipLifecycleStatus.query.all()
 
     return render_template('admin/reports.html',
         report_type='internships', internships=internships,
+        applicant_counts=applicant_counts,
         categories=categories, locations=locations, lc_statuses=lc_statuses,
         category_id=category_id, location_id=location_id, status_filter=status)
 

@@ -156,7 +156,7 @@
                 {% if lc == 'active' %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
                 {% else %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ job.lifecycle_status.status_name if job.lifecycle_status else '-' }}</span>{% endif %}
             </td>
-            <td class="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{{ job.applications|length }}</td>
+            <td class="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{{ applicant_counts.get(job.id, 0) }}</td>
         </tr>
         {% else %}
         <tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">Tidak ada data.</td></tr>

@@ -11,6 +11,7 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
 
     <!-- Tailwind CSS -->
+    <link rel="preload" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}" as="style">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}">
 
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
