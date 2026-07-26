@@ -208,7 +208,8 @@
                        class="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-canvas sm:px-6">
                         {% if app.student_profile.profile_photo %}
                         <img src="{{ app.student_profile.profile_photo.url }}" alt="{{ app.student_profile.user.display_name }}"
-                             class="h-10 w-10 flex-shrink-0 rounded-full border border-hairline object-cover">
+                             class="h-10 w-10 flex-shrink-0 rounded-full border border-hairline object-cover"
+                             loading="lazy" decoding="async">
                         {% else %}
                         <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">
                             {{ app.student_profile.user.display_name[0]|upper }}

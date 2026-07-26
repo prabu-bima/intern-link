@@ -50,29 +50,21 @@ def dashboard():
     from sqlalchemy import case
     from app.models.identity import StudentProfile
 
-    # 2. Caching Status Lookups (IDs only to avoid session detachment errors)
-    active_lifecycle_id = cache.get('status_lifecycle_active_id')
-    if not active_lifecycle_id:
-        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
-        if active_lifecycle:
-            active_lifecycle_id = active_lifecycle.id
-            cache.set('status_lifecycle_active_id', active_lifecycle_id, timeout=86400)
-            
-    closed_lifecycle_id = cache.get('status_lifecycle_closed_id')
-    if not closed_lifecycle_id:
-        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
-        if closed_lifecycle:
-            closed_lifecycle_id = closed_lifecycle.id
-            cache.set('status_lifecycle_closed_id', closed_lifecycle_id, timeout=86400)
-            
-    pending_moderation_id = cache.get('status_moderation_pending_id')
-    if not pending_moderation_id:
-        pending_moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
-        if pending_moderation:
-            pending_moderation_id = pending_moderation.id
-            cache.set('status_moderation_pending_id', pending_moderation_id, timeout=86400)
+    # 2. Resolve status IDs — single query, cached until next restart (86400s).
+    #    Replaces 3 separate per-code lookups that previously ran serially.
+    status_ids = cache.get('_lifecycle_moderation_status_ids')
+    if not status_ids:
+        lc_rows = {r.status_code: r.id for r in InternshipLifecycleStatus.query.all()}
+        md_rows = {r.status_code: r.id for r in InternshipModerationStatus.query.all()}
+        status_ids = {**{f'lc_{k}': v for k, v in lc_rows.items()},
+                      **{f'md_{k}': v for k, v in md_rows.items()}}
+        cache.set('_lifecycle_moderation_status_ids', status_ids, timeout=86400)
 
-    # 3. Caching Dashboard Stats (60 seconds)
+    active_lifecycle_id  = status_ids.get('lc_active',  0)
+    closed_lifecycle_id  = status_ids.get('lc_closed',  0)
+    pending_moderation_id = status_ids.get('md_pending', 0)
+
+    # 3. Caching Dashboard Stats — 300s TTL (data does not need to be real-time)
     stats_cache_key = f"company_dashboard_stats_{profile.id}"
     stats = cache.get(stats_cache_key)
     if not stats:
@@ -158,7 +150,7 @@ def dashboard():
             'active_jobs_list': active_jobs_list,
             'latest_applicants': latest_applicants
         }
-        cache.set(stats_cache_key, stats, timeout=60)
+        cache.set(stats_cache_key, stats, timeout=300)
 
     verification = stats['verification']
     total_jobs = stats['total_jobs']
