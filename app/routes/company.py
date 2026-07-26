@@ -15,11 +15,16 @@ bp = Blueprint('company', __name__, url_prefix='/company')
 @bp.context_processor
 def inject_unread_notifications_count():
     if current_user.is_authenticated and current_user.role == 'company':
-        count = Notification.query.filter_by(
-            recipient_user_id=current_user.id,
-            is_read=False,
-            deleted_at=None
-        ).count()
+        from app.extensions import cache
+        cache_key = f'notif_count_company_{current_user.id}'
+        count = cache.get(cache_key)
+        if count is None:
+            count = Notification.query.filter_by(
+                recipient_user_id=current_user.id,
+                is_read=False,
+                deleted_at=None
+            ).count()
+            cache.set(cache_key, count, timeout=30)
         return dict(unread_notifications_count=count)
     return dict(unread_notifications_count=0)
 
@@ -483,29 +488,75 @@ def internships():
         return redirect(url_for('company.profile_form'))
         
     status_filter = request.args.get('status', 'all')
-    
-    from sqlalchemy.orm import joinedload
-    query = Internship.query.options(
-        joinedload(Internship.lifecycle_status),
-        joinedload(Internship.location),
-        joinedload(Internship.technology_category)
-    ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
-    
-    if status_filter == 'active':
-        query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
-    elif status_filter == 'closed':
-        query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'closed')
-        
-    query = query.order_by(Internship.id.desc())
-    
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-    
+
+    from app.extensions import cache
+
+    # Cache hasil query per perusahaan+filter+halaman (15 detik)
+    cache_key = f'company_internships_{profile.id}_{status_filter}_p{page}'
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        internship_items, applicant_counts, total_count = cached_data
+        class SimplePagination:
+            def __init__(self, items, total, page, per_page):
+                self.items = items
+                self.total = total
+                self.page = page
+                self.per_page = per_page
+                self.pages = max(1, -(-total // per_page))
+                self.has_prev = page > 1
+                self.has_next = page < self.pages
+                self.prev_num = page - 1
+                self.next_num = page + 1
+            def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
+                last = 0
+                for num in range(1, self.pages + 1):
+                    if (num <= left_edge or
+                            (self.page - left_current - 1 < num < self.page + right_current) or
+                            num > self.pages - right_edge):
+                        if last + 1 != num:
+                            yield None
+                        yield num
+                        last = num
+        pagination = SimplePagination(internship_items, total_count, page, per_page)
+    else:
+        from sqlalchemy.orm import joinedload
+        query = Internship.query.options(
+            joinedload(Internship.lifecycle_status),
+            joinedload(Internship.location),
+            joinedload(Internship.technology_category)
+        ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
+
+        if status_filter == 'active':
+            query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
+        elif status_filter == 'closed':
+            query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'closed')
+
+        query = query.order_by(Internship.id.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+        # Hitung pelamar per lowongan dengan 1 query (menghindari N+1)
+        internship_ids = [job.id for job in pagination.items]
+        if internship_ids:
+            counts_q = db.session.query(
+                InternshipApplication.internship_id,
+                func.count(InternshipApplication.id).label('cnt')
+            ).filter(
+                InternshipApplication.internship_id.in_(internship_ids)
+            ).group_by(InternshipApplication.internship_id).all()
+            applicant_counts = {row.internship_id: row.cnt for row in counts_q}
+        else:
+            applicant_counts = {}
+
+        cache.set(cache_key, (pagination.items, applicant_counts, pagination.total), timeout=15)
+
     return render_template(
         'company/internships.html',
         pagination=pagination,
         internships=pagination.items,
+        applicant_counts=applicant_counts,
         current_status=status_filter
     )
 
