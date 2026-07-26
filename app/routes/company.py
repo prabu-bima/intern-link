@@ -681,6 +681,7 @@ def internship_applicants(id):
     
     query = InternshipApplication.query.options(
         joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.profile_photo),
         joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.education_records),
         joinedload(InternshipApplication.application_status)
     ).filter_by(internship_id=internship.id)
@@ -723,14 +724,28 @@ def internship_applicants(id):
 @company_required
 def applicant_detail(application_id):
     from app.models.internship import InternshipApplication, Internship
-    from app.models.identity import CompanyProfile
+    from app.models.identity import CompanyProfile, StudentProfile
+    from app.models.student import StudentSkill, StudentTechStackItem
     from app.models.lookups import ApplicationStatus
+    from sqlalchemy.orm import joinedload
     
     # Get current company profile
     profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
     
-    # Get application and verify it belongs to this company
-    application = InternshipApplication.query.join(Internship).filter(
+    # Get application and verify it belongs to this company with joinedload for all relations
+    application = InternshipApplication.query.options(
+        joinedload(InternshipApplication.application_status),
+        joinedload(InternshipApplication.submitted_cv),
+        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.profile_photo),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.education_records),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.skills).joinedload(StudentSkill.skill),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.tech_stack_items).joinedload(StudentTechStackItem.tech_stack_item),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.experiences),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.organizations),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.portfolios),
+    ).join(Internship).filter(
         InternshipApplication.id == application_id,
         Internship.company_profile_id == profile.id,
         InternshipApplication.deleted_at.is_(None)
