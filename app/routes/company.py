@@ -388,8 +388,8 @@ def internship_create_form():
         
     locations = Location.query.order_by(Location.city).all()
     categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
-    skills = Skill.query.all()
-    tech_stacks = TechStackItem.query.all()
+    skills = Skill.query.order_by(Skill.skill_name).all()
+    tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
     
     return render_template(
         'company/internship_form.html',
@@ -578,8 +578,8 @@ def internship_edit_form(id):
         
     categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
     locations = Location.query.order_by(Location.city).all()
-    skills = Skill.query.all()
-    tech_stacks = TechStackItem.query.all()
+    skills = Skill.query.order_by(Skill.skill_name).all()
+    tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
     
     existing_skills = [s.skill_id for s in internship.required_skills]
     existing_tech_stacks = [t.tech_stack_item_id for t in internship.required_tech_stack_items]
