@@ -1078,6 +1078,13 @@ def edit_interview(interview_id):
             notes = parts[1]
             
     scheduled_at_iso = interview.scheduled_at.isoformat()[:16]
+
+    # Tentukan URL kembali berdasarkan query param ?from
+    from_param = request.args.get('from', '')
+    if from_param == 'interviews':
+        back_url = url_for('company.interviews')
+    else:
+        back_url = url_for('company.applicant_detail', application_id=interview.application.id)
             
     return render_template(
         'company/interview_form.html', 
@@ -1085,7 +1092,8 @@ def edit_interview(interview_id):
         interview=interview,
         interview_format=interview_format,
         notes=notes,
-        scheduled_at_iso=scheduled_at_iso
+        scheduled_at_iso=scheduled_at_iso,
+        back_url=back_url
     )
 
 @bp.route('/interviews', methods=['GET'])
@@ -1096,7 +1104,7 @@ def interviews():
     from app.models.identity import StudentProfile
     from app.models.lookups import InterviewStatus
     from sqlalchemy import desc
-    from sqlalchemy.orm import joinedload
+    from sqlalchemy.orm import contains_eager, joinedload
     
     profile = current_user.company_profile
     if not profile:
@@ -1104,26 +1112,36 @@ def interviews():
         
     status_filter = request.args.get('status', 'all')
     
-    query = ApplicationInterview.query.options(
-        joinedload(ApplicationInterview.interview_status),
-        joinedload(ApplicationInterview.application).options(
-            joinedload(InternshipApplication.internship),
-            joinedload(InternshipApplication.student_profile).options(
+    query = ApplicationInterview.query \
+        .join(ApplicationInterview.interview_status) \
+        .join(ApplicationInterview.application) \
+        .join(InternshipApplication.internship) \
+        .filter(Internship.company_profile_id == profile.id) \
+        .options(
+            contains_eager(ApplicationInterview.interview_status),
+            contains_eager(ApplicationInterview.application).contains_eager(InternshipApplication.internship),
+            contains_eager(ApplicationInterview.application).joinedload(InternshipApplication.student_profile).options(
                 joinedload(StudentProfile.user),
                 joinedload(StudentProfile.profile_photo)
             )
         )
-    ).join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
-        Internship.company_profile_id == profile.id
-    )
     
     if status_filter != 'all':
         query = query.filter(InterviewStatus.status_code == status_filter)
         
-    # Default order by scheduled date
-    interviews = query.order_by(desc(ApplicationInterview.scheduled_at)).all()
+    # Paginasi: 15 per halaman untuk menjaga LCP tetap rendah
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+    pagination = query.order_by(desc(ApplicationInterview.scheduled_at)).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
-    return render_template('company/interviews.html', interviews=interviews, current_status=status_filter)
+    return render_template(
+        'company/interviews.html',
+        interviews=pagination.items,
+        pagination=pagination,
+        current_status=status_filter
+    )
 
 @bp.route('/interviews/<int:interview_id>/status', methods=['POST'])
 @login_required
