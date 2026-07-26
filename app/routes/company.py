@@ -386,8 +386,8 @@ def internship_create_form():
         flash('Perusahaan Anda harus terverifikasi untuk dapat membuat lowongan.', 'warning')
         return redirect(url_for('company.dashboard'))
         
-    locations = Location.query.all()
-    categories = TechnologyCategory.query.all()
+    locations = Location.query.order_by(Location.city).all()
+    categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
     skills = Skill.query.all()
     tech_stacks = TechStackItem.query.all()
     
@@ -576,8 +576,8 @@ def internship_edit_form(id):
         flash('Akses ditolak.', 'error')
         return redirect(url_for('company.dashboard'))
         
-    categories = TechnologyCategory.query.all()
-    locations = Location.query.all()
+    categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+    locations = Location.query.order_by(Location.city).all()
     skills = Skill.query.all()
     tech_stacks = TechStackItem.query.all()
     
