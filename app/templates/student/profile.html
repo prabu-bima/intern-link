@@ -1698,6 +1698,34 @@
         });
     }
 
+    window.downloadCertificateFile = function (fileUrl, title, event) {
+        if (event) event.stopPropagation();
+        fetch(fileUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                const extMatch = fileUrl.match(/\.([a-zA-Z0-9]+)(\?|$)/);
+                const ext = extMatch ? `.${extMatch[1]}` : '';
+                const cleanTitle = (title || 'sertifikat').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim();
+                a.download = cleanTitle ? `${cleanTitle}${ext}` : `sertifikat${ext}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(blobUrl);
+                a.remove();
+            })
+            .catch(err => {
+                console.error('Download failed, falling back to direct URL:', err);
+                const a = document.createElement('a');
+                a.href = fileUrl;
+                a.download = '';
+                a.target = '_blank';
+                a.click();
+            });
+    };
+
     window.loadCertificates = function () {
         const csrfToken = "{{ csrf_token() }}";
         fetch("{{ url_for('student.get_certificates') }}", {
@@ -1722,11 +1750,18 @@
                     const dateStr = cert.issue_date
                         ? new Date(cert.issue_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
                         : '-';
-                    const fileBtn = cert.has_file && cert.file_url
-                        ? `<a href="${cert.file_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                    const previewBtn = cert.has_file && cert.file_url
+                        ? `<a href="${cert.file_url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            Preview
+                       </a>`
+                        : '';
+                    const safeTitle = (cert.certificate_title || '').replace(/'/g, "\\'");
+                    const downloadBtn = cert.has_file && cert.file_url
+                        ? `<button type="button" onclick="downloadCertificateFile('${cert.file_url}', '${safeTitle}', event)" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Unduh File
-                       </a>`
+                       </button>`
                         : '';
                     const credentialBtn = cert.credential_url
                         ? `<a href="${cert.credential_url}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
@@ -1763,7 +1798,8 @@
                                 <p class="text-sm text-gray-500">${cert.issuer}</p>
                                 <p class="text-xs text-gray-400 mt-1">${dateStr}</p>
                                 <div class="mt-2 flex gap-2 flex-wrap">
-                                    ${fileBtn}
+                                    ${previewBtn}
+                                    ${downloadBtn}
                                     ${credentialBtn}
                                 </div>
                             </div>
