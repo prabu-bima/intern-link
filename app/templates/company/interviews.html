@@ -21,14 +21,14 @@
                 <select name="status" id="status"
                     class="pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm border bg-white"
                     onchange="this.form.submit()">
-                    <option value="all" {% if current_status=='all' %}selected{% endif %}>Semua Status</option>
-                    <option value="scheduled" {% if current_status=='scheduled' %}selected{% endif %}>Terjadwal</option>
-                    <option value="completed" {% if current_status=='completed' %}selected{% endif %}>Selesai</option>
-                    <option value="rescheduled" {% if current_status=='rescheduled' %}selected{% endif %}>Dijadwalkan
-                        Ulang</option>
-                    <option value="cancelled" {% if current_status=='cancelled' %}selected{% endif %}>Dibatalkan
+                    <option value="all" {% if current_status=='all' %}selected{% endif %}>
+                        Semua Status ({{ status_counts.get('all', 0) }})
                     </option>
-                    <option value="no_show" {% if current_status=='no_show' %}selected{% endif %}>Tidak Hadir</option>
+                    {% for s in interview_statuses %}
+                    <option value="{{ s.status_code }}" {% if current_status==s.status_code %}selected{% endif %}>
+                        {{ s.status_name }} ({{ status_counts.get(s.status_code, 0) }})
+                    </option>
+                    {% endfor %}
                 </select>
             </div>
         </form>

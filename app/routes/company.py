@@ -727,10 +727,15 @@ def internship_applicants(id):
         joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.profile_photo),
         joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.education_records),
         joinedload(InternshipApplication.application_status)
-    ).filter_by(internship_id=internship.id)
+    ).filter(
+        InternshipApplication.internship_id == internship.id,
+        InternshipApplication.deleted_at.is_(None)
+    )
     
     if status != 'all':
-        query = query.join(ApplicationStatus).filter(ApplicationStatus.status_code == status)
+        query = query.join(ApplicationStatus, InternshipApplication.application_status_id == ApplicationStatus.id).filter(
+            ApplicationStatus.status_code == status
+        )
         
     # Pagination
     page = request.args.get('page', 1, type=int)
@@ -744,7 +749,10 @@ def internship_applicants(id):
     status_counts_query = db.session.query(
         InternshipApplication.application_status_id, 
         db.func.count(InternshipApplication.id)
-    ).filter_by(internship_id=internship.id).group_by(InternshipApplication.application_status_id).all()
+    ).filter(
+        InternshipApplication.internship_id == internship.id,
+        InternshipApplication.deleted_at.is_(None)
+    ).group_by(InternshipApplication.application_status_id).all()
     
     status_counts_map = {status_id: count for status_id, count in status_counts_query}
     
@@ -1095,20 +1103,50 @@ def interviews():
     from app.models.internship import ApplicationInterview, InternshipApplication, Internship
     from app.models.identity import StudentProfile
     from app.models.lookups import InterviewStatus
+    from app.extensions import cache
     from sqlalchemy import desc
     from sqlalchemy.orm import contains_eager, joinedload
-    
+
     profile = current_user.company_profile
     if not profile:
         abort(404)
-        
+
     status_filter = request.args.get('status', 'all')
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+
+    # Cache status lookup (IDs rarely change)
+    interview_statuses = cache.get('all_interview_statuses')
+    if not interview_statuses:
+        interview_statuses = InterviewStatus.query.all()
+        cache.set('all_interview_statuses', interview_statuses, timeout=86400)
+
+    # Cache per-company status counts (120s) to avoid re-running GROUP BY on every request
+    counts_cache_key = f'interview_status_counts_{profile.id}'
+    status_counts = cache.get(counts_cache_key)
+    if not status_counts:
+        rows = db.session.query(
+            InterviewStatus.status_code,
+            db.func.count(ApplicationInterview.id)
+        ).join(ApplicationInterview, ApplicationInterview.interview_status_id == InterviewStatus.id
+        ).join(InternshipApplication, ApplicationInterview.internship_application_id == InternshipApplication.id
+        ).join(Internship, InternshipApplication.internship_id == Internship.id
+        ).filter(
+            Internship.company_profile_id == profile.id,
+            ApplicationInterview.deleted_at.is_(None)
+        ).group_by(InterviewStatus.status_code).all()
+        status_counts = {'all': 0, **{code: cnt for code, cnt in rows}}
+        status_counts['all'] = sum(cnt for code, cnt in rows)
+        cache.set(counts_cache_key, status_counts, timeout=120)
+
     query = ApplicationInterview.query \
         .join(ApplicationInterview.interview_status) \
         .join(ApplicationInterview.application) \
         .join(InternshipApplication.internship) \
-        .filter(Internship.company_profile_id == profile.id) \
+        .filter(
+            Internship.company_profile_id == profile.id,
+            ApplicationInterview.deleted_at.is_(None)
+        ) \
         .options(
             contains_eager(ApplicationInterview.interview_status),
             contains_eager(ApplicationInterview.application).contains_eager(InternshipApplication.internship),
@@ -1117,22 +1155,21 @@ def interviews():
                 joinedload(StudentProfile.profile_photo)
             )
         )
-    
+
     if status_filter != 'all':
         query = query.filter(InterviewStatus.status_code == status_filter)
-        
-    # Paginasi: 15 per halaman untuk menjaga LCP tetap rendah
-    page = request.args.get('page', 1, type=int)
-    per_page = 15
+
     pagination = query.order_by(desc(ApplicationInterview.scheduled_at)).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
+
     return render_template(
         'company/interviews.html',
         interviews=pagination.items,
         pagination=pagination,
-        current_status=status_filter
+        current_status=status_filter,
+        interview_statuses=interview_statuses,
+        status_counts=status_counts,
     )
 
 @bp.route('/interviews/<int:interview_id>/status', methods=['POST'])
