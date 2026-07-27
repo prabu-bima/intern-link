@@ -18,11 +18,11 @@
     <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
         <a href="{{ url_for('company.internship_applicants', id=internship.id, status='all') }}" 
            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-           {% if current_status == 'all' %}border-blue-600 text-blue-600
+           {% if current_status == 'all' %}border-primary-600 text-primary-600
            {% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
             Semua
             <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs font-medium
-                {% if current_status == 'all' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                {% if current_status == 'all' %}bg-primary-100 text-primary-700{% else %}bg-gray-100 text-gray-600{% endif %}">
                 {{ status_counts.get('all', 0) }}
             </span>
         </a>
@@ -30,11 +30,11 @@
         {% for s in application_statuses %}
         <a href="{{ url_for('company.internship_applicants', id=internship.id, status=s.status_code) }}" 
            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-           {% if current_status == s.status_code %}border-blue-600 text-blue-600
+           {% if current_status == s.status_code %}border-primary-600 text-primary-600
            {% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}">
             {{ s.status_name }}
             <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs font-medium
-                {% if current_status == s.status_code %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                {% if current_status == s.status_code %}bg-primary-100 text-primary-700{% else %}bg-gray-100 text-gray-600{% endif %}">
                 {{ status_counts.get(s.status_code, 0) }}
             </span>
         </a>
