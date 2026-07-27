@@ -28,6 +28,7 @@ def _get_or_create_notification_type(type_code: str, type_name: str):
 def _create_notification(recipient_user_id: int, type_code: str, type_name: str, payload: dict):
     """Buat satu record Notification dan tambahkan ke session (belum commit)."""
     from app.models.system import Notification
+    from app.extensions import cache
     notif_type = _get_or_create_notification_type(type_code, type_name)
     notif = Notification(
         recipient_user_id=recipient_user_id,
@@ -35,6 +36,7 @@ def _create_notification(recipient_user_id: int, type_code: str, type_name: str,
         payload_json=payload,
     )
     db.session.add(notif)
+    cache.delete(f'notif_count_company_{recipient_user_id}')
     return notif
 
 

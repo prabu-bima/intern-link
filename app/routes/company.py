@@ -1240,6 +1240,8 @@ def mark_notification_read(id):
         notif.is_read = True
         notif.read_at = datetime.utcnow()
         db.session.commit()
+        from app.extensions import cache
+        cache.delete(f'notif_count_company_{current_user.id}')
 
     return redirect(url_for('company.notifications'))
 
@@ -1257,6 +1259,8 @@ def view_notification(id):
         notif.is_read = True
         notif.read_at = datetime.utcnow()
         db.session.commit()
+        from app.extensions import cache
+        cache.delete(f'notif_count_company_{current_user.id}')
 
     payload = notif.payload_json or {}
     application_id = payload.get('application_id')
@@ -1288,5 +1292,7 @@ def mark_all_notifications_read():
         notif.read_at = now
 
     db.session.commit()
+    from app.extensions import cache
+    cache.delete(f'notif_count_company_{current_user.id}')
     flash('Semua notifikasi telah ditandai sebagai dibaca.', 'success')
     return redirect(url_for('company.notifications'))

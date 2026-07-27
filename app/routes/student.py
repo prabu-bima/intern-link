@@ -1715,6 +1715,8 @@ def apply_internship(id):
         db.session.add(notif_company)
         
     db.session.commit()
+    from app.extensions import cache
+    cache.delete(f'notif_count_company_{internship.company_profile.user_account_id}')
     
     flash('Berhasil mengirim lamaran magang!', 'success')
     return redirect(url_for('student.internship_detail', id=id))
@@ -1817,6 +1819,8 @@ def cancel_application(id):
         db.session.add(notif_company)
         
     db.session.commit()
+    from app.extensions import cache
+    cache.delete(f'notif_count_company_{application.internship.company_profile.user_account_id}')
     flash('Lamaran berhasil dibatalkan.', 'success')
     return redirect(url_for('student.application_detail', id=id))
 
