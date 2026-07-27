@@ -139,6 +139,7 @@
                                   data-confirm-title="Hapus CV"
                                   data-confirm-btn="Ya, Hapus"
                                   data-confirm-danger="true">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <button type="submit" class="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Hapus">
                                     {{ icon.trash(class="h-5 w-5") }}
                                 </button>
