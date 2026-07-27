@@ -1903,6 +1903,61 @@ def view_notification(id):
     return redirect(target)
 
 
+@bp.route('/notifications/<int:id>/detail', methods=['GET'])
+@student_required
+def notification_detail_json(id):
+    """Return notification data as JSON for the modal dialog."""
+    notif = Notification.query.filter_by(
+        id=id,
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).first_or_404()
+
+    was_unread = not notif.is_read
+    if not notif.is_read:
+        notif.is_read = True
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+
+    payload = notif.payload_json or {}
+    now = datetime.utcnow()
+    diff = now - notif.event_at
+    if diff.days > 0:
+        time_ago = f"{diff.days} hari yang lalu"
+    elif diff.seconds // 3600 > 0:
+        time_ago = f"{diff.seconds // 3600} jam yang lalu"
+    elif diff.seconds // 60 > 0:
+        time_ago = f"{diff.seconds // 60} menit yang lalu"
+    else:
+        time_ago = "Baru saja"
+
+    application_id = payload.get('application_id')
+    internship_id = payload.get('internship_id')
+    is_interview = 'Wawancara' in payload.get('title', '')
+
+    detail_url = None
+    if application_id:
+        detail_url = url_for('student.application_detail', id=application_id)
+        if is_interview:
+            detail_url += '#interview-details'
+    elif internship_id:
+        detail_url = url_for('student.internship_detail', id=internship_id)
+
+    t_code = notif.notification_type.type_code if notif.notification_type else ''
+
+    return jsonify({
+        'id': notif.id,
+        'title': payload.get('title', 'Notifikasi'),
+        'message': payload.get('message', ''),
+        'time_ago': time_ago,
+        'event_at': notif.event_at.strftime('%d %B %Y, %H:%M'),
+        'type_code': t_code,
+        'detail_url': detail_url,
+        'was_unread': was_unread,
+        'payload': payload,
+    })
+
+
 @bp.route('/notifications/read-all', methods=['POST'])
 @student_required
 def mark_all_notifications_read():
