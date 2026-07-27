@@ -28,6 +28,9 @@ def create_app(config_name=None):
     cache.init_app(app)
     compress.init_app(app)
 
+    # Inject Python builtins into Jinja2 globals
+    app.jinja_env.globals.update(min=min, max=max, len=len)
+
     # Register error handlers
     register_error_handlers(app)
 
