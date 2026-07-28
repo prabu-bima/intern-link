@@ -1753,9 +1753,9 @@ def applications():
     # Order by most recently submitted
     query = query.order_by(InternshipApplication.submitted_at.desc())
     
-    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    pagination = query.paginate(page=page, per_page=9, error_out=False)
     applications = pagination.items
-    
+
     # Get all possible statuses for the filter dropdown in correct order
     statuses = ApplicationStatus.query.order_by(ApplicationStatus.id).all()
     
