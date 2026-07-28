@@ -453,13 +453,16 @@ def add_education():
         
     form = EducationForm(request.form)
     if form.validate_on_submit():
+        from datetime import date
+        start = date(form.start_date.data, 1, 1)
+        end = date(form.end_date.data, 1, 1) if form.end_date.data else None
         new_record = StudentEducationRecord(
             student_profile_id=profile.id,
             institution_name=form.institution_name.data,
             field_of_study=form.field_of_study.data,
             degree_name=form.degree_name.data,
-            start_date=form.start_date.data,
-            end_date=form.end_date.data,
+            start_date=start,
+            end_date=end,
             grade=form.grade.data
         )
         db.session.add(new_record)
@@ -485,13 +488,14 @@ def edit_education(id):
         
     form = EducationForm(request.form)
     if form.validate_on_submit():
+        from datetime import date
         record.institution_name = form.institution_name.data
         record.field_of_study = form.field_of_study.data
         record.degree_name = form.degree_name.data
-        record.start_date = form.start_date.data
-        record.end_date = form.end_date.data
+        record.start_date = date(form.start_date.data, 1, 1)
+        record.end_date = date(form.end_date.data, 1, 1) if form.end_date.data else None
         record.grade = form.grade.data
-        
+
         db.session.commit()
         return jsonify({'success': True, 'message': 'Education record updated successfully.'})
         

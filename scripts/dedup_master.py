@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import create_app
 from app.extensions import db
-from app.models.master import TechnologyCategory, Skill, TechStackItem
+from app.models.master import TechnologyCategory, Skill, TechStackItem, Location
 from sqlalchemy import text
 
 TABLES_TO_DEDUP = [
@@ -44,6 +44,15 @@ TABLES_TO_DEDUP = [
             ("internship_required_tech_stack_item", "tech_stack_item_id", "tech_stack_item.id"),
             ("student_tech_stack_item", "tech_stack_item_id", "tech_stack_item.id"),
             ("ai_skill_match_tech_stack_item", "tech_stack_item_id", "tech_stack_item.id"),
+        ],
+    },
+    {
+        "label": "Location",
+        "model": Location,
+        "name_col": "city",
+        "fks": [
+            ("company_profile", "location_id", "location.id"),
+            ("internship", "location_id", "location.id"),
         ],
     },
 ]

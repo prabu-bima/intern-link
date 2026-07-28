@@ -368,13 +368,13 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai *</label>
-                    <input type="date" id="edu_start" name="start_date" required
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Mulai *</label>
+                    <input type="number" id="edu_start" name="start_date" required min="1990" max="2035" placeholder="Contoh: 2020"
                         class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lulus (Atau Perkiraan)</label>
-                    <input type="date" id="edu_end" name="end_date"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Lulus (Atau Perkiraan)</label>
+                    <input type="number" id="edu_end" name="end_date" min="1990" max="2035" placeholder="Contoh: 2024"
                         class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm">
                 </div>
             </div>
@@ -902,8 +902,8 @@
                 document.getElementById('edu_institution').value = data.institution_name;
                 document.getElementById('edu_field').value = data.field_of_study;
                 document.getElementById('edu_degree').value = data.degree_name;
-                document.getElementById('edu_start').value = data.start_date;
-                document.getElementById('edu_end').value = data.end_date;
+                document.getElementById('edu_start').value = data.start_date ? data.start_date.substring(0, 4) : '';
+                document.getElementById('edu_end').value = data.end_date ? data.end_date.substring(0, 4) : '';
                 document.getElementById('edu_grade').value = data.grade || '';
 
                 document.getElementById('educationModalTitle').textContent = 'Ubah Pendidikan';

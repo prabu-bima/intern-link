@@ -22,11 +22,6 @@
               {% if report_type == 'internships' %}bg-primary-600 text-white{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
         Lowongan
     </a>
-    <a href="{{ url_for('admin.report_applications') }}"
-       class="px-4 py-2 rounded-xl text-sm font-medium transition-colors
-              {% if report_type == 'applications' %}bg-primary-600 text-white{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
-        Lamaran
-    </a>
 </div>
 
 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -164,82 +159,6 @@
         </tbody>
     </table></div>
 
-    <!-- ── APPLICATION REPORT ──────────────────────────────── -->
-    {% elif report_type == 'applications' %}
-    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-        <h2 class="text-base font-bold text-gray-900">Laporan Lamaran</h2>
-        <form action="{{ url_for('admin.export_applications') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-xl hover:bg-gray-900 transition-colors">
-                {{ icon.download(class="w-4 h-4 mr-1.5") }} Export CSV
-            </button>
-        </form>
-    </div>
-
-    <!-- Funnel summary -->
-    {% if funnel %}
-    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/30">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Conversion Funnel</p>
-        <div class="flex flex-wrap gap-3">
-            {% set funnel_stages = [('applied','Dikirim','gray'),('reviewing','Direview','blue'),('shortlisted','Shortlist','indigo'),('interviewing','Wawancara','yellow'),('accepted','Diterima','green'),('rejected','Ditolak','red')] %}
-            {% for code, label, color in funnel_stages %}
-            {% set cnt = funnel.get(code, 0) %}
-            <div class="text-center bg-white border border-gray-100 rounded-xl px-4 py-3 min-w-[80px]">
-                <p class="text-xl font-bold text-gray-900">{{ cnt }}</p>
-                <p class="text-xs text-gray-500 mt-0.5">{{ label }}</p>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <form method="GET" action="{{ url_for('admin.report_applications') }}" class="p-6 border-b border-gray-100 flex flex-wrap gap-3">
-        <select name="status" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm">
-            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Semua Status</option>
-            {% for s in app_statuses %}
-            <option value="{{ s.status_code }}" {% if status_filter == s.status_code %}selected{% endif %}>{{ s.status_name }}</option>
-            {% endfor %}
-        </select>
-        <select name="company_id" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm">
-            <option value="all" {% if company_id == 'all' %}selected{% endif %}>Semua Perusahaan</option>
-            {% for c in companies %}
-            <option value="{{ c.id }}" {% if company_id == c.id|string %}selected{% endif %}>{{ c.company_name }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700">Filter</button>
-        <a href="{{ url_for('admin.report_applications') }}" class="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50">Reset</a>
-        <span class="ml-auto text-sm text-gray-500 self-center">{{ applications|length }} hasil</span>
-    </form>
-
-    <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-100">
-        <thead class="bg-gray-50/70"><tr>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Mahasiswa</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Lowongan</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Perusahaan</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell">Tanggal</th>
-        </tr></thead>
-        <tbody class="bg-white divide-y divide-gray-100">
-        {% for app in applications %}
-        {% set sc = app.application_status.status_code if app.application_status else '' %}
-        <tr class="hover:bg-gray-50/40">
-            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ app.student_profile.user.display_name if app.student_profile and app.student_profile.user else '-' }}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">{{ app.internship.internship_title if app.internship else '-' }}</td>
-            <td class="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{{ app.internship.company_profile.company_name if app.internship and app.internship.company_profile else '-' }}</td>
-            <td class="px-4 py-3">
-                {% if sc == 'accepted' %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{{ app.application_status.status_name }}</span>
-                {% elif sc == 'rejected' %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">{{ app.application_status.status_name }}</span>
-                {% elif sc == 'interviewing' %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">{{ app.application_status.status_name }}</span>
-                {% else %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ app.application_status.status_name if app.application_status else '-' }}</span>{% endif %}
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell">{{ app.submitted_at.strftime('%d %b %Y') if app.submitted_at else '-' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">Tidak ada data.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table></div>
     {% endif %}
 
 </div><!-- /card -->

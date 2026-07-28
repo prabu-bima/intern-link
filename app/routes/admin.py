@@ -1517,17 +1517,20 @@ def _save_admin_report(report_type):
 def export_users():
     from app.models.identity import UserAccount
 
-    users = UserAccount.query.filter(UserAccount.deleted_at.is_(None)).order_by(UserAccount.id).all()
+    users = UserAccount.query.filter(
+        UserAccount.deleted_at.is_(None),
+        UserAccount.role == 'company'
+    ).order_by(UserAccount.id).all()
     rows = [
-        (u.id, u.display_name, u.email, u.role,
+        (u.id, u.display_name, u.email,
          u.status.status_name if u.status else '-')
         for u in users
     ]
     _save_admin_report('user_report')
     return _make_csv_response(
         rows,
-        ['ID', 'Nama', 'Email', 'Role', 'Status'],
-        f'users_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+        ['ID', 'Nama Perusahaan', 'Email', 'Status'],
+        f'companies_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
     )
 
 

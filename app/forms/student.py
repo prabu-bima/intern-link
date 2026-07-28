@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, DateField, URLField
+from wtforms import StringField, TextAreaField, SelectField, DateField, IntegerField, URLField
 from wtforms.validators import DataRequired, Email, Length, Optional, URL
 
 class PersonalInformationForm(FlaskForm):
@@ -15,8 +15,8 @@ class EducationForm(FlaskForm):
     institution_name = StringField('Nama Institusi / Universitas', validators=[DataRequired(), Length(max=200)])
     field_of_study = StringField('Program Studi / Jurusan', validators=[DataRequired(), Length(max=100)])
     degree_name = StringField('Gelar', validators=[DataRequired(), Length(max=100)])
-    start_date = DateField('Tanggal Mulai', validators=[DataRequired()])
-    end_date = DateField('Tanggal Lulus (Atau Perkiraan)', validators=[Optional()])
+    start_date = IntegerField('Tahun Mulai', validators=[DataRequired()])
+    end_date = IntegerField('Tahun Lulus (Atau Perkiraan)', validators=[Optional()])
     grade = StringField('IPK / Nilai', validators=[Optional(), Length(max=20)])
 
 class StudentSkillForm(FlaskForm):
