@@ -103,27 +103,18 @@ class AIPromptTemplates:
     @staticmethod
     def job_recommendation(student_data: Dict[str, Any], available_internships: list[Dict[str, Any]]) -> str:
         """Prompt template for recommending the best internships to a student."""
-        return f"""
-        You are an expert HR Technology Assistant.
-        Based on the student's profile, recommend the top 3 best matching internships from the available list.
+        # Compact JSON (no indent) to minimize token count
+        student_json = json.dumps(student_data, ensure_ascii=False)
+        internships_json = json.dumps(available_internships, ensure_ascii=False)
+        return f"""You are an expert HR Technology Assistant.
+Based on the student's skills and tech stack, recommend the top 3 best matching internships from the list.
 
-        STUDENT PROFILE:
-        {json.dumps(student_data, indent=2)}
+STUDENT PROFILE: {student_json}
 
-        AVAILABLE INTERNSHIPS:
-        {json.dumps(available_internships, indent=2)}
+AVAILABLE INTERNSHIPS: {internships_json}
 
-        Provide your analysis in the following strict JSON format:
-        {{
-            "recommendations": [
-                {{
-                    "internship_id": <id of the recommended internship>,
-                    "match_percentage": <int, 0-100>,
-                    "reasoning": "<string, brief 1-2 sentence explanation why this is a good fit. MUST BE IN BAHASA INDONESIA>"
-                }}
-            ]
-        }}
-        """
+Reply ONLY with valid JSON in this exact format:
+{{"recommendations":[{{"internship_id":<int>,"match_percentage":<int 0-100>,"reasoning":"<1-2 sentences in Bahasa Indonesia>"}}]}}"""
 
 
 # Singleton instance for easy importing

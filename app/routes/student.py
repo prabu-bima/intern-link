@@ -1561,6 +1561,8 @@ def internship_detail(id):
         joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
         joinedload(Internship.location),
         joinedload(Internship.technology_category),
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.moderation_status),
         joinedload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
         joinedload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
     ).filter_by(id=id).first_or_404()
