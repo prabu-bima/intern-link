@@ -570,6 +570,10 @@ def verify_company(id):
     db.session.add(audit)
     db.session.commit()
 
+    from app.extensions import cache
+    cache.delete(f"company_dashboard_stats_{company.company_profile.id}")
+    cache.delete(f"company_profile_data_{company.company_profile.id}")
+
     flash(f'Perusahaan {company.company_profile.company_name} berhasil diverifikasi.', 'success')
     return redirect(url_for('admin.company_detail', id=id))
 
@@ -614,6 +618,10 @@ def reject_company(id):
     )
     db.session.add(audit)
     db.session.commit()
+
+    from app.extensions import cache
+    cache.delete(f"company_dashboard_stats_{company.company_profile.id}")
+    cache.delete(f"company_profile_data_{company.company_profile.id}")
 
     flash(f'Perusahaan {company.company_profile.company_name} telah ditolak.', 'warning')
     return redirect(url_for('admin.company_detail', id=id))
