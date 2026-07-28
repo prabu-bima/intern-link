@@ -531,10 +531,8 @@ def internships():
             joinedload(Internship.technology_category)
         ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
 
-        if status_filter == 'active':
-            query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
-        elif status_filter == 'closed':
-            query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'closed')
+        if status_filter != 'all':
+            query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == status_filter)
 
         query = query.order_by(Internship.id.desc())
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -569,13 +567,20 @@ def internships():
         ).group_by(InternshipApplication.internship_id).all()
         interview_counts = {row.internship_id: row.cnt for row in interview_counts_query}
 
+    from app.models.lookups import InternshipLifecycleStatus as _ILC
+    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    if not lifecycle_statuses:
+        lifecycle_statuses = _ILC.query.all()
+        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+
     return render_template(
         'company/internships.html',
         pagination=pagination,
         internships=pagination.items,
         applicant_counts=applicant_counts,
         interview_counts=interview_counts,
-        current_status=status_filter
+        current_status=status_filter,
+        lifecycle_statuses=lifecycle_statuses
     )
 
 
@@ -602,6 +607,13 @@ def internship_edit_form(id):
     existing_skills = [s.skill_id for s in internship.required_skills]
     existing_tech_stacks = [t.tech_stack_item_id for t in internship.required_tech_stack_items]
     
+    from app.models.lookups import InternshipLifecycleStatus as _ILC
+    from app.extensions import cache
+    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    if not lifecycle_statuses:
+        lifecycle_statuses = _ILC.query.all()
+        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+
     return render_template(
         'company/internship_form.html',
         categories=categories,
@@ -610,7 +622,8 @@ def internship_edit_form(id):
         tech_stacks=tech_stacks,
         internship=internship,
         existing_skills=existing_skills,
-        existing_tech_stacks=existing_tech_stacks
+        existing_tech_stacks=existing_tech_stacks,
+        lifecycle_statuses=lifecycle_statuses
     )
 
 
@@ -688,26 +701,35 @@ def internship_edit(id):
     return redirect(url_for('company.internships'))
 
 
-@bp.route('/internships/<int:id>/close', methods=['POST'])
+@bp.route('/internships/<int:id>/lifecycle', methods=['POST'])
 @login_required
-def internship_close(id):
+def internship_update_lifecycle(id):
     from app.models.internship import Internship
-    
+    from app.models.lookups import InternshipLifecycleStatus
+
     if current_user.role != 'company':
         return redirect(url_for('guest.index'))
-        
+
     internship = Internship.query.get_or_404(id)
     if internship.company_profile_id != current_user.company_profile.id:
         return redirect(url_for('company.dashboard'))
-        
-    closed_status = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
-    if closed_status:
-        internship.lifecycle_status_id = closed_status.id
-        db.session.commit()
-        flash('Lowongan magang berhasil ditutup.', 'success')
-    else:
-        flash('Terjadi kesalahan pada sistem status.', 'error')
-        
+
+    status_id = request.form.get('lifecycle_status_id', type=int)
+    if not status_id:
+        flash('Status siklus tidak valid.', 'danger')
+        return redirect(url_for('company.internships'))
+
+    new_status = InternshipLifecycleStatus.query.get(status_id)
+    if not new_status:
+        flash('Status siklus tidak ditemukan.', 'danger')
+        return redirect(url_for('company.internships'))
+
+    internship.lifecycle_status_id = new_status.id
+    db.session.commit()
+
+    from app.extensions import cache
+    cache.clear()
+    flash(f'Siklus lowongan berhasil diubah menjadi {new_status.status_name}.', 'success')
     return redirect(url_for('company.internships'))
 
 

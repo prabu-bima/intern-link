@@ -14,7 +14,7 @@
     </a>
 </div>
 
-<form action="{% if internship %}{{ url_for('company.internship_edit', id=internship.id) }}{% else %}{{ url_for('company.internship_create') }}{% endif %}" method="POST" class="space-y-8">
+<form id="mainForm" action="{% if internship %}{{ url_for('company.internship_edit', id=internship.id) }}{% else %}{{ url_for('company.internship_create') }}{% endif %}" method="POST" class="space-y-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
     <!-- Informasi Utama -->
@@ -125,19 +125,56 @@
             </div>
         </div>
     </div>
-    
-    <div class="pt-5 border-t border-gray-200 flex justify-end space-x-4">
-        <a href="{{ url_for('company.internships') }}" class="bg-white py-2.5 px-6 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-            Batal
-        </a>
-        <button type="submit" id="submitBtn" class="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {% if internship %}Simpan Perubahan{% else %}Publikasikan Lowongan{% endif %}
-        </button>
+
+</form><!-- tutup form utama -->
+
+{% if internship %}
+<!-- Status Siklus (di luar form utama) -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+        <h2 class="text-lg font-bold text-gray-900">Status Siklus Lowongan</h2>
+        <p class="text-sm text-gray-500">Ubah siklus hidup lowongan magang ini.</p>
     </div>
-</form>
+    <div class="p-6">
+        <div class="flex items-center gap-4">
+            {% set lc = internship.lifecycle_status.status_code if internship.lifecycle_status else '' %}
+            {% set lc_colors = {
+                'draft': 'bg-gray-100 text-gray-700',
+                'active': 'bg-green-100 text-green-700',
+                'closed': 'bg-red-100 text-red-600'
+            } %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ lc_colors.get(lc, 'bg-yellow-100 text-yellow-700') }}">
+                Status Saat Ini: {{ internship.lifecycle_status.status_name if internship.lifecycle_status else '-' }}
+            </span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+            {% for ls in lifecycle_statuses %}
+            {% if ls.id != internship.lifecycle_status_id %}
+            <form action="{{ url_for('company.internship_update_lifecycle', id=internship.id) }}" method="POST" class="inline-block">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="lifecycle_status_id" value="{{ ls.id }}">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    Ubah ke {{ ls.status_name }}
+                </button>
+            </form>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="pt-5 border-t border-gray-200 flex justify-end space-x-4">
+    <a href="{{ url_for('company.internships') }}" class="bg-white py-2.5 px-6 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+        Batal
+    </a>
+    <button type="submit" form="mainForm" id="submitBtn" class="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        {% if internship %}Simpan Perubahan{% else %}Publikasikan Lowongan{% endif %}
+    </button>
+</div>
 
 <script>
-    document.querySelector('form').addEventListener('submit', function(e) {
+    document.getElementById('mainForm').addEventListener('submit', function(e) {
         const btn = document.getElementById('submitBtn');
         if (btn) {
             // Prevent multiple submissions
