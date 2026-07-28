@@ -61,7 +61,11 @@
                         <h3 class="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
                             {{ company.company_name }}
                         </h3>
-                        {% if company.industry_category %}
+                        {% if company.industry_category_ref %}
+                        <p class="text-primary-600 font-medium text-xs bg-primary-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                            {{ company.industry_category_ref.name }}
+                        </p>
+                        {% elif company.industry_category %}
                         <p class="text-primary-600 font-medium text-xs bg-primary-50 px-2 py-0.5 rounded-md inline-block mt-1">
                             {{ company.industry_category }}
                         </p>

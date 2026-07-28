@@ -189,12 +189,16 @@ def profile():
     from app.extensions import cache
     from sqlalchemy.orm import joinedload, selectinload
     from app.models.identity import CompanyProfile
+    from app.models.master import IndustryCategory
 
     # 1. Cache locations dropdown
     locations = cache.get('all_locations')
     if not locations:
         locations = Location.query.all()
         cache.set('all_locations', locations, timeout=86400)
+
+    # 1b. Ambil semua kategori industri (tidak di-cache karena jarang diakses)
+    industry_categories = IndustryCategory.query.order_by(IndustryCategory.name).all()
 
     # 2. Cache profile page data
     profile_id = current_user.company_profile.id
@@ -226,7 +230,7 @@ def profile():
     profile = db.session.merge(profile_data['profile'], load=False)
     verification = db.session.merge(profile_data['verification'], load=False) if profile_data['verification'] else None
 
-    return render_template('company/profile.html', profile=profile, locations=locations, verification=verification)
+    return render_template('company/profile.html', profile=profile, locations=locations, verification=verification, industry_categories=industry_categories)
 
 def clear_company_profile_cache():
     from app.extensions import cache
@@ -240,6 +244,12 @@ def profile_info():
     profile.company_name = request.form.get('company_name', profile.company_name)
     profile.company_description = request.form.get('company_description')
     profile.industry_category = request.form.get('industry_category')
+    # Simpan industry_category_id dari dropdown
+    industry_cat_id = request.form.get('industry_category_id')
+    if industry_cat_id and industry_cat_id.isdigit():
+        profile.industry_category_id = int(industry_cat_id)
+    else:
+        profile.industry_category_id = None
     profile.company_size = request.form.get('company_size')
     
     founding_year = request.form.get('founding_year')

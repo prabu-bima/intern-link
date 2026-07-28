@@ -16,7 +16,8 @@ from app.models.master import (
     TechnologyCategory,
     Skill,
     TechStackItem,
-    Location
+    Location,
+    IndustryCategory
 )
 
 from app.models.identity import (

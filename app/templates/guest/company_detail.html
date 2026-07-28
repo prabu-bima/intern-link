@@ -30,7 +30,11 @@
                 <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight font-outfit">
                     {{ company.company_name }}
                 </h1>
-                {% if company.industry_category %}
+                {% if company.industry_category_ref %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100">
+                    {{ company.industry_category_ref.name }}
+                </span>
+                {% elif company.industry_category %}
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100">
                     {{ company.industry_category }}
                 </span>

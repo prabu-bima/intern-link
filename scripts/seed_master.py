@@ -10,7 +10,8 @@ from app.models.master import (
     TechnologyCategory,
     Skill,
     TechStackItem,
-    Location
+    Location,
+    IndustryCategory
 )
 
 app = create_app()
@@ -71,6 +72,25 @@ def seed_data():
         for loc in locations:
             if not Location.query.filter_by(location_code=loc['code']).first():
                 db.session.add(Location(location_code=loc['code'], city=loc['city'], region=loc['region'], country=loc['country']))
+
+        # Industry Categories
+        industries = [
+            {'code': 'software_house', 'name': 'Software House'},
+            {'code': 'teknologi_informasi', 'name': 'Teknologi Informasi'},
+            {'code': 'ecommerce', 'name': 'E-Commerce'},
+            {'code': 'fintech', 'name': 'Fintech'},
+            {'code': 'kesehatan', 'name': 'Kesehatan'},
+            {'code': 'pendidikan', 'name': 'Pendidikan'},
+            {'code': 'agrikultur', 'name': 'Agrikultur'},
+            {'code': 'manufaktur', 'name': 'Manufaktur'},
+            {'code': 'layanan_keuangan', 'name': 'Layanan Keuangan'},
+            {'code': 'media_hiburan', 'name': 'Media & Hiburan'},
+            {'code': 'logistik', 'name': 'Logistik & Transportasi'},
+            {'code': 'lainnya', 'name': 'Lainnya'},
+        ]
+        for ind in industries:
+            if not IndustryCategory.query.filter_by(code=ind['code']).first():
+                db.session.add(IndustryCategory(code=ind['code'], name=ind['name']))
 
         db.session.commit()
         print("Successfully seeded master data tables.")

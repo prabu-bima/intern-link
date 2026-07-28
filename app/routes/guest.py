@@ -166,7 +166,8 @@ def companies():
     # Base query. Eager load company_logo & location, filter out soft-deleted & inactive company accounts
     query = CompanyProfile.query.options(
         joinedload(CompanyProfile.company_logo),
-        joinedload(CompanyProfile.location)
+        joinedload(CompanyProfile.location),
+        joinedload(CompanyProfile.industry_category_ref)
     ).join(UserAccount, CompanyProfile.user_account_id == UserAccount.id
     ).outerjoin(UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
     ).filter(

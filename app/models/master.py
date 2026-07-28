@@ -28,3 +28,11 @@ class Location(db.Model):
     city = db.Column(db.String(100), nullable=False)
     region = db.Column(db.String(100), nullable=True)
     country = db.Column(db.String(100), nullable=False, default="Indonesia")
+
+
+class IndustryCategory(db.Model):
+    __tablename__ = 'industry_category'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)

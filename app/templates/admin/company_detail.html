@@ -61,10 +61,10 @@
             <p class="text-sm text-gray-500 mb-2">{{ company.email }}</p>
 
             <div class="flex flex-wrap gap-4 text-sm text-gray-600">
-                {% if profile and profile.industry_category %}
+                {% if profile and (profile.industry_category_ref or profile.industry_category) %}
                 <span class="flex items-center gap-1">
                     {{ icon.briefcase(class="w-4 h-4 text-gray-400") }}
-                    {{ profile.industry_category }}
+                    {{ profile.industry_category_ref.name if profile.industry_category_ref else profile.industry_category }}
                 </span>
                 {% endif %}
                 {% if profile and profile.website_url %}
@@ -170,7 +170,7 @@
             {% endmacro %}
 
             {% if profile %}
-            {{ info_row('Kategori', profile.industry_category) }}
+            {{ info_row('Kategori', profile.industry_category_ref.name if profile.industry_category_ref else profile.industry_category) }}
             {{ info_row('Ukuran Perusahaan', profile.company_size) }}
             {{ info_row('Tahun Berdiri', profile.founding_year) }}
             {{ info_row('Alamat', profile.address_line) }}

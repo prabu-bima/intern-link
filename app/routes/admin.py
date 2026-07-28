@@ -406,7 +406,8 @@ def companies():
 
     query = UserAccount.query.options(
         joinedload(UserAccount.status),
-        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.verifications)
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.verifications),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.industry_category_ref)
     ).filter_by(role='company', deleted_at=None)
 
     if q:
@@ -481,6 +482,7 @@ def company_detail(id):
         joinedload(UserAccount.status),
         joinedload(UserAccount.company_profile).joinedload(CompanyProfile.company_logo),
         joinedload(UserAccount.company_profile).joinedload(CompanyProfile.location),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.industry_category_ref),
     ).filter_by(
         id=id, role='company', deleted_at=None
     ).first_or_404()
@@ -965,7 +967,7 @@ def locations():
 @admin_required
 def master_data():
     from flask import request
-    from app.models.master import TechnologyCategory, Skill, TechStackItem, Location
+    from app.models.master import TechnologyCategory, Skill, TechStackItem, Location, IndustryCategory
 
     tab = request.args.get('tab', 'categories')
 
@@ -973,6 +975,7 @@ def master_data():
     skills = Skill.query.order_by(Skill.skill_name).all()
     tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
     locations = Location.query.order_by(Location.city).all()
+    industries = IndustryCategory.query.order_by(IndustryCategory.name).all()
 
     return render_template(
         'admin/master_data.html',
@@ -981,6 +984,7 @@ def master_data():
         skills=skills,
         tech_stacks=tech_stacks,
         locations=locations,
+        industries=industries,
     )
 
 
@@ -1221,6 +1225,101 @@ def delete_location(id):
     except Exception:
         db.session.rollback()
         return jsonify({'error': 'Tidak dapat menghapus lokasi yang masih digunakan.'}), 400
+
+
+@bp.route('/master-data/industries', methods=['POST'])
+@admin_required
+def add_industry_category():
+    from flask import request, jsonify
+    from app.models.master import IndustryCategory
+    from app.models.system import AdminAuditLog
+
+    name = request.form.get('name', '').strip()
+    code = request.form.get('code', '').strip().lower()
+    desc = request.form.get('description', '').strip()
+
+    if not name or not code:
+        return jsonify({'error': 'Nama dan kode kategori industri wajib diisi.'}), 400
+
+    if IndustryCategory.query.filter_by(code=code).first():
+        return jsonify({'error': f'Kode "{code}" sudah digunakan.'}), 400
+
+    item = IndustryCategory(code=code, name=name, description=desc or None)
+    db.session.add(item)
+    db.session.flush()
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='add_industry_category',
+        target_type='IndustryCategory',
+        target_id=item.id,
+        details_json={'code': code, 'name': name}
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    return jsonify({'success': True, 'id': item.id, 'name': item.name, 'code': item.code, 'description': item.description})
+
+
+@bp.route('/master-data/industries/<int:id>', methods=['POST'])
+@admin_required
+def edit_industry_category(id):
+    from flask import request, jsonify
+    from app.models.master import IndustryCategory
+    from app.models.system import AdminAuditLog
+
+    item = IndustryCategory.query.get_or_404(id)
+    name = request.form.get('name', '').strip()
+    desc = request.form.get('description', '').strip()
+
+    if not name:
+        return jsonify({'error': 'Nama kategori industri wajib diisi.'}), 400
+
+    item.name = name
+    item.description = desc or None
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='edit_industry_category',
+        target_type='IndustryCategory',
+        target_id=item.id,
+        details_json={'code': item.code, 'name': name}
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    return jsonify({'success': True})
+
+
+@bp.route('/master-data/industries/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_industry_category(id):
+    from flask import jsonify
+    from app.models.master import IndustryCategory
+    from app.models.identity import CompanyProfile
+    from app.models.system import AdminAuditLog
+
+    item = IndustryCategory.query.get_or_404(id)
+
+    # Cek apakah masih digunakan oleh CompanyProfile
+    used = CompanyProfile.query.filter_by(industry_category_id=id, deleted_at=None).count()
+    if used > 0:
+        return jsonify({'error': 'Tidak dapat menghapus kategori yang masih digunakan oleh perusahaan.'}), 400
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_industry_category',
+        target_type='IndustryCategory',
+        target_id=item.id,
+        details_json={'code': item.code, 'name': item.name}
+    )
+    db.session.add(audit)
+
+    db.session.delete(item)
+    db.session.commit()
+
+    return jsonify({'success': True})
+
 
 # ── Reports ──────────────────────────────────────────────────────
 
