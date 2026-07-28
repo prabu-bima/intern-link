@@ -38,10 +38,15 @@ def calculate_skill_match(student_profile_id: int, internship_id: int) -> dict:
             if item.item_role.role_code == 'missing'
         ]
         
+        ai_exp = existing_run.ai_explanation or ''
+        import re
+        if ai_exp and existing_run.match_percentage is not None:
+            ai_exp = re.sub(r'\b\d{1,3}%', f"{int(round(existing_run.match_percentage))}%", ai_exp)
+        
         return {
             'status': 'success',
             'match_percentage': existing_run.match_percentage,
-            'ai_explanation': existing_run.ai_explanation,
+            'ai_explanation': ai_exp,
             'matching_skills': matched_skills,
             'missing_skills': missing_skills
         }
@@ -107,7 +112,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
     try:
         response = groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             response_format={"type": "json_object"}
         )
         
@@ -134,7 +139,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
             internship_id=internship_id,
             match_percentage=result_data.get('match_percentage', 0),
             ai_explanation=result_data.get('ai_explanation', ''),
-            model_name='openai/gpt-oss-20b',
+            model_name='llama-3.3-70b-versatile',
             generation_status='success'
         )
         db.session.add(run)

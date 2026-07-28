@@ -237,24 +237,45 @@ def students():
 @admin_required
 def student_detail(id):
     from app.models.identity import UserAccount, StudentProfile
-    from app.models.internship import InternshipApplication
+    from app.models.student import StudentCvVersion, StudentSkill, StudentTechStackItem
+    from app.models.internship import Internship, InternshipApplication
     from sqlalchemy.orm import joinedload
 
-    student = UserAccount.query.filter_by(
+    student = UserAccount.query.options(
+        joinedload(UserAccount.status),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.profile_photo),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.education_records),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.skills).joinedload(StudentSkill.skill),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.tech_stack_items).joinedload(StudentTechStackItem.tech_stack_item),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.experiences),
+        joinedload(UserAccount.student_profile).joinedload(StudentProfile.organizations),
+    ).filter_by(
         id=id, role='student', deleted_at=None
     ).first_or_404()
 
+    profile = student.student_profile
+    cv_version = None
+    if profile:
+        cv_version = StudentCvVersion.query.options(
+            joinedload(StudentCvVersion.cv_file)
+        ).filter_by(
+            student_profile_id=profile.id,
+            is_current=True,
+            deleted_at=None
+        ).first()
+
     applications = InternshipApplication.query.options(
-        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.internship).joinedload(Internship.company_profile),
         joinedload(InternshipApplication.application_status),
     ).filter_by(
-        student_profile_id=student.student_profile.id if student.student_profile else 0,
+        student_profile_id=profile.id if profile else 0,
         deleted_at=None
     ).order_by(InternshipApplication.submitted_at.desc()).all()
 
     return render_template(
         'admin/student_detail.html',
         student=student,
+        cv_version=cv_version,
         applications=applications,
     )
 
@@ -332,6 +353,42 @@ def enable_student(id):
     return redirect(url_for('admin.student_detail', id=id))
 
 
+@bp.route('/students/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_student(id):
+    from flask import redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+
+    student = UserAccount.query.filter_by(
+        id=id, role='student', deleted_at=None
+    ).first_or_404()
+
+    from app.models.lookups import UserAccountStatus
+    inactive_status = UserAccountStatus.query.filter_by(status_code='inactive').first()
+    if inactive_status:
+        student.account_status_id = inactive_status.id
+    student.deleted_at = datetime.utcnow()
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_student',
+        target_type='UserAccount',
+        target_id=student.id,
+        details_json={
+            'student_email': student.email,
+            'student_name': student.display_name,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Akun mahasiswa {student.display_name} berhasil dihapus.', 'success')
+    return redirect(url_for('admin.students'))
+
+
+
 # ── Company Management ───────────────────────────────────────────
 
 @bp.route('/companies')
@@ -349,7 +406,8 @@ def companies():
 
     query = UserAccount.query.options(
         joinedload(UserAccount.status),
-        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.verifications)
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.verifications),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.industry_category_ref)
     ).filter_by(role='company', deleted_at=None)
 
     if q:
@@ -365,24 +423,36 @@ def companies():
     if status_filter != 'all':
         ver_status = CompanyVerificationStatus.query.filter_by(status_code=status_filter).first()
         if ver_status:
-            # Subquery: company_profile_ids whose latest verification has this status
-            from sqlalchemy import select
             latest_ver = db.session.query(
                 CompanyVerification.company_profile_id,
                 db.func.max(CompanyVerification.id).label('max_id')
             ).group_by(CompanyVerification.company_profile_id).subquery()
 
-            matching_ids = db.session.query(CompanyProfile.user_account_id).join(
-                latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
-            ).join(
-                CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
-            ).filter(
-                CompanyVerification.verification_status_id == ver_status.id
-            ).subquery()
+            if status_filter == 'pending':
+                matching_user_ids = db.session.query(UserAccount.id).join(
+                    CompanyProfile, CompanyProfile.user_account_id == UserAccount.id
+                ).outerjoin(
+                    latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
+                ).outerjoin(
+                    CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
+                ).filter(
+                    db.or_(
+                        CompanyVerification.verification_status_id == ver_status.id,
+                        CompanyVerification.id.is_(None)
+                    )
+                )
+            else:
+                matching_user_ids = db.session.query(UserAccount.id).join(
+                    CompanyProfile, CompanyProfile.user_account_id == UserAccount.id
+                ).join(
+                    latest_ver, latest_ver.c.company_profile_id == CompanyProfile.id
+                ).join(
+                    CompanyVerification, CompanyVerification.id == latest_ver.c.max_id
+                ).filter(
+                    CompanyVerification.verification_status_id == ver_status.id
+                )
 
-            query = query.filter(UserAccount.id.in_(
-                db.session.query(matching_ids)
-            ))
+            query = query.filter(UserAccount.id.in_(matching_user_ids))
 
     verification_statuses = CompanyVerificationStatus.query.all()
     pagination = query.order_by(UserAccount.id.desc()).paginate(
@@ -404,10 +474,16 @@ def companies():
 def company_detail(id):
     from app.models.identity import UserAccount, CompanyProfile
     from app.models.company import CompanyVerification
-    from app.models.internship import Internship
+    from app.models.internship import Internship, InternshipApplication
     from sqlalchemy.orm import joinedload
+    from sqlalchemy import func
 
-    company = UserAccount.query.filter_by(
+    company = UserAccount.query.options(
+        joinedload(UserAccount.status),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.company_logo),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.location),
+        joinedload(UserAccount.company_profile).joinedload(CompanyProfile.industry_category_ref),
+    ).filter_by(
         id=id, role='company', deleted_at=None
     ).first_or_404()
 
@@ -418,10 +494,26 @@ def company_detail(id):
         company_profile_id=company.company_profile.id if company.company_profile else 0
     ).order_by(CompanyVerification.id.desc()).all()
 
-    internships = Internship.query.filter_by(
+    internships = Internship.query.options(
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.technology_category),
+    ).filter_by(
         company_profile_id=company.company_profile.id if company.company_profile else 0,
         deleted_at=None
     ).order_by(Internship.id.desc()).limit(10).all()
+
+    # Hitung pelamar dengan 1 query (menghindari N+1)
+    internship_ids = [job.id for job in internships]
+    if internship_ids:
+        counts_q = db.session.query(
+            InternshipApplication.internship_id,
+            func.count(InternshipApplication.id).label('cnt')
+        ).filter(
+            InternshipApplication.internship_id.in_(internship_ids)
+        ).group_by(InternshipApplication.internship_id).all()
+        applicant_counts = {row.internship_id: row.cnt for row in counts_q}
+    else:
+        applicant_counts = {}
 
     latest_verification = verifications[0] if verifications else None
 
@@ -430,6 +522,7 @@ def company_detail(id):
         company=company,
         verifications=verifications,
         internships=internships,
+        applicant_counts=applicant_counts,
         latest_verification=latest_verification,
     )
 
@@ -477,6 +570,10 @@ def verify_company(id):
     db.session.add(audit)
     db.session.commit()
 
+    from app.extensions import cache
+    cache.delete(f"company_dashboard_stats_{company.company_profile.id}")
+    cache.delete(f"company_profile_data_{company.company_profile.id}")
+
     flash(f'Perusahaan {company.company_profile.company_name} berhasil diverifikasi.', 'success')
     return redirect(url_for('admin.company_detail', id=id))
 
@@ -521,6 +618,10 @@ def reject_company(id):
     )
     db.session.add(audit)
     db.session.commit()
+
+    from app.extensions import cache
+    cache.delete(f"company_dashboard_stats_{company.company_profile.id}")
+    cache.delete(f"company_profile_data_{company.company_profile.id}")
 
     flash(f'Perusahaan {company.company_profile.company_name} telah ditolak.', 'warning')
     return redirect(url_for('admin.company_detail', id=id))
@@ -611,6 +712,54 @@ def enable_company(id):
     return redirect(url_for('admin.company_detail', id=id))
 
 
+@bp.route('/companies/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_company(id):
+    from flask import redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.lookups import UserAccountStatus
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    inactive_status = UserAccountStatus.query.filter_by(status_code='inactive').first()
+    if inactive_status:
+        company.account_status_id = inactive_status.id
+    company.deleted_at = datetime.utcnow()
+
+    # Soft-hide all active internship postings
+    if company.company_profile:
+        from app.models.lookups import InternshipLifecycleStatus
+        from app.models.internship import Internship
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
+        if active_lifecycle and closed_lifecycle:
+            Internship.query.filter_by(
+                company_profile_id=company.company_profile.id,
+                lifecycle_status_id=active_lifecycle.id,
+                deleted_at=None
+            ).update({'lifecycle_status_id': closed_lifecycle.id})
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_company',
+        target_type='UserAccount',
+        target_id=company.id,
+        details_json={
+            'company_name': company.company_profile.company_name if company.company_profile else company.display_name,
+            'email': company.email,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Akun perusahaan {company.display_name} berhasil dihapus.', 'success')
+    return redirect(url_for('admin.companies'))
+
+
 # ── Internship Management ────────────────────────────────────────
 
 @bp.route('/internships')
@@ -681,6 +830,35 @@ def internships():
     )
 
 
+@bp.route('/internships/<int:id>/lifecycle', methods=['POST'])
+@admin_required
+def internship_update_lifecycle(id):
+    from flask import request, redirect, url_for, flash
+    from app.models.internship import Internship
+    from app.models.lookups import InternshipLifecycleStatus
+    from app.extensions import cache
+
+    internship = Internship.query.get_or_404(id)
+
+    status_id = request.form.get('lifecycle_status_id', type=int)
+    if not status_id:
+        flash('Status siklus tidak valid.', 'danger')
+        return redirect(url_for('admin.internships'))
+
+    new_status = InternshipLifecycleStatus.query.get(status_id)
+    if not new_status:
+        flash('Status siklus tidak ditemukan.', 'danger')
+        return redirect(url_for('admin.internships'))
+
+    internship.lifecycle_status_id = new_status.id
+    db.session.commit()
+
+    cache.delete(f"company_dashboard_stats_{internship.company_profile_id}")
+
+    flash(f'Siklus lowongan "{internship.internship_title}" berhasil diubah menjadi {new_status.status_name}.', 'success')
+    return redirect(url_for('admin.internships'))
+
+
 @bp.route('/internships/<int:id>')
 @admin_required
 def internship_detail(id):
@@ -710,11 +888,19 @@ def internship_detail(id):
         internship_id=internship.id, deleted_at=None
     ).order_by(InternshipModerationEvent.id.desc()).all()
     
+    from app.models.lookups import InternshipLifecycleStatus
+    from app.extensions import cache
+    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    if not lifecycle_statuses:
+        lifecycle_statuses = InternshipLifecycleStatus.query.all()
+        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+
     return render_template(
         'admin/internship_detail.html',
         internship=internship,
         applicants_count=applicants_count,
-        moderation_events=moderation_events
+        moderation_events=moderation_events,
+        lifecycle_statuses=lifecycle_statuses
     )
 
 
@@ -826,7 +1012,7 @@ def locations():
 @admin_required
 def master_data():
     from flask import request
-    from app.models.master import TechnologyCategory, Skill, TechStackItem, Location
+    from app.models.master import TechnologyCategory, Skill, TechStackItem, Location, IndustryCategory
 
     tab = request.args.get('tab', 'categories')
 
@@ -834,6 +1020,7 @@ def master_data():
     skills = Skill.query.order_by(Skill.skill_name).all()
     tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
     locations = Location.query.order_by(Location.city).all()
+    industries = IndustryCategory.query.order_by(IndustryCategory.name).all()
 
     return render_template(
         'admin/master_data.html',
@@ -842,6 +1029,7 @@ def master_data():
         skills=skills,
         tech_stacks=tech_stacks,
         locations=locations,
+        industries=industries,
     )
 
 
@@ -1083,6 +1271,101 @@ def delete_location(id):
         db.session.rollback()
         return jsonify({'error': 'Tidak dapat menghapus lokasi yang masih digunakan.'}), 400
 
+
+@bp.route('/master-data/industries', methods=['POST'])
+@admin_required
+def add_industry_category():
+    from flask import request, jsonify
+    from app.models.master import IndustryCategory
+    from app.models.system import AdminAuditLog
+
+    name = request.form.get('name', '').strip()
+    code = request.form.get('code', '').strip().lower()
+    desc = request.form.get('description', '').strip()
+
+    if not name or not code:
+        return jsonify({'error': 'Nama dan kode kategori industri wajib diisi.'}), 400
+
+    if IndustryCategory.query.filter_by(code=code).first():
+        return jsonify({'error': f'Kode "{code}" sudah digunakan.'}), 400
+
+    item = IndustryCategory(code=code, name=name, description=desc or None)
+    db.session.add(item)
+    db.session.flush()
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='add_industry_category',
+        target_type='IndustryCategory',
+        target_id=item.id,
+        details_json={'code': code, 'name': name}
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    return jsonify({'success': True, 'id': item.id, 'name': item.name, 'code': item.code, 'description': item.description})
+
+
+@bp.route('/master-data/industries/<int:id>', methods=['POST'])
+@admin_required
+def edit_industry_category(id):
+    from flask import request, jsonify
+    from app.models.master import IndustryCategory
+    from app.models.system import AdminAuditLog
+
+    item = IndustryCategory.query.get_or_404(id)
+    name = request.form.get('name', '').strip()
+    desc = request.form.get('description', '').strip()
+
+    if not name:
+        return jsonify({'error': 'Nama kategori industri wajib diisi.'}), 400
+
+    item.name = name
+    item.description = desc or None
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='edit_industry_category',
+        target_type='IndustryCategory',
+        target_id=item.id,
+        details_json={'code': item.code, 'name': name}
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    return jsonify({'success': True})
+
+
+@bp.route('/master-data/industries/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_industry_category(id):
+    from flask import jsonify
+    from app.models.master import IndustryCategory
+    from app.models.identity import CompanyProfile
+    from app.models.system import AdminAuditLog
+
+    item = IndustryCategory.query.get_or_404(id)
+
+    # Cek apakah masih digunakan oleh CompanyProfile
+    used = CompanyProfile.query.filter_by(industry_category_id=id, deleted_at=None).count()
+    if used > 0:
+        return jsonify({'error': 'Tidak dapat menghapus kategori yang masih digunakan oleh perusahaan.'}), 400
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_industry_category',
+        target_type='IndustryCategory',
+        target_id=item.id,
+        details_json={'code': item.code, 'name': item.name}
+    )
+    db.session.add(audit)
+
+    db.session.delete(item)
+    db.session.commit()
+
+    return jsonify({'success': True})
+
+
 # ── Reports ──────────────────────────────────────────────────────
 
 import csv
@@ -1113,14 +1396,17 @@ def report_users():
     if role != 'all':
         query = query.filter(UserAccount.role == role)
     if status != 'all':
+        from sqlalchemy import or_
         st = UserAccountStatus.query.filter_by(status_code=status).first()
         if st:
-            query = query.filter(UserAccount.account_status_id == st.id)
-    if date_from:
-        try:
-            query = query.filter(UserAccount.id >= 0)  # placeholder; use created_at if column exists
-        except Exception:
-            pass
+            if status == 'active':
+                # User dengan status_id=None dianggap aktif (default)
+                query = query.filter(
+                    or_(UserAccount.account_status_id == st.id,
+                        UserAccount.account_status_id.is_(None))
+                )
+            else:
+                query = query.filter(UserAccount.account_status_id == st.id)
 
     users = query.order_by(UserAccount.id.desc()).all()
     statuses = UserAccountStatus.query.all()
@@ -1134,10 +1420,11 @@ def report_users():
 @admin_required
 def report_internships():
     from flask import request
-    from app.models.internship import Internship
+    from app.models.internship import Internship, InternshipApplication
     from app.models.lookups import InternshipLifecycleStatus
     from app.models.master import TechnologyCategory, Location
     from sqlalchemy.orm import joinedload
+    from sqlalchemy import func
 
     category_id = request.args.get('category_id', 'all')
     location_id = request.args.get('location_id', 'all')
@@ -1146,7 +1433,6 @@ def report_internships():
     query = Internship.query.options(
         joinedload(Internship.company_profile),
         joinedload(Internship.technology_category),
-        joinedload(Internship.location),
         joinedload(Internship.lifecycle_status),
     ).filter(Internship.deleted_at.is_(None))
 
@@ -1159,13 +1445,29 @@ def report_internships():
         if ls:
             query = query.filter(Internship.lifecycle_status_id == ls.id)
 
-    internships = query.order_by(Internship.id.desc()).all()
+    # Batasi 500 baris untuk mencegah halaman overload
+    internships = query.order_by(Internship.id.desc()).limit(500).all()
+
+    # Hitung jumlah pelamar dengan 1 query (menghindari N+1)
+    internship_ids = [job.id for job in internships]
+    if internship_ids:
+        counts_q = db.session.query(
+            InternshipApplication.internship_id,
+            func.count(InternshipApplication.id).label('cnt')
+        ).filter(
+            InternshipApplication.internship_id.in_(internship_ids)
+        ).group_by(InternshipApplication.internship_id).all()
+        applicant_counts = {row.internship_id: row.cnt for row in counts_q}
+    else:
+        applicant_counts = {}
+
     categories  = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
     locations   = Location.query.order_by(Location.city).all()
     lc_statuses = InternshipLifecycleStatus.query.all()
 
     return render_template('admin/reports.html',
         report_type='internships', internships=internships,
+        applicant_counts=applicant_counts,
         categories=categories, locations=locations, lc_statuses=lc_statuses,
         category_id=category_id, location_id=location_id, status_filter=status)
 
@@ -1252,17 +1554,20 @@ def _save_admin_report(report_type):
 def export_users():
     from app.models.identity import UserAccount
 
-    users = UserAccount.query.filter(UserAccount.deleted_at.is_(None)).order_by(UserAccount.id).all()
+    users = UserAccount.query.filter(
+        UserAccount.deleted_at.is_(None),
+        UserAccount.role == 'company'
+    ).order_by(UserAccount.id).all()
     rows = [
-        (u.id, u.display_name, u.email, u.role,
+        (u.id, u.display_name, u.email,
          u.status.status_name if u.status else '-')
         for u in users
     ]
     _save_admin_report('user_report')
     return _make_csv_response(
         rows,
-        ['ID', 'Nama', 'Email', 'Role', 'Status'],
-        f'users_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+        ['ID', 'Nama Perusahaan', 'Email', 'Status'],
+        f'companies_{dt.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
     )
 
 

@@ -209,11 +209,15 @@ def recommendations():
 def refresh_recommendations():
     from flask import current_app
     from app.services.ai_job_recommendation import run_job_recommendation
+    from app.extensions import cache
     profile = current_user.student_profile
     if not profile:
         return jsonify({'status': 'error', 'message': 'Student profile not found.'}), 404
         
     try:
+        # Clear recommendation cache to force loading newly generated recommendations
+        cache.delete(f"student_recommendations_{profile.id}")
+        
         new_run = run_job_recommendation(profile.id)
         if not new_run or new_run.generation_status == 'failed':
             return jsonify({
@@ -449,13 +453,16 @@ def add_education():
         
     form = EducationForm(request.form)
     if form.validate_on_submit():
+        from datetime import date
+        start = date(form.start_date.data, 1, 1)
+        end = date(form.end_date.data, 1, 1) if form.end_date.data else None
         new_record = StudentEducationRecord(
             student_profile_id=profile.id,
             institution_name=form.institution_name.data,
             field_of_study=form.field_of_study.data,
             degree_name=form.degree_name.data,
-            start_date=form.start_date.data,
-            end_date=form.end_date.data,
+            start_date=start,
+            end_date=end,
             grade=form.grade.data
         )
         db.session.add(new_record)
@@ -481,13 +488,14 @@ def edit_education(id):
         
     form = EducationForm(request.form)
     if form.validate_on_submit():
+        from datetime import date
         record.institution_name = form.institution_name.data
         record.field_of_study = form.field_of_study.data
         record.degree_name = form.degree_name.data
-        record.start_date = form.start_date.data
-        record.end_date = form.end_date.data
+        record.start_date = date(form.start_date.data, 1, 1)
+        record.end_date = date(form.end_date.data, 1, 1) if form.end_date.data else None
         record.grade = form.grade.data
-        
+
         db.session.commit()
         return jsonify({'success': True, 'message': 'Education record updated successfully.'})
         
@@ -1557,6 +1565,8 @@ def internship_detail(id):
         joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
         joinedload(Internship.location),
         joinedload(Internship.technology_category),
+        joinedload(Internship.lifecycle_status),
+        joinedload(Internship.moderation_status),
         joinedload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
         joinedload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
     ).filter_by(id=id).first_or_404()
@@ -1616,6 +1626,12 @@ def internship_ai_match(id):
             ).first()
             if reco_item is not None:
                 match_run.match_percentage = reco_item.match_score
+
+        # Selaraskan persentase yang tertulis di dalam deskripsi teks dengan match_percentage
+        import re
+        if match_run.ai_explanation:
+            score_int = int(round(match_run.match_percentage))
+            match_run.ai_explanation = re.sub(r'\b\d{1,3}%', f"{score_int}%", match_run.ai_explanation)
 
     # Render the partial
     html = render_template('student/_ai_match_partial.html', match_run=match_run)
@@ -1705,6 +1721,8 @@ def apply_internship(id):
         db.session.add(notif_company)
         
     db.session.commit()
+    from app.extensions import cache
+    cache.delete(f'notif_count_company_{internship.company_profile.user_account_id}')
     
     flash('Berhasil mengirim lamaran magang!', 'success')
     return redirect(url_for('student.internship_detail', id=id))
@@ -1735,9 +1753,9 @@ def applications():
     # Order by most recently submitted
     query = query.order_by(InternshipApplication.submitted_at.desc())
     
-    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    pagination = query.paginate(page=page, per_page=9, error_out=False)
     applications = pagination.items
-    
+
     # Get all possible statuses for the filter dropdown in correct order
     statuses = ApplicationStatus.query.order_by(ApplicationStatus.id).all()
     
@@ -1807,6 +1825,8 @@ def cancel_application(id):
         db.session.add(notif_company)
         
     db.session.commit()
+    from app.extensions import cache
+    cache.delete(f'notif_count_company_{application.internship.company_profile.user_account_id}')
     flash('Lamaran berhasil dibatalkan.', 'success')
     return redirect(url_for('student.application_detail', id=id))
 
@@ -1855,6 +1875,94 @@ def mark_notification_read(id):
         db.session.commit()
         
     return redirect(url_for('student.notifications'))
+
+@bp.route('/notifications/<int:id>/view', methods=['GET'])
+@student_required
+def view_notification(id):
+    """Mark notification as read, then redirect to its detail URL."""
+    notif = Notification.query.filter_by(
+        id=id,
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).first_or_404()
+
+    if not notif.is_read:
+        notif.is_read = True
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+
+    # Build redirect target from payload
+    payload = notif.payload_json or {}
+    application_id = payload.get('application_id')
+    internship_id = payload.get('internship_id')
+    is_interview = 'Wawancara' in payload.get('title', '')
+
+    if application_id:
+        target = url_for('student.application_detail', id=application_id)
+        if is_interview:
+            target += '#interview-details'
+    elif internship_id:
+        target = url_for('student.internship_detail', id=internship_id)
+    else:
+        target = url_for('student.notifications')
+
+    return redirect(target)
+
+
+@bp.route('/notifications/<int:id>/detail', methods=['GET'])
+@student_required
+def notification_detail_json(id):
+    """Return notification data as JSON for the modal dialog."""
+    notif = Notification.query.filter_by(
+        id=id,
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).first_or_404()
+
+    was_unread = not notif.is_read
+    if not notif.is_read:
+        notif.is_read = True
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+
+    payload = notif.payload_json or {}
+    now = datetime.utcnow()
+    diff = now - notif.event_at
+    if diff.days > 0:
+        time_ago = f"{diff.days} hari yang lalu"
+    elif diff.seconds // 3600 > 0:
+        time_ago = f"{diff.seconds // 3600} jam yang lalu"
+    elif diff.seconds // 60 > 0:
+        time_ago = f"{diff.seconds // 60} menit yang lalu"
+    else:
+        time_ago = "Baru saja"
+
+    application_id = payload.get('application_id')
+    internship_id = payload.get('internship_id')
+    is_interview = 'Wawancara' in payload.get('title', '')
+
+    detail_url = None
+    if application_id:
+        detail_url = url_for('student.application_detail', id=application_id)
+        if is_interview:
+            detail_url += '#interview-details'
+    elif internship_id:
+        detail_url = url_for('student.internship_detail', id=internship_id)
+
+    t_code = notif.notification_type.type_code if notif.notification_type else ''
+
+    return jsonify({
+        'id': notif.id,
+        'title': payload.get('title', 'Notifikasi'),
+        'message': payload.get('message', ''),
+        'time_ago': time_ago,
+        'event_at': notif.event_at.strftime('%d %B %Y, %H:%M'),
+        'type_code': t_code,
+        'detail_url': detail_url,
+        'was_unread': was_unread,
+        'payload': payload,
+    })
+
 
 @bp.route('/notifications/read-all', methods=['POST'])
 @student_required

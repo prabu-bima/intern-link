@@ -12,21 +12,26 @@
 </div>
 
 <!-- Search Bar -->
-<form method="GET" action="{{ url_for('admin.students') }}" class="mb-6">
-    <div class="relative w-full">
+<form method="GET" action="{{ url_for('admin.students') }}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-3 items-center w-full">
+    <!-- Search Input -->
+    <div class="relative flex-grow w-full">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             {{ icon.magnifying_glass(class="w-4 h-4 text-gray-400") }}
         </div>
         <input type="text" name="q" value="{{ q }}"
                placeholder="Cari nama atau email..."
                class="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
-        {% if q %}
-        <a href="{{ url_for('admin.students') }}"
-           class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-            {{ icon.x_mark(class="w-4 h-4") }}
-        </a>
-        {% endif %}
     </div>
+    <button type="submit"
+            class="w-full sm:w-auto px-5 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors whitespace-nowrap">
+        Cari
+    </button>
+    {% if q %}
+    <a href="{{ url_for('admin.students') }}"
+       class="w-full sm:w-auto px-4 py-2.5 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors text-center whitespace-nowrap">
+        Reset
+    </a>
+    {% endif %}
 </form>
 
 {% if q %}

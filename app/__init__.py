@@ -28,6 +28,9 @@ def create_app(config_name=None):
     cache.init_app(app)
     compress.init_app(app)
 
+    # Inject Python builtins into Jinja2 globals
+    app.jinja_env.globals.update(min=min, max=max, len=len)
+
     # Register error handlers
     register_error_handlers(app)
 
@@ -79,3 +82,16 @@ def register_cli_commands(app):
         from app.services.notification import run_job_closing_reminders
         sent = run_job_closing_reminders(days_before=days)
         click.echo(f'[job-closing-reminders] {sent} notifikasi berhasil dikirim.')
+
+    @app.cli.command('normalize-industry')
+    def normalize_industry():
+        """Normalisasi industry_category CompanyProfile menjadi 'Software House'."""
+        from app.models.identity import CompanyProfile
+        from app.extensions import db
+        updated = CompanyProfile.query.filter(
+            (CompanyProfile.industry_category != 'Software House') |
+            (CompanyProfile.industry_category.is_(None))
+        ).update({CompanyProfile.industry_category: 'Software House'}, synchronize_session=False)
+        db.session.commit()
+        click.echo(f'[normalize-industry] {updated} baris di-update menjadi "Software House".')
+

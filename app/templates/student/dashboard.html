@@ -5,15 +5,17 @@
 
 {% block student_content %}
 <div class="space-y-6">
-    
+
     <!-- Greeting Section (Minimalist) -->
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between border-b border-gray-200 pb-6">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 font-outfit tracking-tight">Selamat datang, {{ current_user.display_name.split()[0] }}.</h1>
+            <h1 class="text-3xl font-bold text-gray-900 font-outfit tracking-tight">Selamat datang, {{
+                current_user.display_name.split()[0] }}.</h1>
             <p class="text-sm text-gray-500 mt-2">Ringkasan aktivitas magang Anda hari ini.</p>
         </div>
         <div class="mt-4 sm:mt-0">
-            <a href="{{ url_for('student.internships') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors">
+            <a href="{{ url_for('student.internships') }}"
+                class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors">
                 Cari Magang Baru
             </a>
         </div>
@@ -49,7 +51,8 @@
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">Profil Lengkap</p>
                 <div class="flex items-center gap-3 mt-1">
-                    <p class="text-3xl font-medium text-gray-900 leading-none">{{ profile_completeness | default(0) }}%</p>
+                    <p class="text-3xl font-medium text-gray-900 leading-none">{{ profile_completeness | default(0) }}%
+                    </p>
                 </div>
             </div>
         </div>
@@ -67,15 +70,16 @@
 
     <!-- Main Dashboard Content -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <!-- Left Column (Main) -->
         <div class="lg:col-span-2 space-y-6">
-            
+
             <!-- Application Status Pipeline -->
             <div class="bg-white rounded-xl border border-gray-200 p-6">
                 <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-6">Status Lamaran</h3>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+
+                <div
+                    class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
                     <div class="p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
                         <p class="text-3xl font-medium text-gray-900">{{ status_counts.applied | default(0) }}</p>
                         <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mt-2">Terkirim</p>
@@ -93,7 +97,7 @@
                         <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mt-2">Diterima</p>
                     </div>
                 </div>
-                
+
                 {% if total_applications == 0 %}
                 <div class="mt-6 text-sm text-gray-500">
                     Anda belum melamar lowongan magang apapun.
@@ -105,20 +109,25 @@
             <div class="bg-white rounded-xl border border-gray-200 p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Terbaru</h3>
-                    <a href="{{ url_for('student.internships') }}" class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">Lihat Semua</a>
+                    <a href="{{ url_for('student.internships') }}"
+                        class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">Lihat
+                        Semua</a>
                 </div>
-                
+
                 <div class="divide-y divide-gray-100">
                     {% for job in latest_internships %}
                     <div class="py-4 flex items-center group">
                         <div class="flex-grow min-w-0 pr-4">
                             <h4 class="text-base font-medium text-gray-900 truncate">
-                                <a href="{{ url_for('guest.internship_detail', id=job.id) }}" class="group-hover:underline">{{ job.internship_title }}</a>
+                                <a href="{{ url_for('guest.internship_detail', id=job.id) }}"
+                                    class="group-hover:underline">{{ job.internship_title }}</a>
                             </h4>
-                            <p class="text-sm text-gray-500 truncate mt-1">{{ job.company_profile.company_name }} <span class="mx-1">&middot;</span> {{ job.location.city }}</p>
+                            <p class="text-sm text-gray-500 truncate mt-1">{{ job.company_profile.company_name }} <span
+                                    class="mx-1">&middot;</span> {{ job.location.city }}</p>
                         </div>
                         <div class="hidden sm:block shrink-0 text-right">
-                            <span class="inline-flex items-center px-2 py-1 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                            <span
+                                class="inline-flex items-center px-2 py-1 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
                                 {{ job.technology_category.category_name }}
                             </span>
                         </div>
@@ -135,7 +144,7 @@
 
         <!-- Right Column (Sidebar) -->
         <div class="space-y-6">
-            
+
             <!-- AI Recommended Internships -->
             <div class="bg-white rounded-xl border border-gray-200 p-6">
                 <div class="flex items-center justify-between mb-6">
@@ -143,10 +152,12 @@
                         {{ icon.sparkles(class="h-4 w-4 text-gray-400 mr-2") }}
                         AI Recommended
                     </h3>
-                    <button id="dash-refresh-btn" onclick="dashRefreshRecommendations()" title="Hitung ulang rekomendasi"
-                        class="text-gray-400 hover:text-gray-900 transition-colors">
-                        <svg id="dash-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    <button id="dash-refresh-btn" onclick="dashRefreshRecommendations()"
+                        title="Hitung ulang rekomendasi" class="text-gray-400 hover:text-gray-900 transition-colors">
+                        <svg id="dash-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                     </button>
                 </div>
@@ -165,30 +176,34 @@
 
                 <div id="dash-recommendation-content" class="space-y-4">
                     {% if recommendations %}
-                        {% for item in recommendations %}
-                        {% set score = item.match_score | int %}
-                        <div class="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                            <a href="{{ url_for('student.internship_detail', id=item.internship.id) }}" class="block">
-                                <h4 class="font-medium text-sm text-gray-900 group-hover:underline">{{ item.internship.internship_title }}</h4>
-                                <p class="text-xs text-gray-500 mt-1">{{ item.internship.company_profile.company_name }}</p>
-                                <div class="flex items-center mt-2 text-xs {% if score >= 75 %}text-primary-600{% else %}text-gray-500{% endif %}">
-                                    {{ score }}% MATCH
-                                </div>
-                            </a>
-                        </div>
-                        {% endfor %}
+                    {% for item in recommendations %}
+                    {% set score = item.match_score | int %}
+                    <div class="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                        <a href="{{ url_for('student.internship_detail', id=item.internship.id) }}" class="block">
+                            <h4 class="font-medium text-sm text-gray-900 group-hover:underline">{{
+                                item.internship.internship_title }}</h4>
+                            <p class="text-xs text-gray-500 mt-1">{{ item.internship.company_profile.company_name }}</p>
+                            <div
+                                class="flex items-center mt-2 text-xs {% if score >= 75 %}text-primary-600{% else %}text-gray-500{% endif %}">
+                                {{ score }}% MATCH
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
                     {% else %}
                     <div class="py-4">
                         <p class="text-sm text-gray-500 mb-4">Belum ada rekomendasi. Segarkan untuk menghitung.</p>
-                        <button onclick="dashRefreshRecommendations()" class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">
+                        <button onclick="dashRefreshRecommendations()"
+                            class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">
                             Hitung Sekarang &rarr;
                         </button>
                     </div>
                     {% endif %}
                 </div>
-                
+
                 <div class="mt-6 pt-4 border-t border-gray-100">
-                    <a href="{{ url_for('student.recommendations') }}" class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">
+                    <a href="{{ url_for('student.recommendations') }}"
+                        class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">
                         Lihat Semua &rarr;
                     </a>
                 </div>
@@ -200,13 +215,14 @@
                     <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center">
                         Notifikasi
                         {% if notifications %}
-                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-900 text-white">
+                        <span
+                            class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-900 text-white">
                             {{ notifications|length }}
                         </span>
                         {% endif %}
                     </h3>
                 </div>
-                
+
                 <div class="space-y-6">
                     {% for notif in notifications %}
                     <div class="flex items-start">
@@ -214,8 +230,10 @@
                             {{ icon.bell(class="w-4 h-4") }}
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900 leading-tight mb-1">{{ notif.payload_json.get('title', '') }}</p>
-                            <p class="text-xs text-gray-600 leading-relaxed">{{ notif.payload_json.get('message', '') }}</p>
+                            <p class="text-sm font-medium text-gray-900 leading-tight mb-1">{{
+                                notif.payload_json.get('title', '') }}</p>
+                            <p class="text-xs text-gray-600 leading-relaxed">{{ notif.payload_json.get('message', '') }}
+                            </p>
                             <p class="text-xs text-gray-400 mt-2">{{ notif.event_at.strftime('%d %b, %H:%M') }}</p>
                         </div>
                     </div>
@@ -225,12 +243,13 @@
                     </div>
                     {% endfor %}
                 </div>
-                
+
                 {% if notifications %}
                 <div class="mt-8 pt-4 border-t border-gray-100 text-center">
                     <form action="{{ url_for('student.mark_all_notifications_read') }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit"
+                            class="text-xs font-semibold uppercase tracking-widest text-primary-600 hover:text-primary-700 hover:underline">
                             Tandai semua dibaca
                         </button>
                     </form>
@@ -239,53 +258,80 @@
             </div>
 
         </div>
-        
+
     </div>
 
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-async function dashRefreshRecommendations() {
-    const btn = document.getElementById('dash-refresh-btn');
-    const icon = document.getElementById('dash-refresh-icon');
-    const skeleton = document.getElementById('dash-skeleton');
-    const content = document.getElementById('dash-recommendation-content');
-    const error = document.getElementById('dash-error');
-
-    btn.disabled = true;
-    icon.classList.add('animate-spin');
-    skeleton.classList.remove('hidden');
-    content.classList.add('hidden');
-    error.classList.add('hidden');
-
-    try {
-        const response = await fetch('{{ url_for("student.refresh_recommendations") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        });
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            window.location.reload();
-        } else {
-            skeleton.classList.add('hidden');
-            content.classList.remove('hidden');
-            error.classList.remove('hidden');
-            btn.disabled = false;
-            icon.classList.remove('animate-spin');
-        }
-    } catch (err) {
-        skeleton.classList.add('hidden');
-        content.classList.remove('hidden');
-        error.classList.remove('hidden');
-        btn.disabled = false;
-        icon.classList.remove('animate-spin');
-    }
+{% block extra_js %}
+<style>
+@keyframes gpu-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
+.animate-gpu-spin {
+    animation: gpu-spin 0.8s linear infinite;
+    will-change: transform;
+}
+.fade-transition {
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
+<script>
+    async function dashRefreshRecommendations() {
+        const btn = document.getElementById('dash-refresh-btn');
+        const icon = document.getElementById('dash-refresh-icon');
+        const skeleton = document.getElementById('dash-skeleton');
+        const content = document.getElementById('dash-recommendation-content');
+        const error = document.getElementById('dash-error');
+
+        // Prevent double clicking and add animations
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        icon.classList.add('animate-gpu-spin');
+        
+        // Smooth transition out for content
+        content.classList.add('fade-transition', 'opacity-0');
+        
+        setTimeout(() => {
+            if (content.classList.contains('opacity-0')) {
+                content.classList.add('hidden');
+                skeleton.classList.remove('hidden');
+                skeleton.classList.add('fade-transition', 'opacity-100');
+            }
+        }, 150);
+        
+        error.classList.add('hidden');
+
+        try {
+            const response = await fetch('{{ url_for("student.refresh_recommendations") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                resetUI(btn, icon, skeleton, content, error);
+                error.classList.remove('hidden');
+            }
+        } catch (err) {
+            resetUI(btn, icon, skeleton, content, error);
+            error.classList.remove('hidden');
+        }
+    }
+
+    function resetUI(btn, icon, skeleton, content, error) {
+        skeleton.classList.add('hidden');
+        content.classList.remove('hidden', 'opacity-0');
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        icon.classList.remove('animate-gpu-spin');
+    }
 </script>
 {% endblock %}

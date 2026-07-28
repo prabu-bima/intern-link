@@ -20,6 +20,9 @@ build/
 # Environment variables
 .env
 
+# Command Code
+.commandcode/
+
 # IDE
 .vscode/
 .idea/

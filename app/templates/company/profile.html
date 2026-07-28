@@ -124,7 +124,11 @@
                             <a href="{{ link.url }}" target="_blank" class="text-xs text-gray-500 hover:text-primary-600 truncate">{{ link.url }}</a>
                         </div>
                     </div>
-                    <form action="{{ url_for('company.profile_social_delete', id=link.id) }}" method="POST" onsubmit="return confirm('Hapus tautan ini?');">
+                    <form action="{{ url_for('company.profile_social_delete', id=link.id) }}" method="POST"
+                          data-confirm="Apakah Anda yakin ingin menghapus tautan media sosial ini?"
+                          data-confirm-title="Hapus Media Sosial"
+                          data-confirm-btn="Ya, Hapus"
+                          data-confirm-danger="true">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Hapus">
                             {{ icon.trash(class="w-4 h-4") }}
@@ -189,15 +193,14 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label for="industry_category" class="block text-sm font-medium text-gray-700">Kategori Industri</label>
-                        <select id="industry_category" name="industry_category" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
-                            <option value="Software House" selected>Software House</option>
-                            {#
-                            <!-- {% set industries = ['Teknologi Informasi', 'E-Commerce', 'Fintech', 'Kesehatan', 'Pendidikan', 'Agrikultur', 'Manufaktur', 'Layanan Finansial', 'Lainnya'] %} -->
-                            {% for ind in industries %}
-                            <option value="{{ ind }}" {% if profile.industry_category == ind %}selected{% endif %}>{{ ind }}</option>
+                        <label for="industry_category_id" class="block text-sm font-medium text-gray-700">Kategori Industri</label>
+                        <select id="industry_category_id" name="industry_category_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl">
+                            <option value="">-- Pilih Kategori --</option>
+                            {% for cat in industry_categories %}
+                            <option value="{{ cat.id }}" {% if profile.industry_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% else %}
+                            <option value="" disabled>Belum ada kategori tersedia</option>
                             {% endfor %}
-                            #}
                         </select>
                     </div>
                     

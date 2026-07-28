@@ -69,9 +69,9 @@ class InternshipApplication(db.Model):
 class ApplicationInterview(db.Model):
     __tablename__ = 'application_interview'
     id = db.Column(db.Integer, primary_key=True)
-    internship_application_id = db.Column(db.Integer, db.ForeignKey('internship_application.id'), nullable=False)
-    interview_status_id = db.Column(db.Integer, db.ForeignKey('interview_status.id'), nullable=False)
-    scheduled_at = db.Column(db.DateTime, nullable=False)
+    internship_application_id = db.Column(db.Integer, db.ForeignKey('internship_application.id'), nullable=False, index=True)
+    interview_status_id = db.Column(db.Integer, db.ForeignKey('interview_status.id'), nullable=False, index=True)
+    scheduled_at = db.Column(db.DateTime, nullable=False, index=True)
     meeting_link = db.Column(db.String(255), nullable=True)
     interview_notes = db.Column(db.Text, nullable=True)
     interview_completed_at = db.Column(db.DateTime, nullable=True)

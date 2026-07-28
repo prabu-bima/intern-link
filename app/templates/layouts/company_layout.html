@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% import "components/icons.html" as icon %}
 
+{% block extra_css %}{% endblock %}
+
 {% block content %}
 <div class="flex flex-col md:flex-row gap-8">
-    <!-- Company Sidebar -->
+    <!-- Sidebar kiri -->
     <aside class="w-full md:w-64 flex-shrink-0">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-6">
             <nav class="space-y-1">
@@ -44,8 +46,12 @@
                         Notifikasi
                     </div>
                     {% if unread_notifications_count > 0 %}
-                    <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600">
+                    <span data-notif-badge class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600">
                         {{ unread_notifications_count }}
+                    </span>
+                    {% else %}
+                    <span data-notif-badge class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600 hidden">
+                        0
                     </span>
                     {% endif %}
                 </a>
@@ -60,9 +66,30 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Konten utama kanan -->
     <div class="flex-grow min-w-0">
         {% block company_content %}{% endblock %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Polling notifikasi setiap 15 detik
+setInterval(function() {
+    fetch("{{ url_for('company.unread_notifications_count_json') }}")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var badge = document.querySelector('[data-notif-badge]');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        });
+}, 15000);
+</script>
 {% endblock %}

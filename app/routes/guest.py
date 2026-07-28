@@ -10,12 +10,25 @@ def index():
     # Menghindari 3x round-trip ke Supabase tiap kali halaman dibuka.
     @cache.cached(timeout=300, key_prefix='landing_stats')
     def _get_landing_stats():
-        from app.models.identity import StudentProfile, CompanyProfile
+        from app.models.identity import StudentProfile, CompanyProfile, UserAccount
+        from app.models.lookups import UserAccountStatus
         from app.models.internship import Internship
         from app.models.lookups import InternshipLifecycleStatus
+        from app.extensions import db
 
         student_count = StudentProfile.query.count()
-        company_count = CompanyProfile.query.count()
+        company_count = CompanyProfile.query.join(
+            UserAccount, CompanyProfile.user_account_id == UserAccount.id
+        ).outerjoin(
+            UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
+        ).filter(
+            CompanyProfile.deleted_at.is_(None),
+            UserAccount.deleted_at.is_(None),
+            db.or_(
+                UserAccountStatus.status_code == 'active',
+                UserAccount.account_status_id.is_(None)
+            )
+        ).count()
 
         # Query internships that are active (assuming 'Active' is the status name, fallback to all if empty)
         internships = Internship.query.join(InternshipLifecycleStatus).filter(
@@ -141,3 +154,108 @@ def internship_detail(id):
     # For simplicity, we just render it.
     
     return render_template('guest/internship_detail.html', internship=internship)
+
+@bp.route('/companies')
+def companies():
+    from flask import request
+    from app.models.identity import CompanyProfile, UserAccount
+    from app.models.lookups import UserAccountStatus
+    from sqlalchemy.orm import joinedload
+    from app.extensions import db
+    
+    # Base query. Eager load company_logo & location, filter out soft-deleted & inactive company accounts
+    query = CompanyProfile.query.options(
+        joinedload(CompanyProfile.company_logo),
+        joinedload(CompanyProfile.location),
+        joinedload(CompanyProfile.industry_category_ref)
+    ).join(UserAccount, CompanyProfile.user_account_id == UserAccount.id
+    ).outerjoin(UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
+    ).filter(
+        CompanyProfile.deleted_at.is_(None),
+        UserAccount.deleted_at.is_(None),
+        db.or_(
+            UserAccountStatus.status_code == 'active',
+            UserAccount.account_status_id.is_(None)
+        )
+    )
+    
+    # Search by company name (q)
+    q = request.args.get('q', '').strip()
+    if q:
+        search_term = f"%{q}%"
+        query = query.filter(CompanyProfile.company_name.ilike(search_term))
+        
+    # Sort alphabetically by company name
+    query = query.order_by(CompanyProfile.company_name.asc())
+    
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 9
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return render_template(
+        'guest/companies.html',
+        pagination=pagination,
+        companies=pagination.items,
+        current_q=q
+    )
+
+@bp.route('/companies/<int:id>')
+def company_detail(id):
+    from flask import abort
+    from app.models.identity import CompanyProfile, UserAccount
+    from app.models.lookups import UserAccountStatus
+    from app.models.internship import Internship, InternshipRequiredSkill
+    from app.models.lookups import InternshipLifecycleStatus
+    from sqlalchemy.orm import joinedload, selectinload
+    from app.extensions import db
+    
+    # 1. Query CompanyProfile. Eager load logo, location, and social links. Must not be soft-deleted or inactive.
+    company = CompanyProfile.query.options(
+        joinedload(CompanyProfile.company_logo),
+        joinedload(CompanyProfile.location),
+        selectinload(CompanyProfile.social_links)
+    ).join(UserAccount, CompanyProfile.user_account_id == UserAccount.id
+    ).outerjoin(UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
+    ).filter(
+        CompanyProfile.id == id,
+        CompanyProfile.deleted_at.is_(None),
+        UserAccount.deleted_at.is_(None),
+        db.or_(
+            UserAccountStatus.status_code == 'active',
+            UserAccount.account_status_id.is_(None)
+        )
+    ).first_or_404()
+    
+    # 2. Query active internships for this company.
+    active_internships = Internship.query.options(
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        selectinload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill)
+    ).join(InternshipLifecycleStatus).filter(
+        Internship.company_profile_id == id,
+        Internship.deleted_at.is_(None),
+        InternshipLifecycleStatus.status_name.ilike('%active%')
+    ).order_by(Internship.id.desc()).all()
+    
+    return render_template(
+        'guest/company_detail.html',
+        company=company,
+        active_internships=active_internships
+    )
+
+@bp.route('/terms')
+def terms():
+    return render_template('guest/terms.html')
+
+@bp.route('/privacy')
+def privacy():
+    return render_template('guest/privacy.html')
+
+@bp.route('/cookies')
+def cookies():
+    return render_template('guest/cookies.html')
+
+
+
+

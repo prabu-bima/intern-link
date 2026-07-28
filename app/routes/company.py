@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from app.utils.decorators import company_required
 from app.models.company import CompanyVerification
@@ -15,11 +15,16 @@ bp = Blueprint('company', __name__, url_prefix='/company')
 @bp.context_processor
 def inject_unread_notifications_count():
     if current_user.is_authenticated and current_user.role == 'company':
-        count = Notification.query.filter_by(
-            recipient_user_id=current_user.id,
-            is_read=False,
-            deleted_at=None
-        ).count()
+        from app.extensions import cache
+        cache_key = f'notif_count_company_{current_user.id}'
+        count = cache.get(cache_key)
+        if count is None:
+            count = Notification.query.filter_by(
+                recipient_user_id=current_user.id,
+                is_read=False,
+                deleted_at=None
+            ).count()
+            cache.set(cache_key, count, timeout=30)
         return dict(unread_notifications_count=count)
     return dict(unread_notifications_count=0)
 
@@ -45,29 +50,21 @@ def dashboard():
     from sqlalchemy import case
     from app.models.identity import StudentProfile
 
-    # 2. Caching Status Lookups (IDs only to avoid session detachment errors)
-    active_lifecycle_id = cache.get('status_lifecycle_active_id')
-    if not active_lifecycle_id:
-        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
-        if active_lifecycle:
-            active_lifecycle_id = active_lifecycle.id
-            cache.set('status_lifecycle_active_id', active_lifecycle_id, timeout=86400)
-            
-    closed_lifecycle_id = cache.get('status_lifecycle_closed_id')
-    if not closed_lifecycle_id:
-        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
-        if closed_lifecycle:
-            closed_lifecycle_id = closed_lifecycle.id
-            cache.set('status_lifecycle_closed_id', closed_lifecycle_id, timeout=86400)
-            
-    pending_moderation_id = cache.get('status_moderation_pending_id')
-    if not pending_moderation_id:
-        pending_moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
-        if pending_moderation:
-            pending_moderation_id = pending_moderation.id
-            cache.set('status_moderation_pending_id', pending_moderation_id, timeout=86400)
+    # 2. Resolve status IDs — single query, cached until next restart (86400s).
+    #    Replaces 3 separate per-code lookups that previously ran serially.
+    status_ids = cache.get('_lifecycle_moderation_status_ids')
+    if not status_ids:
+        lc_rows = {r.status_code: r.id for r in InternshipLifecycleStatus.query.all()}
+        md_rows = {r.status_code: r.id for r in InternshipModerationStatus.query.all()}
+        status_ids = {**{f'lc_{k}': v for k, v in lc_rows.items()},
+                      **{f'md_{k}': v for k, v in md_rows.items()}}
+        cache.set('_lifecycle_moderation_status_ids', status_ids, timeout=86400)
 
-    # 3. Caching Dashboard Stats (60 seconds)
+    active_lifecycle_id  = status_ids.get('lc_active',  0)
+    closed_lifecycle_id  = status_ids.get('lc_closed',  0)
+    pending_moderation_id = status_ids.get('md_pending', 0)
+
+    # 3. Caching Dashboard Stats — 300s TTL (data does not need to be real-time)
     stats_cache_key = f"company_dashboard_stats_{profile.id}"
     stats = cache.get(stats_cache_key)
     if not stats:
@@ -153,7 +150,7 @@ def dashboard():
             'active_jobs_list': active_jobs_list,
             'latest_applicants': latest_applicants
         }
-        cache.set(stats_cache_key, stats, timeout=60)
+        cache.set(stats_cache_key, stats, timeout=300)
 
     verification = stats['verification']
     total_jobs = stats['total_jobs']
@@ -192,12 +189,16 @@ def profile():
     from app.extensions import cache
     from sqlalchemy.orm import joinedload, selectinload
     from app.models.identity import CompanyProfile
+    from app.models.master import IndustryCategory
 
     # 1. Cache locations dropdown
     locations = cache.get('all_locations')
     if not locations:
         locations = Location.query.all()
         cache.set('all_locations', locations, timeout=86400)
+
+    # 1b. Ambil semua kategori industri (tidak di-cache karena jarang diakses)
+    industry_categories = IndustryCategory.query.order_by(IndustryCategory.name).all()
 
     # 2. Cache profile page data
     profile_id = current_user.company_profile.id
@@ -229,7 +230,7 @@ def profile():
     profile = db.session.merge(profile_data['profile'], load=False)
     verification = db.session.merge(profile_data['verification'], load=False) if profile_data['verification'] else None
 
-    return render_template('company/profile.html', profile=profile, locations=locations, verification=verification)
+    return render_template('company/profile.html', profile=profile, locations=locations, verification=verification, industry_categories=industry_categories)
 
 def clear_company_profile_cache():
     from app.extensions import cache
@@ -243,6 +244,12 @@ def profile_info():
     profile.company_name = request.form.get('company_name', profile.company_name)
     profile.company_description = request.form.get('company_description')
     profile.industry_category = request.form.get('industry_category')
+    # Simpan industry_category_id dari dropdown
+    industry_cat_id = request.form.get('industry_category_id')
+    if industry_cat_id and industry_cat_id.isdigit():
+        profile.industry_category_id = int(industry_cat_id)
+    else:
+        profile.industry_category_id = None
     profile.company_size = request.form.get('company_size')
     
     founding_year = request.form.get('founding_year')
@@ -381,10 +388,10 @@ def internship_create_form():
         flash('Perusahaan Anda harus terverifikasi untuk dapat membuat lowongan.', 'warning')
         return redirect(url_for('company.dashboard'))
         
-    locations = Location.query.all()
-    categories = TechnologyCategory.query.all()
-    skills = Skill.query.all()
-    tech_stacks = TechStackItem.query.all()
+    locations = Location.query.order_by(Location.city).all()
+    categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+    skills = Skill.query.order_by(Skill.skill_name).all()
+    tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
     
     return render_template(
         'company/internship_form.html',
@@ -483,30 +490,97 @@ def internships():
         return redirect(url_for('company.profile_form'))
         
     status_filter = request.args.get('status', 'all')
-    
-    from sqlalchemy.orm import joinedload
-    query = Internship.query.options(
-        joinedload(Internship.lifecycle_status),
-        joinedload(Internship.location),
-        joinedload(Internship.technology_category)
-    ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
-    
-    if status_filter == 'active':
-        query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'active')
-    elif status_filter == 'closed':
-        query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == 'closed')
-        
-    query = query.order_by(Internship.id.desc())
-    
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-    
+
+    from app.extensions import cache
+
+    # Cache hasil query per perusahaan+filter+halaman (15 detik)
+    cache_key = f'company_internships_{profile.id}_{status_filter}_p{page}'
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        internship_items, applicant_counts, total_count = cached_data
+        class SimplePagination:
+            def __init__(self, items, total, page, per_page):
+                self.items = items
+                self.total = total
+                self.page = page
+                self.per_page = per_page
+                self.pages = max(1, -(-total // per_page))
+                self.has_prev = page > 1
+                self.has_next = page < self.pages
+                self.prev_num = page - 1
+                self.next_num = page + 1
+            def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
+                last = 0
+                for num in range(1, self.pages + 1):
+                    if (num <= left_edge or
+                            (self.page - left_current - 1 < num < self.page + right_current) or
+                            num > self.pages - right_edge):
+                        if last + 1 != num:
+                            yield None
+                        yield num
+                        last = num
+        pagination = SimplePagination(internship_items, total_count, page, per_page)
+    else:
+        from sqlalchemy.orm import joinedload
+        query = Internship.query.options(
+            joinedload(Internship.lifecycle_status),
+            joinedload(Internship.location),
+            joinedload(Internship.technology_category)
+        ).filter_by(company_profile_id=profile.id).filter(Internship.deleted_at.is_(None))
+
+        if status_filter != 'all':
+            query = query.join(Internship.lifecycle_status).filter(InternshipLifecycleStatus.status_code == status_filter)
+
+        query = query.order_by(Internship.id.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+        # Hitung pelamar per lowongan dengan 1 query (menghindari N+1)
+        internship_ids = [job.id for job in pagination.items]
+        if internship_ids:
+            counts_q = db.session.query(
+                InternshipApplication.internship_id,
+                func.count(InternshipApplication.id).label('cnt')
+            ).filter(
+                InternshipApplication.internship_id.in_(internship_ids)
+            ).group_by(InternshipApplication.internship_id).all()
+            applicant_counts = {row.internship_id: row.cnt for row in counts_q}
+        else:
+            applicant_counts = {}
+
+        cache.set(cache_key, (pagination.items, applicant_counts, pagination.total), timeout=15)
+
+    # Hitung jumlah wawancara per lowongan (untuk kedua jalur cache/non-cache)
+    internship_ids_for_interviews = [job.id for job in pagination.items]
+    interview_counts = {}
+    if internship_ids_for_interviews:
+        from app.models.internship import ApplicationInterview
+        interview_counts_query = db.session.query(
+            InternshipApplication.internship_id,
+            func.count(ApplicationInterview.id).label('cnt')
+        ).join(ApplicationInterview, ApplicationInterview.internship_application_id == InternshipApplication.id
+        ).filter(
+            InternshipApplication.internship_id.in_(internship_ids_for_interviews),
+            ApplicationInterview.deleted_at.is_(None)
+        ).group_by(InternshipApplication.internship_id).all()
+        interview_counts = {row.internship_id: row.cnt for row in interview_counts_query}
+
+    from app.models.lookups import InternshipLifecycleStatus as _ILC
+    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    if not lifecycle_statuses:
+        lifecycle_statuses = _ILC.query.all()
+        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+
     return render_template(
         'company/internships.html',
         pagination=pagination,
         internships=pagination.items,
-        current_status=status_filter
+        applicant_counts=applicant_counts,
+        interview_counts=interview_counts,
+        current_status=status_filter,
+        lifecycle_statuses=lifecycle_statuses
     )
 
 
@@ -525,14 +599,21 @@ def internship_edit_form(id):
         flash('Akses ditolak.', 'error')
         return redirect(url_for('company.dashboard'))
         
-    categories = TechnologyCategory.query.all()
-    locations = Location.query.all()
-    skills = Skill.query.all()
-    tech_stacks = TechStackItem.query.all()
+    categories = TechnologyCategory.query.order_by(TechnologyCategory.category_name).all()
+    locations = Location.query.order_by(Location.city).all()
+    skills = Skill.query.order_by(Skill.skill_name).all()
+    tech_stacks = TechStackItem.query.order_by(TechStackItem.tech_stack_name).all()
     
     existing_skills = [s.skill_id for s in internship.required_skills]
     existing_tech_stacks = [t.tech_stack_item_id for t in internship.required_tech_stack_items]
     
+    from app.models.lookups import InternshipLifecycleStatus as _ILC
+    from app.extensions import cache
+    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    if not lifecycle_statuses:
+        lifecycle_statuses = _ILC.query.all()
+        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+
     return render_template(
         'company/internship_form.html',
         categories=categories,
@@ -541,7 +622,8 @@ def internship_edit_form(id):
         tech_stacks=tech_stacks,
         internship=internship,
         existing_skills=existing_skills,
-        existing_tech_stacks=existing_tech_stacks
+        existing_tech_stacks=existing_tech_stacks,
+        lifecycle_statuses=lifecycle_statuses
     )
 
 
@@ -619,26 +701,35 @@ def internship_edit(id):
     return redirect(url_for('company.internships'))
 
 
-@bp.route('/internships/<int:id>/close', methods=['POST'])
+@bp.route('/internships/<int:id>/lifecycle', methods=['POST'])
 @login_required
-def internship_close(id):
+def internship_update_lifecycle(id):
     from app.models.internship import Internship
-    
+    from app.models.lookups import InternshipLifecycleStatus
+
     if current_user.role != 'company':
         return redirect(url_for('guest.index'))
-        
+
     internship = Internship.query.get_or_404(id)
     if internship.company_profile_id != current_user.company_profile.id:
         return redirect(url_for('company.dashboard'))
-        
-    closed_status = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
-    if closed_status:
-        internship.lifecycle_status_id = closed_status.id
-        db.session.commit()
-        flash('Lowongan magang berhasil ditutup.', 'success')
-    else:
-        flash('Terjadi kesalahan pada sistem status.', 'error')
-        
+
+    status_id = request.form.get('lifecycle_status_id', type=int)
+    if not status_id:
+        flash('Status siklus tidak valid.', 'danger')
+        return redirect(url_for('company.internships'))
+
+    new_status = InternshipLifecycleStatus.query.get(status_id)
+    if not new_status:
+        flash('Status siklus tidak ditemukan.', 'danger')
+        return redirect(url_for('company.internships'))
+
+    internship.lifecycle_status_id = new_status.id
+    db.session.commit()
+
+    from app.extensions import cache
+    cache.clear()
+    flash(f'Siklus lowongan berhasil diubah menjadi {new_status.status_name}.', 'success')
     return redirect(url_for('company.internships'))
 
 
@@ -681,12 +772,18 @@ def internship_applicants(id):
     
     query = InternshipApplication.query.options(
         joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.profile_photo),
         joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.education_records),
         joinedload(InternshipApplication.application_status)
-    ).filter_by(internship_id=internship.id)
+    ).filter(
+        InternshipApplication.internship_id == internship.id,
+        InternshipApplication.deleted_at.is_(None)
+    )
     
     if status != 'all':
-        query = query.join(ApplicationStatus).filter(ApplicationStatus.status_code == status)
+        query = query.join(ApplicationStatus, InternshipApplication.application_status_id == ApplicationStatus.id).filter(
+            ApplicationStatus.status_code == status
+        )
         
     # Pagination
     page = request.args.get('page', 1, type=int)
@@ -700,7 +797,10 @@ def internship_applicants(id):
     status_counts_query = db.session.query(
         InternshipApplication.application_status_id, 
         db.func.count(InternshipApplication.id)
-    ).filter_by(internship_id=internship.id).group_by(InternshipApplication.application_status_id).all()
+    ).filter(
+        InternshipApplication.internship_id == internship.id,
+        InternshipApplication.deleted_at.is_(None)
+    ).group_by(InternshipApplication.application_status_id).all()
     
     status_counts_map = {status_id: count for status_id, count in status_counts_query}
     
@@ -723,14 +823,28 @@ def internship_applicants(id):
 @company_required
 def applicant_detail(application_id):
     from app.models.internship import InternshipApplication, Internship
-    from app.models.identity import CompanyProfile
+    from app.models.identity import CompanyProfile, StudentProfile
+    from app.models.student import StudentSkill, StudentTechStackItem
     from app.models.lookups import ApplicationStatus
+    from sqlalchemy.orm import joinedload
     
     # Get current company profile
     profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
     
-    # Get application and verify it belongs to this company
-    application = InternshipApplication.query.join(Internship).filter(
+    # Get application and verify it belongs to this company with joinedload for all relations
+    application = InternshipApplication.query.options(
+        joinedload(InternshipApplication.application_status),
+        joinedload(InternshipApplication.submitted_cv),
+        joinedload(InternshipApplication.internship),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.user),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.profile_photo),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.education_records),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.skills).joinedload(StudentSkill.skill),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.tech_stack_items).joinedload(StudentTechStackItem.tech_stack_item),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.experiences),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.organizations),
+        joinedload(InternshipApplication.student_profile).joinedload(StudentProfile.portfolios),
+    ).join(Internship).filter(
         InternshipApplication.id == application_id,
         Internship.company_profile_id == profile.id,
         InternshipApplication.deleted_at.is_(None)
@@ -1012,6 +1126,13 @@ def edit_interview(interview_id):
             notes = parts[1]
             
     scheduled_at_iso = interview.scheduled_at.isoformat()[:16]
+
+    # Tentukan URL kembali berdasarkan query param ?from
+    from_param = request.args.get('from', '')
+    if from_param == 'interviews':
+        back_url = url_for('company.interviews')
+    else:
+        back_url = url_for('company.applicant_detail', application_id=interview.application.id)
             
     return render_template(
         'company/interview_form.html', 
@@ -1019,7 +1140,8 @@ def edit_interview(interview_id):
         interview=interview,
         interview_format=interview_format,
         notes=notes,
-        scheduled_at_iso=scheduled_at_iso
+        scheduled_at_iso=scheduled_at_iso,
+        back_url=back_url
     )
 
 @bp.route('/interviews', methods=['GET'])
@@ -1029,35 +1151,78 @@ def interviews():
     from app.models.internship import ApplicationInterview, InternshipApplication, Internship
     from app.models.identity import StudentProfile
     from app.models.lookups import InterviewStatus
+    from app.extensions import cache
     from sqlalchemy import desc
-    from sqlalchemy.orm import joinedload
-    
+    from sqlalchemy.orm import contains_eager, joinedload
+
     profile = current_user.company_profile
     if not profile:
         abort(404)
-        
+
     status_filter = request.args.get('status', 'all')
-    
-    query = ApplicationInterview.query.options(
-        joinedload(ApplicationInterview.interview_status),
-        joinedload(ApplicationInterview.application).options(
-            joinedload(InternshipApplication.internship),
-            joinedload(InternshipApplication.student_profile).options(
+    internship_filter = request.args.get('internship_id', type=int)
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+
+    # Cache status lookup (IDs rarely change)
+    interview_statuses = cache.get('all_interview_statuses')
+    if not interview_statuses:
+        interview_statuses = InterviewStatus.query.all()
+        cache.set('all_interview_statuses', interview_statuses, timeout=86400)
+
+    # Cache per-company status counts (120s) to avoid re-running GROUP BY on every request
+    counts_cache_key = f'interview_status_counts_{profile.id}'
+    status_counts = cache.get(counts_cache_key)
+    if not status_counts:
+        rows = db.session.query(
+            InterviewStatus.status_code,
+            db.func.count(ApplicationInterview.id)
+        ).join(ApplicationInterview, ApplicationInterview.interview_status_id == InterviewStatus.id
+        ).join(InternshipApplication, ApplicationInterview.internship_application_id == InternshipApplication.id
+        ).join(Internship, InternshipApplication.internship_id == Internship.id
+        ).filter(
+            Internship.company_profile_id == profile.id,
+            ApplicationInterview.deleted_at.is_(None)
+        ).group_by(InterviewStatus.status_code).all()
+        status_counts = {'all': 0, **{code: cnt for code, cnt in rows}}
+        status_counts['all'] = sum(cnt for code, cnt in rows)
+        cache.set(counts_cache_key, status_counts, timeout=120)
+
+    query = ApplicationInterview.query \
+        .join(ApplicationInterview.interview_status) \
+        .join(ApplicationInterview.application) \
+        .join(InternshipApplication.internship) \
+        .filter(
+            Internship.company_profile_id == profile.id,
+            ApplicationInterview.deleted_at.is_(None)
+        ) \
+        .options(
+            contains_eager(ApplicationInterview.interview_status),
+            contains_eager(ApplicationInterview.application).contains_eager(InternshipApplication.internship),
+            contains_eager(ApplicationInterview.application).joinedload(InternshipApplication.student_profile).options(
                 joinedload(StudentProfile.user),
                 joinedload(StudentProfile.profile_photo)
             )
         )
-    ).join(InternshipApplication).join(Internship).join(InterviewStatus).filter(
-        Internship.company_profile_id == profile.id
-    )
-    
+
     if status_filter != 'all':
         query = query.filter(InterviewStatus.status_code == status_filter)
-        
-    # Default order by scheduled date
-    interviews = query.order_by(desc(ApplicationInterview.scheduled_at)).all()
-    
-    return render_template('company/interviews.html', interviews=interviews, current_status=status_filter)
+
+    if internship_filter:
+        query = query.filter(Internship.id == internship_filter)
+
+    pagination = query.order_by(desc(ApplicationInterview.scheduled_at)).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    return render_template(
+        'company/interviews.html',
+        interviews=pagination.items,
+        pagination=pagination,
+        current_status=status_filter,
+        interview_statuses=interview_statuses,
+        status_counts=status_counts,
+    )
 
 @bp.route('/interviews/<int:interview_id>/status', methods=['POST'])
 @login_required
@@ -1127,8 +1292,65 @@ def mark_notification_read(id):
         notif.is_read = True
         notif.read_at = datetime.utcnow()
         db.session.commit()
+        from app.extensions import cache
+        cache.delete(f'notif_count_company_{current_user.id}')
 
     return redirect(url_for('company.notifications'))
+
+@bp.route('/notifications/<int:id>/detail', methods=['GET'])
+@company_required
+def notification_detail_json(id):
+    """Return notification data as JSON for the modal dialog."""
+    notif = Notification.query.filter_by(
+        id=id,
+        recipient_user_id=current_user.id,
+        deleted_at=None
+    ).first_or_404()
+
+    was_unread = not notif.is_read
+    if not notif.is_read:
+        notif.is_read = True
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+        from app.extensions import cache
+        cache.delete(f'notif_count_company_{current_user.id}')
+
+    payload = notif.payload_json or {}
+    now = datetime.utcnow()
+    diff = now - notif.event_at
+    if diff.days > 0:
+        time_ago = f"{diff.days} hari yang lalu"
+    elif diff.seconds // 3600 > 0:
+        time_ago = f"{diff.seconds // 3600} jam yang lalu"
+    elif diff.seconds // 60 > 0:
+        time_ago = f"{diff.seconds // 60} menit yang lalu"
+    else:
+        time_ago = "Baru saja"
+
+    application_id = payload.get('application_id')
+    internship_id = payload.get('internship_id')
+    detail_url = None
+    if application_id:
+        detail_url = url_for('company.applicant_detail', application_id=application_id)
+    elif internship_id:
+        detail_url = url_for('company.internship_applicants', id=internship_id)
+
+    t_code = notif.notification_type.type_code if notif.notification_type else ''
+
+    return jsonify({
+        'id': notif.id,
+        'title': payload.get('title', 'Notifikasi'),
+        'message': payload.get('message', ''),
+        'time_ago': time_ago,
+        'event_at': notif.event_at.strftime('%d %B %Y, %H:%M'),
+        'type_code': t_code,
+        'detail_url': detail_url,
+        'was_unread': was_unread,
+        'payload': payload,
+    })
+
+
+
 
 
 @bp.route('/notifications/read-all', methods=['POST'])
@@ -1146,5 +1368,70 @@ def mark_all_notifications_read():
         notif.read_at = now
 
     db.session.commit()
+    from app.extensions import cache
+    cache.delete(f'notif_count_company_{current_user.id}')
     flash('Semua notifikasi telah ditandai sebagai dibaca.', 'success')
     return redirect(url_for('company.notifications'))
+
+
+@bp.route('/notifications/unread-count')
+@company_required
+def unread_notifications_count_json():
+    from app.extensions import cache
+    cache_key = f'notif_count_company_{current_user.id}'
+    count = cache.get(cache_key)
+    if count is None:
+        count = Notification.query.filter_by(
+            recipient_user_id=current_user.id,
+            is_read=False,
+            deleted_at=None
+        ).count()
+        cache.set(cache_key, count, timeout=30)
+    return jsonify({'count': count})
+
+
+@bp.route('/applicants/<int:application_id>/cv/download')
+@login_required
+@company_required
+def download_applicant_cv(application_id):
+    """Download CV file as attachment (forces browser download instead of open)."""
+    import requests as http_requests
+    from flask import Response, abort, current_app
+    from app.models.internship import InternshipApplication, Internship
+    from app.models.identity import CompanyProfile
+
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+
+    application = InternshipApplication.query.join(Internship).filter(
+        InternshipApplication.id == application_id,
+        Internship.company_profile_id == profile.id,
+        InternshipApplication.deleted_at.is_(None)
+    ).first_or_404()
+
+    cv = application.submitted_cv
+    if not cv:
+        abort(404)
+
+    file_url = cv.url
+    if not file_url:
+        abort(404)
+
+    filename = cv.file_name or 'cv.pdf'
+
+    try:
+        resp = http_requests.get(file_url, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        current_app.logger.error(f"CV download proxy error: {e}")
+        abort(502)
+
+    content_type = cv.content_type or 'application/pdf'
+
+    return Response(
+        resp.content,
+        status=200,
+        headers={
+            'Content-Type': content_type,
+            'Content-Disposition': f'attachment; filename="{filename}"',
+        }
+    )

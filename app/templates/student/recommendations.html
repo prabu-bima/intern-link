@@ -12,19 +12,20 @@
             <h1 class="text-2xl font-bold text-gray-900 font-outfit flex items-center gap-2">
                 Rekomendasi Magang AI
             </h1>
-            <p class="text-sm text-gray-500 mt-2">Lowongan magang yang paling cocok dengan profil dan keahlian Anda berdasarkan kecerdasan buatan.</p>
+            <p class="text-sm text-gray-500 mt-2">Lowongan magang yang paling cocok dengan profil dan keahlian Anda
+                berdasarkan kecerdasan buatan.</p>
         </div>
         <div class="flex items-center gap-3">
             <!-- Sort Control -->
             {% if latest_run and recommendations %}
             <div class="flex items-center gap-1 border border-gray-200 rounded-md p-1 bg-gray-50">
                 <a href="{{ url_for('student.recommendations', sort='desc') }}"
-                   class="px-3 py-1 text-xs font-semibold rounded transition-colors
+                    class="px-3 py-1 text-xs font-semibold rounded transition-colors
                           {% if sort_order == 'desc' %}bg-white text-gray-900 shadow-sm border border-gray-200{% else %}text-gray-500 hover:text-gray-900{% endif %}">
                     Match &darr;
                 </a>
                 <a href="{{ url_for('student.recommendations', sort='asc') }}"
-                   class="px-3 py-1 text-xs font-semibold rounded transition-colors
+                    class="px-3 py-1 text-xs font-semibold rounded transition-colors
                           {% if sort_order == 'asc' %}bg-white text-gray-900 shadow-sm border border-gray-200{% else %}text-gray-500 hover:text-gray-900{% endif %}">
                     Match &uarr;
                 </a>
@@ -33,8 +34,10 @@
             <!-- Refresh Button -->
             <button id="refresh-btn" onclick="refreshRecommendations()"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-700 rounded-md transition-colors">
-                <svg id="refresh-icon" class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                <svg id="refresh-icon" class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 <span id="refresh-text">Segarkan Rekomendasi</span>
             </button>
@@ -72,16 +75,16 @@
             {% for item in recommendations %}
             {% set internship = item.internship %}
             {% set score = item.match_score | int %}
-            
+
             {% if score >= 75 %}
-                {% set score_color = 'text-green-800 bg-green-50 border-green-100' %}
-                {% set bar_color = 'bg-green-500' %}
+            {% set score_color = 'text-green-800 bg-green-50 border-green-100' %}
+            {% set bar_color = 'bg-green-500' %}
             {% elif score >= 50 %}
-                {% set score_color = 'text-yellow-800 bg-yellow-50 border-yellow-100' %}
-                {% set bar_color = 'bg-yellow-500' %}
+            {% set score_color = 'text-yellow-800 bg-yellow-50 border-yellow-100' %}
+            {% set bar_color = 'bg-yellow-500' %}
             {% else %}
-                {% set score_color = 'text-red-800 bg-red-50 border-red-100' %}
-                {% set bar_color = 'bg-red-400' %}
+            {% set score_color = 'text-red-800 bg-red-50 border-red-100' %}
+            {% set bar_color = 'bg-red-400' %}
             {% endif %}
 
             <div class="bg-white rounded-xl border border-gray-200 transition-colors hover:border-primary-500 p-6">
@@ -90,10 +93,11 @@
                     <div class="shrink-0">
                         {% if internship.company_profile.company_logo %}
                         <img src="{{ internship.company_profile.company_logo.url }}"
-                             alt="{{ internship.company_profile.company_name }}"
-                             class="w-14 h-14 rounded-lg object-contain border border-gray-200 bg-white p-1">
+                            alt="{{ internship.company_profile.company_name }}"
+                            class="w-14 h-14 rounded-lg object-contain border border-gray-200 bg-white p-1">
                         {% else %}
-                        <div class="w-14 h-14 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 font-bold text-xl">
+                        <div
+                            class="w-14 h-14 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 font-bold text-xl">
                             {{ internship.company_profile.company_name[:1].upper() }}
                         </div>
                         {% endif %}
@@ -103,7 +107,8 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
                             <div>
-                                <h3 class="text-lg font-bold text-gray-900 font-outfit hover:text-primary-600 transition-colors">
+                                <h3
+                                    class="text-lg font-bold text-gray-900 font-outfit hover:text-primary-600 transition-colors">
                                     <a href="{{ url_for('student.internship_detail', id=internship.id) }}">
                                         {{ internship.internship_title }}
                                     </a>
@@ -111,35 +116,40 @@
                                 <p class="text-sm text-gray-500 mt-1">
                                     {{ internship.company_profile.company_name }}
                                     {% if internship.location %}
-                                     &middot; {{ internship.location.city }}
+                                    &middot; {{ internship.location.city }}
                                     {% endif %}
                                 </p>
                             </div>
                             <!-- Match Score Badge -->
-                            <span class="inline-flex items-center px-3 py-1 rounded text-xs font-semibold border {{ score_color }} shrink-0">
+                            <span
+                                class="inline-flex items-center px-3 py-1 rounded text-xs font-semibold border {{ score_color }} shrink-0">
                                 {{ score }}% MATCH
                             </span>
                         </div>
 
                         <!-- Match Score Bar -->
                         <div class="w-full bg-gray-100 rounded-full h-1 mb-4">
-                            <div class="{{ bar_color }} h-1 rounded-full transition-all duration-500" style="width: {{ score }}%"></div>
+                            <div class="{{ bar_color }} h-1 rounded-full transition-all duration-500"
+                                style="width: {{ score }}%"></div>
                         </div>
 
                         <!-- Tags -->
                         <div class="flex flex-wrap gap-2 mb-4">
                             {% if internship.technology_category %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
                                 {{ internship.technology_category.category_name }}
                             </span>
                             {% endif %}
                             {% if internship.internship_type %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
                                 {{ internship.internship_type }}
                             </span>
                             {% endif %}
                             {% if internship.closing_at %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 border border-gray-200 text-xs text-gray-600">
                                 Tutup {{ internship.closing_at.strftime('%d %b %Y') }}
                             </span>
                             {% endif %}
@@ -152,7 +162,8 @@
                         {% if item.recommendation_reason %}
                         <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 mb-4">
                             <p class="text-xs text-gray-700 leading-relaxed">
-                                <span class="font-semibold text-gray-900">Analisis AI:</span> {{ item.recommendation_reason }}
+                                <span class="font-semibold text-gray-900">Analisis AI:</span> {{
+                                item.recommendation_reason }}
                             </p>
                         </div>
                         {% endif %}
@@ -160,11 +171,11 @@
                         <!-- CTA Button -->
                         <div class="flex items-center gap-4">
                             <a href="{{ url_for('student.internship_detail', id=internship.id) }}"
-                               class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold uppercase tracking-wider rounded-md transition-colors">
+                                class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold uppercase tracking-wider rounded-md transition-colors">
                                 Lihat & Lamar
                             </a>
                             <a href="{{ url_for('student.internship_detail', id=internship.id) }}"
-                               class="text-xs font-semibold uppercase tracking-wider text-primary-600 hover:text-primary-700 transition-colors">
+                                class="text-xs font-semibold uppercase tracking-wider text-primary-600 hover:text-primary-700 transition-colors">
                                 Lihat Detail &rarr;
                             </a>
                         </div>
@@ -184,7 +195,8 @@
         {% elif latest_run and not recommendations %}
         <!-- Empty Recommendations (no active internships) -->
         <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div class="mx-auto w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center mb-4 text-gray-400 border border-gray-200">
+            <div
+                class="mx-auto w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center mb-4 text-gray-400 border border-gray-200">
                 {{ icon.sparkles(class="w-5 h-5") }}
             </div>
             <h3 class="text-base font-bold text-gray-900 font-outfit mb-2">Tidak Ada Lowongan Aktif</h3>
@@ -192,7 +204,7 @@
                 Saat ini belum ada lowongan magang aktif yang tersedia di platform. Silakan cek kembali nanti.
             </p>
             <a href="{{ url_for('student.internships') }}"
-               class="inline-flex items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold uppercase tracking-wider rounded-md transition-colors">
+                class="inline-flex items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold uppercase tracking-wider rounded-md transition-colors">
                 Cari Magang
             </a>
         </div>
@@ -200,12 +212,14 @@
         {% else %}
         <!-- No Run Yet State -->
         <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div class="mx-auto w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center mb-4 text-gray-400 border border-gray-200">
+            <div
+                class="mx-auto w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center mb-4 text-gray-400 border border-gray-200">
                 {{ icon.sparkles(class="w-5 h-5") }}
             </div>
             <h3 class="text-base font-bold text-gray-900 font-outfit mb-2">Belum Ada Rekomendasi</h3>
             <p class="text-sm text-gray-500 max-w-sm mx-auto mb-6">
-                Gunakan AI untuk menemukan lowongan magang yang paling cocok dengan profil dan keahlian Anda. Lengkapi profil Anda terlebih dahulu untuk hasil terbaik.
+                Gunakan AI untuk menemukan lowongan magang yang paling cocok dengan profil dan keahlian Anda. Lengkapi
+                profil Anda terlebih dahulu untuk hasil terbaik.
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button onclick="refreshRecommendations()"
@@ -213,7 +227,7 @@
                     Hitung Rekomendasi Sekarang
                 </button>
                 <a href="{{ url_for('student.profile') }}"
-                   class="inline-flex items-center px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold uppercase tracking-wider rounded-md border border-gray-300 transition-colors">
+                    class="inline-flex items-center px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold uppercase tracking-wider rounded-md border border-gray-300 transition-colors">
                     Lengkapi Profil
                 </a>
             </div>
@@ -224,59 +238,59 @@
 </div>
 
 <script>
-async function refreshRecommendations() {
-    const btn = document.getElementById('refresh-btn');
-    const icon = document.getElementById('refresh-icon');
-    const text = document.getElementById('refresh-text');
-    const skeleton = document.getElementById('loading-skeleton');
-    const list = document.getElementById('recommendation-list');
-    const errorBanner = document.getElementById('error-banner');
+    async function refreshRecommendations() {
+        const btn = document.getElementById('refresh-btn');
+        const icon = document.getElementById('refresh-icon');
+        const text = document.getElementById('refresh-text');
+        const skeleton = document.getElementById('loading-skeleton');
+        const list = document.getElementById('recommendation-list');
+        const errorBanner = document.getElementById('error-banner');
 
-    // Show loading state
-    btn.disabled = true;
-    btn.classList.add('opacity-60', 'cursor-not-allowed');
-    icon.classList.add('animate-spin');
-    text.textContent = 'Menghitung...';
-    skeleton.classList.remove('hidden');
-    list.classList.add('hidden');
-    errorBanner.classList.add('hidden');
+        // Show loading state
+        btn.disabled = true;
+        btn.classList.add('opacity-60', 'cursor-not-allowed');
+        icon.classList.add('animate-spin');
+        text.textContent = 'Menghitung...';
+        skeleton.classList.remove('hidden');
+        list.classList.add('hidden');
+        errorBanner.classList.add('hidden');
 
-    try {
-        const response = await fetch('{{ url_for("student.refresh_recommendations") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
+        try {
+            const response = await fetch('{{ url_for("student.refresh_recommendations") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Reload page to show new recommendations
+                window.location.reload();
+            } else {
+                // Show error
+                skeleton.classList.add('hidden');
+                list.classList.remove('hidden');
+                errorBanner.classList.remove('hidden');
+                document.getElementById('error-message').textContent = data.message || 'Gagal menghitung rekomendasi. Silakan coba lagi.';
+                resetBtn(btn, icon, text);
             }
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            // Reload page to show new recommendations
-            window.location.reload();
-        } else {
-            // Show error
+        } catch (error) {
             skeleton.classList.add('hidden');
             list.classList.remove('hidden');
             errorBanner.classList.remove('hidden');
-            document.getElementById('error-message').textContent = data.message || 'Gagal menghitung rekomendasi. Silakan coba lagi.';
+            document.getElementById('error-message').textContent = 'Terjadi kesalahan jaringan. Silakan coba lagi.';
             resetBtn(btn, icon, text);
         }
-    } catch (error) {
-        skeleton.classList.add('hidden');
-        list.classList.remove('hidden');
-        errorBanner.classList.remove('hidden');
-        document.getElementById('error-message').textContent = 'Terjadi kesalahan jaringan. Silakan coba lagi.';
-        resetBtn(btn, icon, text);
     }
-}
 
-function resetBtn(btn, icon, text) {
-    btn.disabled = false;
-    btn.classList.remove('opacity-60', 'cursor-not-allowed');
-    icon.classList.remove('animate-spin');
-    text.textContent = 'Segarkan Rekomendasi';
-}
+    function resetBtn(btn, icon, text) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60', 'cursor-not-allowed');
+        icon.classList.remove('animate-spin');
+        text.textContent = 'Segarkan Rekomendasi';
+    }
 </script>
 {% endblock %}

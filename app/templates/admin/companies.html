@@ -10,7 +10,7 @@
 </div>
 
 <!-- Search & Filter -->
-<form method="GET" action="{{ url_for('admin.companies') }}" class="mb-6 flex flex-col sm:flex-row gap-3">
+<form method="GET" action="{{ url_for('admin.companies') }}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-3 items-center w-full">
     <!-- Search -->
     <div class="relative flex-grow w-full">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -37,12 +37,12 @@
         </div>
     </div>
     <button type="submit"
-            class="px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors">
+            class="w-full sm:w-auto px-5 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-xl hover:bg-primary-700 transition-colors whitespace-nowrap">
         Cari
     </button>
     {% if q or status_filter != 'all' %}
     <a href="{{ url_for('admin.companies') }}"
-       class="px-4 py-2.5 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors">
+       class="w-full sm:w-auto px-4 py-2.5 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors text-center whitespace-nowrap">
         Reset
     </a>
     {% endif %}
@@ -88,28 +88,28 @@
                 </td>
                 <!-- Category -->
                 <td class="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                    {{ profile.industry_category if profile and profile.industry_category else '-' }}
+                    {{ profile.industry_category_ref.name if profile and profile.industry_category_ref else (profile.industry_category if profile and profile.industry_category else '-') }}
                 </td>
                 <!-- Account Status -->
                 <td class="px-6 py-4 hidden md:table-cell">
-                    {% if company.status and company.status.status_code == 'active' %}
+                    {% if not company.status or company.status.status_code == 'active' %}
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
-                    {% elif company.status and company.status.status_code == 'inactive' %}
+                    {% elif company.status.status_code == 'inactive' %}
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Nonaktif</span>
+                    {% elif company.status.status_code == 'suspended' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Ditangguhkan</span>
                     {% else %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">-</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{{ company.status.status_name }}</span>
                     {% endif %}
                 </td>
                 <!-- Verification Status -->
                 <td class="px-6 py-4">
                     {% if ver_code == 'verified' %}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Terverifikasi</span>
-                    {% elif ver_code == 'pending' %}
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Menunggu</span>
                     {% elif ver_code == 'rejected' %}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">Ditolak</span>
                     {% else %}
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Belum diajukan</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Menunggu Verifikasi</span>
                     {% endif %}
                 </td>
                 <!-- Action -->

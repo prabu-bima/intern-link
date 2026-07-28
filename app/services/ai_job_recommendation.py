@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 
+from sqlalchemy.orm import selectinload, joinedload
 from app.extensions import db
 from app.models import (
     StudentProfile,
@@ -12,129 +13,135 @@ from app.models import (
     AIJobRecommendationRun,
     AIJobRecommendationItem
 )
+from app.models.student import (
+    StudentSkill, StudentTechStackItem, StudentEducationRecord,
+    StudentExperience, StudentOrganization, StudentPortfolio
+)
+from app.models.internship import InternshipRequiredSkill, InternshipRequiredTechStackItem
+from app.models.master import Skill, TechStackItem, Location, TechnologyCategory
 from app.services.groq_service import groq_service, AIPromptTemplates
 
 logger = logging.getLogger(__name__)
 
+# Hard cap on pool size sent to Groq — prevents token bloat with many active internships
+POOL_LIMIT = 30
+
+
 def get_student_full_profile(student_profile_id: int) -> Dict[str, Any]:
-    """Extract complete student data for job recommendation."""
-    student = StudentProfile.query.get(student_profile_id)
+    """Extract complete student data for job recommendation.
+    Uses eager loading to avoid N+1 queries on relationship collections.
+    """
+    student = StudentProfile.query.options(
+        selectinload(StudentProfile.skills).joinedload(StudentSkill.skill),
+        selectinload(StudentProfile.tech_stack_items).joinedload(StudentTechStackItem.tech_stack_item),
+        selectinload(StudentProfile.education_records),
+        selectinload(StudentProfile.experiences),
+        selectinload(StudentProfile.organizations),
+        selectinload(StudentProfile.portfolios),
+    ).filter_by(id=student_profile_id).first()
+
     if not student:
         raise ValueError(f"StudentProfile not found with ID: {student_profile_id}")
 
-    skills = []
-    for ss in student.skills:
-        if ss.deleted_at is None:
-            skills.append({
-                "skill_name": ss.skill.skill_name,
-                "proficiency_level": ss.proficiency_level or "",
-                "years_experience": ss.years_experience or 0
-            })
-            
-    tech_stack = []
-    for st in student.tech_stack_items:
-        if st.deleted_at is None:
-            tech_stack.append({
-                "tech_stack_name": st.tech_stack_item.tech_stack_name,
-                "proficiency_level": st.proficiency_level or ""
-            })
-            
-    education = []
-    for edu in student.education_records:
-        if edu.deleted_at is None:
-            education.append({
-                "degree_name": edu.degree_name,
-                "field_of_study": edu.field_of_study,
-                "institution_name": edu.institution_name,
-                "grade": edu.grade or "",
-                "start_date": edu.start_date.isoformat() if edu.start_date else "",
-                "end_date": edu.end_date.isoformat() if edu.end_date else ""
-            })
-            
-    experiences = []
-    for exp in student.experiences:
-        if exp.deleted_at is None:
-            experiences.append({
-                "title": exp.title,
-                "organization_name": exp.organization_name,
-                "description": exp.description or "",
-                "start_date": exp.start_date.isoformat() if exp.start_date else "",
-                "end_date": exp.end_date.isoformat() if exp.end_date else ""
-            })
-            
-    organizations = []
-    for org in student.organizations:
-        if org.deleted_at is None:
-            organizations.append({
-                "organization_name": org.organization_name,
-                "role_title": org.role_title,
-                "description": org.description or "",
-                "start_date": org.start_date.isoformat() if org.start_date else "",
-                "end_date": org.end_date.isoformat() if org.end_date else ""
-            })
+    skills = [
+        {
+            "skill_name": ss.skill.skill_name,
+            "proficiency_level": ss.proficiency_level or "",
+            "years_experience": ss.years_experience or 0,
+        }
+        for ss in student.skills if ss.deleted_at is None
+    ]
 
-    portfolios = []
-    for sp in student.portfolios:
-        if sp.deleted_at is None:
-            portfolios.append({
-                "title": sp.portfolio_title,
-                "url": sp.portfolio_url or "",
-                "description": sp.description or ""
-            })
+    tech_stack = [
+        {
+            "tech_stack_name": st.tech_stack_item.tech_stack_name,
+            "proficiency_level": st.proficiency_level or "",
+        }
+        for st in student.tech_stack_items if st.deleted_at is None
+    ]
+
+    education = [
+        {
+            "degree_name": edu.degree_name,
+            "field_of_study": edu.field_of_study,
+            "institution_name": edu.institution_name,
+            "grade": edu.grade or "",
+        }
+        for edu in student.education_records if edu.deleted_at is None
+    ]
+
+    experiences = [
+        {
+            "title": exp.title,
+            "organization_name": exp.organization_name,
+            "description": (exp.description or "")[:200],  # truncate long descriptions
+        }
+        for exp in student.experiences if exp.deleted_at is None
+    ]
+
+    portfolios = [
+        {
+            "title": sp.portfolio_title,
+            "description": (sp.description or "")[:150],
+        }
+        for sp in student.portfolios if sp.deleted_at is None
+    ]
 
     return {
         "student_id": student.id,
-        "bio": student.bio or "",
+        "bio": (student.bio or "")[:300],  # truncate bio
         "skills": skills,
         "tech_stack": tech_stack,
         "education": education,
         "experiences": experiences,
-        "organizations": organizations,
-        "portfolios": portfolios
+        "portfolios": portfolios,
     }
 
-def get_active_internships_pool() -> list[Dict[str, Any]]:
-    """Query all active internships with their requirements."""
-    # Find active lifecycle status
-    active_status = InternshipLifecycleStatus.query.filter(
-        InternshipLifecycleStatus.status_code == 'active'
-    ).first()
-    if not active_status:
-        active_status = InternshipLifecycleStatus.query.filter(
-            InternshipLifecycleStatus.status_name.ilike('%active%')
-        ).first()
-    if not active_status:
-        active_status = InternshipLifecycleStatus.query.filter(
-            InternshipLifecycleStatus.status_name.ilike('%open%')
-        ).first()
 
-    query = Internship.query
+def get_active_internships_pool() -> list[Dict[str, Any]]:
+    """Query active internships with their requirements.
+
+    Uses selectinload to eliminate the N+1 query pattern.
+    Strips internship_description from the payload to reduce token count —
+    the AI only needs title, category, skills, and tech stack for matching.
+    Capped at POOL_LIMIT to keep prompt size manageable.
+    """
+    active_status = InternshipLifecycleStatus.query.filter_by(
+        status_code='active'
+    ).first()
+
+    query = Internship.query.options(
+        joinedload(Internship.location),
+        joinedload(Internship.technology_category),
+        selectinload(Internship.required_skills).joinedload(InternshipRequiredSkill.skill),
+        selectinload(Internship.required_tech_stack_items).joinedload(InternshipRequiredTechStackItem.tech_stack_item),
+    ).filter(Internship.deleted_at.is_(None))
+
     if active_status:
         query = query.filter(Internship.lifecycle_status_id == active_status.id)
-    query = query.filter(Internship.deleted_at.is_(None))
-    
-    internships = query.all()
+
+    internships = query.limit(POOL_LIMIT).all()
+
     pool = []
     for i in internships:
-        required_skills = []
-        for rs in i.required_skills:
-            if rs.deleted_at is None:
-                required_skills.append(rs.skill.skill_name)
-                
-        required_tech_stack = []
-        for rt in i.required_tech_stack_items:
-            if rt.deleted_at is None:
-                required_tech_stack.append(rt.tech_stack_item.tech_stack_name)
-                
+        required_skills = [
+            rs.skill.skill_name
+            for rs in i.required_skills
+            if rs.deleted_at is None
+        ]
+        required_tech_stack = [
+            rt.tech_stack_item.tech_stack_name
+            for rt in i.required_tech_stack_items
+            if rt.deleted_at is None
+        ]
         pool.append({
             "internship_id": i.id,
             "title": i.internship_title,
-            "description": i.internship_description,
             "type": i.internship_type or "",
-            "location": f"{i.location.city}, {i.location.region}" if i.location else "",
+            "location": f"{i.location.city}" if i.location else "",
             "category": i.technology_category.category_name if i.technology_category else "",
             "required_skills": required_skills,
-            "required_tech_stack": required_tech_stack
+            "required_tech_stack": required_tech_stack,
         })
     return pool
 

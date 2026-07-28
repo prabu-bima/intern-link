@@ -99,7 +99,7 @@ def register_company():
         db.session.flush()
         
         # Create Verification Record (Status Pending)
-        pending_status = CompanyVerificationStatus.query.filter_by(status_name='Pending').first()
+        pending_status = CompanyVerificationStatus.query.filter_by(status_code='pending').first()
         if pending_status:
             verification = CompanyVerification(
                 company_profile_id=profile.id,
@@ -126,7 +126,7 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = UserAccount.query.filter_by(email=form.email.data).first()
+        user = UserAccount.query.filter_by(email=form.email.data, deleted_at=None).first()
         
         if user and check_password_hash(user.password_hash, form.password.data):
             # Cek status akun jika direlasikan (Banned/Disabled)
@@ -178,7 +178,7 @@ def forgot_password():
     
     form = ForgotPasswordForm()
     if form.validate_on_submit():
-        user = UserAccount.query.filter_by(email=form.email.data).first()
+        user = UserAccount.query.filter_by(email=form.email.data, deleted_at=None).first()
         if user:
             # Generate token
             serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])

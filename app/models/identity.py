@@ -24,7 +24,7 @@ def load_user(user_id):
     return UserAccount.query.options(
         joinedload(UserAccount.student_profile),
         joinedload(UserAccount.company_profile)
-    ).filter_by(id=int(user_id)).first()
+    ).filter_by(id=int(user_id)).filter(UserAccount.deleted_at.is_(None)).first()
 
 class FileAsset(db.Model):
     __tablename__ = 'file_asset'
@@ -72,6 +72,7 @@ class CompanyProfile(db.Model):
     company_name = db.Column(db.String(150), nullable=False)
     company_description = db.Column(db.Text, nullable=True)
     industry_category = db.Column(db.String(100), nullable=True)
+    industry_category_id = db.Column(db.Integer, db.ForeignKey('industry_category.id'), nullable=True)
     company_size = db.Column(db.String(50), nullable=True)
     founding_year = db.Column(db.Integer, nullable=True)
     company_logo_file_id = db.Column(db.Integer, db.ForeignKey('file_asset.id'), nullable=True)
@@ -84,3 +85,4 @@ class CompanyProfile(db.Model):
     user = db.relationship('UserAccount', back_populates='company_profile')
     company_logo = db.relationship('FileAsset', foreign_keys=[company_logo_file_id])
     location = db.relationship('Location')
+    industry_category_ref = db.relationship('IndustryCategory')

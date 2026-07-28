@@ -70,6 +70,13 @@
                     Lokasi
                 </a>
 
+                <!-- Industry Categories -->
+                <a href="{{ url_for('admin.master_data', tab='industry') }}"
+                   class="{% if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'industry' %}bg-primary-50 text-primary-700{% else %}text-muted hover:bg-canvas hover:text-ink{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                    {{ icon.building_office(class="mr-3 flex-shrink-0 h-4 w-4 " ~ ('text-primary-600' if request.endpoint == 'admin.master_data' and request.args.get('tab') == 'industry' else 'text-muted group-hover:text-ink')) }}
+                    Kategori Industri
+                </a>
+
                 <div class="my-2 border-t border-hairline"></div>
                 <p class="px-3 py-1.5 text-[10px] font-semibold text-muted uppercase tracking-wider">Laporan</p>
 

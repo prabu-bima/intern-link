@@ -206,10 +206,13 @@
                     </div>
                 </div>
 
-                {% if interview.interview_notes %}
+                {% set _raw_notes = interview.interview_notes or '' %}
+                {% set _note_parts = _raw_notes.split('\nNotes: ', 1) %}
+                {% set _display_notes = _note_parts[1] if _note_parts|length > 1 else (_raw_notes if not _raw_notes.startswith('Format: ') else '') %}
+                {% if _display_notes %}
                 <div class="mt-4 pt-4 border-t border-gray-200">
                     <span class="block text-xs text-gray-500 mb-1">Catatan dari Perusahaan</span>
-                    <p class="text-sm text-gray-700">{{ interview.interview_notes }}</p>
+                    <p class="text-sm text-gray-700">{{ _display_notes }}</p>
                 </div>
                 {% endif %}
             </div>
@@ -231,12 +234,16 @@
                 <div>
                     <h4 class="text-sm font-medium text-gray-900">Curriculum Vitae</h4>
                     <p class="text-xs text-gray-500 mt-1">CV yang Anda gunakan saat melamar.</p>
-                    {% if application.submitted_cv %}
-                    <a href="{{ url_for('static', filename='uploads/cv/' ~ application.submitted_cv.file_path) }}"
+                    {% set cv_url = application.submitted_cv.url if application.submitted_cv else (current_user.student_profile.cv_versions | selectattr('is_current') | map(attribute='cv_file') | map(attribute='url') | first) %}
+                    {% if cv_url %}
+                    <a href="{{ cv_url }}"
                         target="_blank"
+                        rel="noopener noreferrer"
                         class="mt-2 inline-flex items-center text-xs font-medium text-primary-600 hover:text-primary-700">
                         Lihat CV {{ icon.external_link(class="w-3 h-3 ml-1") }}
                     </a>
+                    {% else %}
+                    <p class="text-xs text-gray-400 mt-2 italic">Belum ada CV yang dilampirkan.</p>
                     {% endif %}
                 </div>
             </div>
@@ -251,10 +258,17 @@
             <p class="text-xs text-gray-500 mb-4">
                 Anda dapat membatalkan lamaran ini sebelum masuk ke tahap wawancara. Keputusan ini bersifat final.
             </p>
-            <button onclick="document.getElementById('cancel-modal').classList.remove('hidden')"
-                class="w-full flex justify-center items-center px-4 py-2.5 border border-red-300 shadow-sm text-sm font-medium rounded-xl text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                Batalkan Lamaran
-            </button>
+            <form action="{{ url_for('student.cancel_application', id=application.id) }}" method="POST"
+                  data-confirm="Apakah Anda yakin ingin membatalkan lamaran untuk posisi {{ application.internship.internship_title }}? Tindakan ini tidak dapat dibatalkan."
+                  data-confirm-title="Batalkan Lamaran"
+                  data-confirm-btn="Ya, Batalkan"
+                  data-confirm-danger="true">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit"
+                    class="w-full flex justify-center items-center px-4 py-2.5 border border-red-300 shadow-sm text-sm font-medium rounded-xl text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                    Batalkan Lamaran
+                </button>
+            </form>
             {% else %}
             <div class="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <p class="text-sm text-gray-500">
@@ -267,53 +281,6 @@
                 class="mt-3 w-full flex justify-center items-center px-4 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                 Lihat Detail Lowongan
             </a>
-        </div>
-    </div>
-</div>
-
-<!-- Cancel Modal -->
-<div id="cancel-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
-    aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
-            onclick="document.getElementById('cancel-modal').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div
-            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div
-                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        {{ icon.exclamation_triangle(class="h-6 w-6 text-red-600") }}
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 font-outfit" id="modal-title">
-                            Batalkan Lamaran
-                        </h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500">
-                                Apakah Anda yakin ingin membatalkan lamaran untuk posisi <span class="font-bold">{{
-                                    application.internship.internship_title }}</span>? Tindakan ini tidak dapat
-                                dibatalkan.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <form action="{{ url_for('student.cancel_application', id=application.id) }}" method="POST"
-                    class="w-full sm:w-auto">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit"
-                        class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Ya, Batalkan
-                    </button>
-                </form>
-                <button type="button" onclick="document.getElementById('cancel-modal').classList.add('hidden')"
-                    class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Kembali
-                </button>
-            </div>
         </div>
     </div>
 </div>
