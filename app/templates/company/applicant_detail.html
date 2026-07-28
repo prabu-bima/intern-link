@@ -122,7 +122,8 @@
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                     <h2 class="text-lg font-semibold text-gray-900">Resume / CV</h2>
                     {% if application.submitted_cv %}
-                    <a href="{{ application.submitted_cv.url }}" target="_blank" download class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors flex items-center">
+                    <a href="{{ url_for('company.download_applicant_cv', application_id=application.id) }}"
+                       class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors flex items-center">
                         {{ icon.download(class="w-4 h-4 mr-1") }} Unduh PDF
                     </a>
                     {% endif %}

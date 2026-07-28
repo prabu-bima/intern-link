@@ -1320,3 +1320,50 @@ def mark_all_notifications_read():
     cache.delete(f'notif_count_company_{current_user.id}')
     flash('Semua notifikasi telah ditandai sebagai dibaca.', 'success')
     return redirect(url_for('company.notifications'))
+
+
+@bp.route('/applicants/<int:application_id>/cv/download')
+@login_required
+@company_required
+def download_applicant_cv(application_id):
+    """Download CV file as attachment (forces browser download instead of open)."""
+    import requests as http_requests
+    from flask import Response, abort, current_app
+    from app.models.internship import InternshipApplication, Internship
+    from app.models.identity import CompanyProfile
+
+    profile = CompanyProfile.query.filter_by(user_account_id=current_user.id).first()
+
+    application = InternshipApplication.query.join(Internship).filter(
+        InternshipApplication.id == application_id,
+        Internship.company_profile_id == profile.id,
+        InternshipApplication.deleted_at.is_(None)
+    ).first_or_404()
+
+    cv = application.submitted_cv
+    if not cv:
+        abort(404)
+
+    file_url = cv.url
+    if not file_url:
+        abort(404)
+
+    filename = cv.file_name or 'cv.pdf'
+
+    try:
+        resp = http_requests.get(file_url, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        current_app.logger.error(f"CV download proxy error: {e}")
+        abort(502)
+
+    content_type = cv.content_type or 'application/pdf'
+
+    return Response(
+        resp.content,
+        status=200,
+        headers={
+            'Content-Type': content_type,
+            'Content-Disposition': f'attachment; filename="{filename}"',
+        }
+    )
