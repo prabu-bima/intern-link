@@ -17,7 +17,7 @@ if not GROQ_API_KEY:
 class GroqService:
     """Service wrapper for interacting with the Groq API."""
 
-    def __init__(self, model_name: str = "openai/gpt-oss-20b"):
+    def __init__(self, model_name: str = "llama-3.3-70b-versatile"):
         """Initialize the Groq service with a specific model."""
         self.model_name = model_name
 

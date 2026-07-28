@@ -112,7 +112,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
     try:
         response = groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             response_format={"type": "json_object"}
         )
         
@@ -139,7 +139,7 @@ Keluarkan hasil secara ketat HANYA dalam format JSON berikut (tanpa tambahan mar
             internship_id=internship_id,
             match_percentage=result_data.get('match_percentage', 0),
             ai_explanation=result_data.get('ai_explanation', ''),
-            model_name='openai/gpt-oss-20b',
+            model_name='llama-3.3-70b-versatile',
             generation_status='success'
         )
         db.session.add(run)
