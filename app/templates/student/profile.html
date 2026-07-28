@@ -992,7 +992,7 @@
 
     // Skills Logic
     function loadSkillOptions() {
-        fetch("{{ url_for('student.get_skills_options') }}")
+        fetch("{{ url_for('student.get_skills_options') }}?_t=" + Date.now())
             .then(res => res.json())
             .then(data => {
                 const select = document.getElementById('skillSelect');
@@ -1006,7 +1006,7 @@
     }
 
     function loadSkills() {
-        fetch("{{ url_for('student.get_student_skills') }}")
+        fetch("{{ url_for('student.get_student_skills') }}?_t=" + Date.now())
             .then(res => res.json())
             .then(data => {
                 const list = document.getElementById('skillsList');

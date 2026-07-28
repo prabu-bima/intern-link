@@ -80,6 +80,23 @@
                 </a>
             </div>
             {% endif %}
+            
+            <!-- Social Media Links -->
+            {% if company.social_links %}
+            <div class="mt-6">
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Media Sosial</h3>
+                <div class="flex flex-wrap gap-3">
+                    {% for link in company.social_links %}
+                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-primary-200 hover:text-primary-700 transition-colors shadow-sm">
+                        {{ icon.globe(class="h-4 w-4 text-gray-400") }}
+                        {{ link.platform }}
+                        {{ icon.external_link(class="h-3 w-3 text-gray-400") }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

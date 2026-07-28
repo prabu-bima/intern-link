@@ -365,6 +365,10 @@ def delete_student(id):
         id=id, role='student', deleted_at=None
     ).first_or_404()
 
+    from app.models.lookups import UserAccountStatus
+    inactive_status = UserAccountStatus.query.filter_by(status_code='inactive').first()
+    if inactive_status:
+        student.account_status_id = inactive_status.id
     student.deleted_at = datetime.utcnow()
 
     audit = AdminAuditLog(
@@ -696,6 +700,54 @@ def enable_company(id):
 
     flash(f'Akun perusahaan {company.display_name} berhasil diaktifkan kembali.', 'success')
     return redirect(url_for('admin.company_detail', id=id))
+
+
+@bp.route('/companies/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_company(id):
+    from flask import redirect, url_for, flash
+    from app.models.identity import UserAccount
+    from app.models.lookups import UserAccountStatus
+    from app.models.system import AdminAuditLog
+    from datetime import datetime
+
+    company = UserAccount.query.filter_by(
+        id=id, role='company', deleted_at=None
+    ).first_or_404()
+
+    inactive_status = UserAccountStatus.query.filter_by(status_code='inactive').first()
+    if inactive_status:
+        company.account_status_id = inactive_status.id
+    company.deleted_at = datetime.utcnow()
+
+    # Soft-hide all active internship postings
+    if company.company_profile:
+        from app.models.lookups import InternshipLifecycleStatus
+        from app.models.internship import Internship
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        closed_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='closed').first()
+        if active_lifecycle and closed_lifecycle:
+            Internship.query.filter_by(
+                company_profile_id=company.company_profile.id,
+                lifecycle_status_id=active_lifecycle.id,
+                deleted_at=None
+            ).update({'lifecycle_status_id': closed_lifecycle.id})
+
+    audit = AdminAuditLog(
+        admin_user_id=current_user.id,
+        action_code='delete_company',
+        target_type='UserAccount',
+        target_id=company.id,
+        details_json={
+            'company_name': company.company_profile.company_name if company.company_profile else company.display_name,
+            'email': company.email,
+        }
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'Akun perusahaan {company.display_name} berhasil dihapus.', 'success')
+    return redirect(url_for('admin.companies'))
 
 
 # ── Internship Management ────────────────────────────────────────

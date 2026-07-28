@@ -46,8 +46,12 @@
                         Notifikasi
                     </div>
                     {% if unread_notifications_count > 0 %}
-                    <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600">
+                    <span data-notif-badge class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600">
                         {{ unread_notifications_count }}
+                    </span>
+                    {% else %}
+                    <span data-notif-badge class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600 hidden">
+                        0
                     </span>
                     {% endif %}
                 </a>
@@ -67,4 +71,25 @@
         {% block company_content %}{% endblock %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Polling notifikasi setiap 15 detik
+setInterval(function() {
+    fetch("{{ url_for('company.unread_notifications_count_json') }}")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var badge = document.querySelector('[data-notif-badge]');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        });
+}, 15000);
+</script>
 {% endblock %}

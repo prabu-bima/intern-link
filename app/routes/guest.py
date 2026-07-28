@@ -209,10 +209,11 @@ def company_detail(id):
     from sqlalchemy.orm import joinedload, selectinload
     from app.extensions import db
     
-    # 1. Query CompanyProfile. Eager load logo and location. Must not be soft-deleted or inactive.
+    # 1. Query CompanyProfile. Eager load logo, location, and social links. Must not be soft-deleted or inactive.
     company = CompanyProfile.query.options(
         joinedload(CompanyProfile.company_logo),
-        joinedload(CompanyProfile.location)
+        joinedload(CompanyProfile.location),
+        selectinload(CompanyProfile.social_links)
     ).join(UserAccount, CompanyProfile.user_account_id == UserAccount.id
     ).outerjoin(UserAccountStatus, UserAccount.account_status_id == UserAccountStatus.id
     ).filter(

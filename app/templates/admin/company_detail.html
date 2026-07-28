@@ -137,6 +137,19 @@
                 </button>
             </form>
             {% endif %}
+            <!-- Hapus -->
+            <form action="{{ url_for('admin.delete_company', id=company.id) }}" method="POST"
+                  data-confirm="Hapus permanen perusahaan ini? Semua data terkait akan dihapus dan perusahaan tidak bisa login lagi."
+                  data-confirm-title="Konfirmasi Hapus Perusahaan"
+                  data-confirm-btn="Ya, Hapus"
+                  data-confirm-danger="true">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                        class="w-full inline-flex items-center justify-center px-4 py-2 border border-red-200 text-sm font-medium rounded-xl text-red-600 bg-white hover:bg-red-50 transition-colors">
+                    {{ icon.trash(class="w-4 h-4 mr-1.5") }}
+                    Hapus
+                </button>
+            </form>
         </div>
         {% endif %}
     </div>

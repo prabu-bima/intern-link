@@ -121,6 +121,10 @@
                         {{ icon.user_group(class="w-4 h-4 mr-2") if icon.user_group else icon.user(class="w-4 h-4 mr-2") }}
                         Pelamar
                     </a>
+                    <a href="{{ url_for('company.interviews') }}?internship_id={{ internship.id }}" class="inline-flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        {{ icon.calendar(class="w-4 h-4 mr-2 text-gray-500") }}
+                        Wawancara ({{ interview_counts.get(internship.id, 0) }})
+                    </a>
                 </div>
             </div>
         </div>

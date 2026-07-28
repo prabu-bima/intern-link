@@ -544,11 +544,27 @@ def internships():
 
         cache.set(cache_key, (pagination.items, applicant_counts, pagination.total), timeout=15)
 
+    # Hitung jumlah wawancara per lowongan (untuk kedua jalur cache/non-cache)
+    internship_ids_for_interviews = [job.id for job in pagination.items]
+    interview_counts = {}
+    if internship_ids_for_interviews:
+        from app.models.internship import ApplicationInterview
+        interview_counts_query = db.session.query(
+            InternshipApplication.internship_id,
+            func.count(ApplicationInterview.id).label('cnt')
+        ).join(ApplicationInterview, ApplicationInterview.internship_application_id == InternshipApplication.id
+        ).filter(
+            InternshipApplication.internship_id.in_(internship_ids_for_interviews),
+            ApplicationInterview.deleted_at.is_(None)
+        ).group_by(InternshipApplication.internship_id).all()
+        interview_counts = {row.internship_id: row.cnt for row in interview_counts_query}
+
     return render_template(
         'company/internships.html',
         pagination=pagination,
         internships=pagination.items,
         applicant_counts=applicant_counts,
+        interview_counts=interview_counts,
         current_status=status_filter
     )
 
@@ -1112,6 +1128,7 @@ def interviews():
         abort(404)
 
     status_filter = request.args.get('status', 'all')
+    internship_filter = request.args.get('internship_id', type=int)
     page = request.args.get('page', 1, type=int)
     per_page = 15
 
@@ -1158,6 +1175,9 @@ def interviews():
 
     if status_filter != 'all':
         query = query.filter(InterviewStatus.status_code == status_filter)
+
+    if internship_filter:
+        query = query.filter(Internship.id == internship_filter)
 
     pagination = query.order_by(desc(ApplicationInterview.scheduled_at)).paginate(
         page=page, per_page=per_page, error_out=False
@@ -1320,6 +1340,22 @@ def mark_all_notifications_read():
     cache.delete(f'notif_count_company_{current_user.id}')
     flash('Semua notifikasi telah ditandai sebagai dibaca.', 'success')
     return redirect(url_for('company.notifications'))
+
+
+@bp.route('/notifications/unread-count')
+@company_required
+def unread_notifications_count_json():
+    from app.extensions import cache
+    cache_key = f'notif_count_company_{current_user.id}'
+    count = cache.get(cache_key)
+    if count is None:
+        count = Notification.query.filter_by(
+            recipient_user_id=current_user.id,
+            is_read=False,
+            deleted_at=None
+        ).count()
+        cache.set(cache_key, count, timeout=30)
+    return jsonify({'count': count})
 
 
 @bp.route('/applicants/<int:application_id>/cv/download')

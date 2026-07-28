@@ -24,7 +24,7 @@ def load_user(user_id):
     return UserAccount.query.options(
         joinedload(UserAccount.student_profile),
         joinedload(UserAccount.company_profile)
-    ).filter_by(id=int(user_id)).first()
+    ).filter_by(id=int(user_id)).filter(UserAccount.deleted_at.is_(None)).first()
 
 class FileAsset(db.Model):
     __tablename__ = 'file_asset'
