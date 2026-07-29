@@ -429,8 +429,8 @@ def internship_create():
         except ValueError:
             pass
             
-    # Default statuses: company sets lifecycle, admin must approve moderation
-    lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+    # Default statuses: company sets draft, admin must approve moderation
+    lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='draft').first()
     moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
     
     new_internship = Internship(

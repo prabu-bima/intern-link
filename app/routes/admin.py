@@ -872,7 +872,7 @@ def internship_detail(id):
 def moderate_internship(id):
     from flask import request, redirect, url_for, flash
     from app.models.internship import Internship, InternshipModerationEvent
-    from app.models.lookups import InternshipModerationStatus
+    from app.models.lookups import InternshipModerationStatus, InternshipLifecycleStatus
     from app.models.system import AdminAuditLog
     
     internship = Internship.query.filter_by(id=id, deleted_at=None).first_or_404()
@@ -886,6 +886,12 @@ def moderate_internship(id):
         return redirect(url_for('admin.internship_detail', id=id))
         
     internship.moderation_status_id = mod_status.id
+    
+    # When approved, auto-publish: set lifecycle to active
+    if action == 'approved':
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        if active_lifecycle:
+            internship.lifecycle_status_id = active_lifecycle.id
     
     mod_event = InternshipModerationEvent(
         internship_id=internship.id,
