@@ -1377,19 +1377,18 @@ def report_users():
 
     date_from = request.args.get('date_from', '')
     date_to   = request.args.get('date_to', '')
-    role      = request.args.get('role', 'all')
     status    = request.args.get('status', 'all')
 
-    query = UserAccount.query.filter(UserAccount.deleted_at.is_(None))
+    query = UserAccount.query.filter(
+        UserAccount.deleted_at.is_(None),
+        UserAccount.role == 'company'
+    )
 
-    if role != 'all':
-        query = query.filter(UserAccount.role == role)
     if status != 'all':
         from sqlalchemy import or_
         st = UserAccountStatus.query.filter_by(status_code=status).first()
         if st:
             if status == 'active':
-                # User dengan status_id=None dianggap aktif (default)
                 query = query.filter(
                     or_(UserAccount.account_status_id == st.id,
                         UserAccount.account_status_id.is_(None))
@@ -1402,7 +1401,7 @@ def report_users():
 
     return render_template('admin/reports.html',
         report_type='users', users=users, statuses=statuses,
-        date_from=date_from, date_to=date_to, role=role, status_filter=status)
+        date_from=date_from, date_to=date_to, role='company', status_filter=status)
 
 
 @bp.route('/reports/internships')

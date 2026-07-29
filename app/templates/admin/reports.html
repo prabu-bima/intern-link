@@ -15,7 +15,7 @@
     <a href="{{ url_for('admin.report_users') }}"
        class="px-4 py-2 rounded-xl text-sm font-medium transition-colors
               {% if report_type == 'users' %}bg-primary-600 text-white{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
-        Pengguna
+        Perusahaan
     </a>
     <a href="{{ url_for('admin.report_internships') }}"
        class="px-4 py-2 rounded-xl text-sm font-medium transition-colors
@@ -29,7 +29,7 @@
     <!-- ── USER REPORT ─────────────────────────────────────── -->
     {% if report_type == 'users' %}
     <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-        <h2 class="text-base font-bold text-gray-900">Laporan Pengguna</h2>
+        <h2 class="text-base font-bold text-gray-900">Laporan Perusahaan</h2>
         <form action="{{ url_for('admin.export_users') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-xl hover:bg-gray-900 transition-colors">
@@ -40,12 +40,6 @@
 
     <!-- Filter -->
     <form method="GET" action="{{ url_for('admin.report_users') }}" class="p-6 border-b border-gray-100 flex flex-wrap gap-3">
-        <select name="role" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm">
-            <option value="all" {% if role == 'all' %}selected{% endif %}>Semua Role</option>
-            <option value="student" {% if role == 'student' %}selected{% endif %}>Mahasiswa</option>
-            <option value="company" {% if role == 'company' %}selected{% endif %}>Perusahaan</option>
-            <option value="admin" {% if role == 'admin' %}selected{% endif %}>Admin</option>
-        </select>
         <select name="status" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm">
             <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Semua Status</option>
             {% set status_labels = {'active': 'Aktif', 'inactive': 'Nonaktif', 'suspended': 'Ditangguhkan'} %}
@@ -62,9 +56,8 @@
     <table class="min-w-full divide-y divide-gray-100">
         <thead class="bg-gray-50/70"><tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">ID</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama Perusahaan</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
         </tr></thead>
         <tbody class="bg-white divide-y divide-gray-100">
@@ -73,7 +66,6 @@
             <td class="px-4 py-3 text-sm text-gray-400">{{ u.id }}</td>
             <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ u.display_name }}</td>
             <td class="px-4 py-3 text-sm text-gray-500">{{ u.email }}</td>
-            <td class="px-4 py-3 text-sm text-gray-600 capitalize">{{ u.role }}</td>
             <td class="px-4 py-3">
                 {% if not u.status or u.status.status_code == 'active' %}
                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
@@ -87,7 +79,7 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">Tidak ada data.</td></tr>
+        <tr><td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">Tidak ada data.</td></tr>
         {% endfor %}
         </tbody>
     </table></div>
