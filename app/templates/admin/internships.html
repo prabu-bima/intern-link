@@ -120,7 +120,6 @@
                             {% set mod_badges = {
                                 'pending': 'bg-yellow-100 text-yellow-800',
                                 'approved': 'bg-green-100 text-green-800',
-                                'flagged': 'bg-orange-100 text-orange-800',
                                 'hidden': 'bg-red-100 text-red-800'
                             } %}
                             {% set mod_class = mod_badges.get(internship.moderation_status.status_code, 'bg-gray-100 text-gray-800') if internship.moderation_status else 'bg-gray-100 text-gray-800' %}

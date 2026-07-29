@@ -27,7 +27,7 @@ with app.app_context():
     for code in ('draft', 'active', 'closed', 'cancelled'):
         if code not in lc:
             raise RuntimeError(f"Lifecycle status '{code}' not found in DB.")
-    for code in ('pending', 'approved', 'rejected', 'flagged', 'hidden'):
+    for code in ('pending', 'approved', 'hidden'):
         if code not in md:
             raise RuntimeError(f"Moderation status '{code}' not found in DB.")
 

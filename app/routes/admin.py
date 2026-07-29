@@ -914,7 +914,7 @@ def moderate_internship(id):
     
     internship = Internship.query.filter_by(id=id, deleted_at=None).first_or_404()
     
-    action = request.form.get('action') # 'approved', 'flagged', 'hidden'
+    action = request.form.get('action') # 'approved', 'hidden'
     note = request.form.get('note', '').strip()
     
     mod_status = InternshipModerationStatus.query.filter_by(status_code=action).first()

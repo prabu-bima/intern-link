@@ -947,7 +947,7 @@ with app.app_context():
 
     # â”€â”€ 4. Ensure InternshipModerationStatus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     mod_statuses = {}
-    for code, name in [('approved', 'Approved'), ('pending', 'Pending Review'), ('rejected', 'Rejected')]:
+    for code, name in [('approved', 'Approved'), ('pending', 'Pending Review'), ('hidden', 'Hidden')]:
         obj, _ = get_or_create(
             InternshipModerationStatus, status_code=code,
             defaults={'status_name': name}

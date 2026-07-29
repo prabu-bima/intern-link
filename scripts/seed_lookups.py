@@ -57,8 +57,6 @@ def seed_data():
         internship_moderations = [
             {'code': 'pending', 'name': 'Pending Approval'},
             {'code': 'approved', 'name': 'Approved'},
-            {'code': 'rejected', 'name': 'Rejected'},
-            {'code': 'flagged', 'name': 'Flagged'},
             {'code': 'hidden', 'name': 'Hidden'}
         ]
         for s in internship_moderations:

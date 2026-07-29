@@ -30,7 +30,6 @@
                 {% set mod_badges = {
                     'pending': 'bg-yellow-100 text-yellow-800',
                     'approved': 'bg-green-100 text-green-800',
-                    'flagged': 'bg-orange-100 text-orange-800',
                     'hidden': 'bg-red-100 text-red-800'
                 } %}
                 {% set mod_class = mod_badges.get(internship.moderation_status.status_code, 'bg-gray-100 text-gray-800') if internship.moderation_status else 'bg-gray-100 text-gray-800' %}
@@ -43,7 +42,7 @@
             <form action="{{ url_for('admin.moderate_internship', id=internship.id) }}" method="POST" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
                         <input type="radio" name="action" value="approved" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'approved' %}checked{% endif %}>
                         <span class="flex flex-1">
@@ -52,18 +51,6 @@
                                     Setujui (Approved)
                                 </span>
                                 <span class="mt-1 block text-xs text-gray-500">Lowongan akan tayang dan bisa dilamar.</span>
-                            </span>
-                        </span>
-                    </label>
-
-                    <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
-                        <input type="radio" name="action" value="flagged" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'flagged' %}checked{% endif %}>
-                        <span class="flex flex-1">
-                            <span class="flex flex-col">
-                                <span class="block text-sm font-medium text-orange-700">
-                                    Tandai (Flagged)
-                                </span>
-                                <span class="mt-1 block text-xs text-gray-500">Lowongan tetap tayang tapi diberi peringatan.</span>
                             </span>
                         </span>
                     </label>
