@@ -47,7 +47,8 @@ def seed_data():
             {'code': 'draft', 'name': 'Draft'},
             {'code': 'active', 'name': 'Active'},
             {'code': 'closed', 'name': 'Closed'},
-            {'code': 'hidden', 'name': 'Hidden'}
+            {'code': 'hidden', 'name': 'Hidden'},
+            {'code': 'rejected', 'name': 'Rejected'}
         ]
         for s in internship_lifecycles:
             if not InternshipLifecycleStatus.query.filter_by(status_code=s['code']).first():

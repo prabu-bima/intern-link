@@ -573,7 +573,7 @@ def internships():
     from app.models.lookups import InternshipLifecycleStatus as _ILC
     lifecycle_statuses = cache.get('all_lifecycle_statuses')
     if not lifecycle_statuses:
-        lifecycle_statuses = _ILC.query.all()
+        lifecycle_statuses = _ILC.query.filter(_ILC.status_code.notin_(['cancelled', 'rejected'])).all()
         cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
 
     return render_template(
@@ -614,7 +614,7 @@ def internship_edit_form(id):
     from app.extensions import cache
     lifecycle_statuses = cache.get('all_lifecycle_statuses')
     if not lifecycle_statuses:
-        lifecycle_statuses = _ILC.query.all()
+        lifecycle_statuses = _ILC.query.filter(_ILC.status_code.notin_(['cancelled', 'rejected'])).all()
         cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
 
     return render_template(

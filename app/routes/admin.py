@@ -779,7 +779,7 @@ def internships():
     # 1. Cache lookup lists to avoid redundant DB queries
     lifecycle_statuses = cache.get('all_lifecycle_statuses')
     if not lifecycle_statuses:
-        lifecycle_statuses = InternshipLifecycleStatus.query.all()
+        lifecycle_statuses = InternshipLifecycleStatus.query.filter(InternshipLifecycleStatus.status_code != 'cancelled').all()
         cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
         
     mod_statuses = cache.get('all_moderation_statuses')
@@ -891,6 +891,12 @@ def moderate_internship(id):
         active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
         if active_lifecycle:
             internship.lifecycle_status_id = active_lifecycle.id
+    
+    # When rejected, set lifecycle to rejected too
+    if action == 'rejected':
+        rejected_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='rejected').first()
+        if rejected_lifecycle:
+            internship.lifecycle_status_id = rejected_lifecycle.id
     
     mod_event = InternshipModerationEvent(
         internship_id=internship.id,

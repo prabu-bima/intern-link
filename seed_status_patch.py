@@ -24,7 +24,7 @@ with app.app_context():
     md = {s.status_code: s for s in InternshipModerationStatus.query.all()}
 
     # ── Validate all required status codes exist ──────────────────
-    for code in ('draft', 'active', 'closed', 'hidden'):
+    for code in ('draft', 'active', 'closed', 'hidden', 'rejected'):
         if code not in lc:
             raise RuntimeError(f"Lifecycle status '{code}' not found in DB.")
     for code in ('pending', 'approved', 'rejected'):

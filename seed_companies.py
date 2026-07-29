@@ -937,7 +937,7 @@ with app.app_context():
 
     # â”€â”€ 3. Ensure InternshipLifecycleStatus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     lifecycle_statuses = {}
-    for code, name in [('active', 'Active'), ('closed', 'Closed'), ('draft', 'Draft')]:
+    for code, name in [('active', 'Active'), ('closed', 'Closed'), ('draft', 'Draft'), ('hidden', 'Hidden'), ('rejected', 'Rejected')]:
         obj, _ = get_or_create(
             InternshipLifecycleStatus, status_code=code,
             defaults={'status_name': name}
