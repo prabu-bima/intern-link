@@ -1,3 +1,4 @@
+{# FRONTEND: Komponen tombol reusable — button_primary (bg-ink/text-white), button_secondary (white/border), button_ghost (transparan/hover bg), mendukung link atau button HTML #}
 {% macro button_primary(text, type='submit', href='', icon='') %}
     {% if href %}
         <a href="{{ href }}" class="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 text-sm font-medium text-canvas hover:bg-body shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink transition-colors">

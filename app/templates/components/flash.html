@@ -1,3 +1,4 @@
+{# FRONTEND: Komponen flash messages — alert dismissible dengan border-left warna sesuai kategori (success=green, error=red, warning=yellow, info=blue), ikon x untuk close, shadow #}
 {% import "components/icons.html" as icon %}
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}

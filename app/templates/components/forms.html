@@ -1,3 +1,4 @@
+{# FRONTEND: Komponen form input reusable — render_text_input, render_textarea, render_select, render_file_upload; semua dengan label, error state (ring-red-500), required indicator * #}
 {% macro render_text_input(name, label, value='', type='text', placeholder='', required=False, error='') %}
 <div class="mb-4">
     <label for="{{ name }}" class="block text-body-sm font-medium text-ink mb-1">{{ label }} {% if required %}<span class="text-red-500">*</span>{% endif %}</label>

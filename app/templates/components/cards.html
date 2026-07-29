@@ -1,3 +1,4 @@
+{# FRONTEND: Komponen feature_card — card dengan ikon + judul + deskripsi + badge opsional + caller block, border/shadow/hover effect, layout flex column #}
 {% macro feature_card(title, description, icon='', badge='') %}
 <div class="relative flex flex-col items-start p-6 bg-white border border-hairline rounded-lg shadow-sm hover:shadow-md transition-shadow">
     {% if icon %}

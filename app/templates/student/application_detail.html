@@ -1,4 +1,5 @@
 {% extends "layouts/student_layout.html" %}
+{# FRONTEND: Header card (logo, judul, badge status), timeline stepper 4-tahap (Dikirim→Direview→Wawancara→Diterima), kartu jadwal wawancara, sidebar dokumen CV & tombol batalkan. Grid layout: grid-cols-1 lg:grid-cols-3 (konten utama lg:col-span-2 + sidebar). Ubah lg:grid-cols-3 jadi lg:grid-cols-4 dan lg:col-span-3 untuk sidebar lebih kecil. Interview grid: grid-cols-1 sm:grid-cols-2. #}
 {% import "components/icons.html" as icon %}
 
 {% block title %}Detail Lamaran: {{ application.internship.internship_title }} - InternLink{% endblock %}
