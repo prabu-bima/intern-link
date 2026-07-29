@@ -139,7 +139,6 @@ def dashboard():
         for code, name in [
             ('applied',     'Dikirim'),
             ('reviewing',   'Direview'),
-            ('shortlisted', 'Shortlist'),
             ('interviewing','Wawancara'),
             ('accepted',    'Diterima'),
             ('rejected',    'Ditolak'),

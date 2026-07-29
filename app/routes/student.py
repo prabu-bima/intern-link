@@ -1775,8 +1775,13 @@ def applications():
     pagination = query.paginate(page=page, per_page=9, error_out=False)
     applications = pagination.items
 
-    # Get all possible statuses for the filter dropdown in correct order
-    statuses = ApplicationStatus.query.order_by(ApplicationStatus.id).all()
+    # Get statuses for filter tabs — only relevant ones in order
+    status_order = ['applied', 'reviewing', 'interviewing', 'accepted', 'rejected']
+    statuses = ApplicationStatus.query.filter(
+        ApplicationStatus.status_code.in_(status_order)
+    ).all()
+    status_map = {s.status_code: s for s in statuses}
+    statuses = [status_map[code] for code in status_order if code in status_map]
     
     return render_template(
         'student/applications.html',
