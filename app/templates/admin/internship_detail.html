@@ -30,7 +30,7 @@
                 {% set mod_badges = {
                     'pending': 'bg-yellow-100 text-yellow-800',
                     'approved': 'bg-green-100 text-green-800',
-                    'hidden': 'bg-red-100 text-red-800'
+                    'rejected': 'bg-red-100 text-red-800'
                 } %}
                 {% set mod_class = mod_badges.get(internship.moderation_status.status_code, 'bg-gray-100 text-gray-800') if internship.moderation_status else 'bg-gray-100 text-gray-800' %}
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ mod_class }}">
@@ -56,13 +56,13 @@
                     </label>
 
                     <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
-                        <input type="radio" name="action" value="hidden" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'hidden' %}checked{% endif %}>
+                        <input type="radio" name="action" value="rejected" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'rejected' %}checked{% endif %}>
                         <span class="flex flex-1">
                             <span class="flex flex-col">
                                 <span class="block text-sm font-medium text-red-700">
-                                    Sembunyikan (Hidden)
+                                    Tolak (Rejected)
                                 </span>
-                                <span class="mt-1 block text-xs text-gray-500">Lowongan diturunkan sementara (tidak bisa dilamar).</span>
+                                <span class="mt-1 block text-xs text-gray-500">Lowongan ditolak permanen. Tidak bisa diaktifkan oleh perusahaan.</span>
                             </span>
                         </span>
                     </label>

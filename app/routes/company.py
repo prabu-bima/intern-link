@@ -717,6 +717,13 @@ def internship_update_lifecycle(id):
     if internship.company_profile_id != current_user.company_profile.id:
         return redirect(url_for('company.dashboard'))
 
+    # Lock lifecycle jika moderate_status == rejected
+    from app.models.lookups import InternshipModerationStatus
+    rejected_moderation = InternshipModerationStatus.query.filter_by(status_code='rejected').first()
+    if rejected_moderation and internship.moderation_status_id == rejected_moderation.id:
+        flash('Lowongan ditolak oleh admin. Tidak dapat mengubah status siklus.', 'danger')
+        return redirect(url_for('company.internships'))
+
     status_id = request.form.get('lifecycle_status_id', type=int)
     if not status_id:
         flash('Status siklus tidak valid.', 'danger')

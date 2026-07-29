@@ -47,7 +47,7 @@ def seed_data():
             {'code': 'draft', 'name': 'Draft'},
             {'code': 'active', 'name': 'Active'},
             {'code': 'closed', 'name': 'Closed'},
-            {'code': 'cancelled', 'name': 'Cancelled'}
+            {'code': 'hidden', 'name': 'Hidden'}
         ]
         for s in internship_lifecycles:
             if not InternshipLifecycleStatus.query.filter_by(status_code=s['code']).first():
@@ -57,7 +57,7 @@ def seed_data():
         internship_moderations = [
             {'code': 'pending', 'name': 'Pending Approval'},
             {'code': 'approved', 'name': 'Approved'},
-            {'code': 'hidden', 'name': 'Hidden'}
+            {'code': 'rejected', 'name': 'Rejected'}
         ]
         for s in internship_moderations:
             if not InternshipModerationStatus.query.filter_by(status_code=s['code']).first():

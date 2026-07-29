@@ -129,11 +129,12 @@
 </form><!-- tutup form utama -->
 
 {% if internship %}
+{% set _is_rejected = internship.moderation_status and internship.moderation_status.status_code == 'rejected' %}
 <!-- Status Siklus (di luar form utama) -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
         <h2 class="text-lg font-bold text-gray-900">Status Siklus Lowongan</h2>
-        <p class="text-sm text-gray-500">Ubah siklus hidup lowongan magang ini.</p>
+        <p class="text-sm text-gray-500">{{ 'Lowongan ditolak oleh admin. Status siklus tidak dapat diubah.' if _is_rejected else 'Ubah siklus hidup lowongan magang ini.' }}</p>
     </div>
     <div class="p-6">
         <div class="flex items-center gap-4">
@@ -141,12 +142,14 @@
             {% set lc_colors = {
                 'draft': 'bg-gray-100 text-gray-700',
                 'active': 'bg-green-100 text-green-700',
-                'closed': 'bg-red-100 text-red-600'
+                'closed': 'bg-red-100 text-red-600',
+                'hidden': 'bg-orange-100 text-orange-700'
             } %}
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ lc_colors.get(lc, 'bg-yellow-100 text-yellow-700') }}">
                 Status Saat Ini: {{ internship.lifecycle_status.status_name if internship.lifecycle_status else '-' }}
             </span>
         </div>
+        {% if not _is_rejected %}
         <div class="mt-4 flex flex-wrap gap-2">
             {% for ls in lifecycle_statuses %}
             {% if ls.id != internship.lifecycle_status_id %}
@@ -160,6 +163,7 @@
             {% endif %}
             {% endfor %}
         </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
