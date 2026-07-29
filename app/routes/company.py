@@ -429,9 +429,9 @@ def internship_create():
         except ValueError:
             pass
             
-    # Default statuses
-    lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
-    moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first() # Auto approve for now, or pending depending on policy
+    # Default statuses: company sets draft, admin must approve moderation
+    lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='draft').first()
+    moderation = InternshipModerationStatus.query.filter_by(status_code='pending').first()
     
     new_internship = Internship(
         company_profile_id=profile.id,
@@ -552,18 +552,21 @@ def internships():
 
         cache.set(cache_key, (pagination.items, applicant_counts, pagination.total), timeout=15)
 
-    # Hitung jumlah wawancara per lowongan (untuk kedua jalur cache/non-cache)
+    # Hitung jumlah wawancara aktif per lowongan (hanya yg masih terjadwal)
     internship_ids_for_interviews = [job.id for job in pagination.items]
     interview_counts = {}
     if internship_ids_for_interviews:
         from app.models.internship import ApplicationInterview
+        from app.models.lookups import InterviewStatus
+        scheduled_status = InterviewStatus.query.filter_by(status_code='scheduled').first()
         interview_counts_query = db.session.query(
             InternshipApplication.internship_id,
             func.count(ApplicationInterview.id).label('cnt')
         ).join(ApplicationInterview, ApplicationInterview.internship_application_id == InternshipApplication.id
         ).filter(
             InternshipApplication.internship_id.in_(internship_ids_for_interviews),
-            ApplicationInterview.deleted_at.is_(None)
+            ApplicationInterview.deleted_at.is_(None),
+            ApplicationInterview.interview_status_id == (scheduled_status.id if scheduled_status else 0)
         ).group_by(InternshipApplication.internship_id).all()
         interview_counts = {row.internship_id: row.cnt for row in interview_counts_query}
 
@@ -790,8 +793,14 @@ def internship_applicants(id):
     pagination = query.order_by(InternshipApplication.submitted_at.desc()).paginate(page=page, per_page=10, error_out=False)
     applicants = pagination.items
     
-    # Get all application statuses for filter bar
-    application_statuses = ApplicationStatus.query.all()
+    # Get application statuses for filter bar — only relevant ones, in order
+    status_order = ['applied', 'reviewing', 'interviewing', 'accepted', 'rejected']
+    application_statuses = ApplicationStatus.query.filter(
+        ApplicationStatus.status_code.in_(status_order)
+    ).all()
+    # Reorder to match desired sequence
+    status_map = {s.status_code: s for s in application_statuses}
+    application_statuses = [status_map[code] for code in status_order if code in status_map]
     
     # Calculate counts for each status using a single GROUP BY query
     status_counts_query = db.session.query(
@@ -850,8 +859,13 @@ def applicant_detail(application_id):
         InternshipApplication.deleted_at.is_(None)
     ).first_or_404()
     
-    # Get all possible application statuses
-    application_statuses = ApplicationStatus.query.all()
+    # Get application statuses for dropdown — only relevant ones
+    status_order = ['applied', 'reviewing', 'interviewing', 'accepted', 'rejected']
+    application_statuses = ApplicationStatus.query.filter(
+        ApplicationStatus.status_code.in_(status_order)
+    ).all()
+    status_map = {s.status_code: s for s in application_statuses}
+    application_statuses = [status_map[code] for code in status_order if code in status_map]
     
     return render_template(
         'company/applicant_detail.html',
@@ -1248,6 +1262,11 @@ def update_interview_status(interview_id):
         interview.interview_status_id = valid_status_obj.id
         if new_status == 'completed':
             interview.interview_completed_at = datetime.utcnow()
+            # Auto move application status to reviewing
+            from app.models.lookups import ApplicationStatus
+            reviewing_status = ApplicationStatus.query.filter_by(status_code='reviewing').first()
+            if reviewing_status:
+                interview.application.application_status_id = reviewing_status.id
         db.session.commit()
         flash('Status wawancara berhasil diperbarui.', 'success')
     else:

@@ -55,7 +55,6 @@
             {% set status_colors = {
             'applied': 'bg-blue-100 text-blue-700 border-blue-200',
             'reviewing': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-            'shortlisted': 'bg-purple-100 text-purple-700 border-purple-200',
             'interviewing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
             'accepted': 'bg-green-100 text-green-700 border-green-200',
             'rejected': 'bg-red-100 text-red-700 border-red-200',
@@ -120,9 +119,9 @@
                         <p class="mt-2 text-xs font-semibold text-primary-600">Dikirim</p>
                     </li>
 
-                    <!-- Step 2: Reviewing / Shortlisted -->
+                    <!-- Step 2: Reviewing -->
                     <li class="flex flex-col items-center">
-                        {% set is_step2 = (s in ['reviewing', 'shortlisted', 'interviewing', 'accepted']) %}
+                        {% set is_step2 = (s in ['reviewing', 'interviewing', 'accepted']) %}
                         <div
                             class="w-10 h-10 rounded-full flex items-center justify-center shadow ring-4 ring-white {% if is_step2 %}bg-primary-600 text-white{% else %}bg-gray-100 text-gray-400{% endif %}">
                             {{ icon.eye(class="w-5 h-5") }}
@@ -253,7 +252,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 class="text-base font-bold text-gray-900 font-outfit mb-4">Tindakan</h3>
 
-            {% set cancellable = ['applied', 'reviewing', 'shortlisted'] %}
+            {% set cancellable = ['applied', 'reviewing'] %}
             {% if application.application_status.status_code in cancellable %}
             <p class="text-xs text-gray-500 mb-4">
                 Anda dapat membatalkan lamaran ini sebelum masuk ke tahap wawancara. Keputusan ini bersifat final.

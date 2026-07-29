@@ -139,7 +139,6 @@ def dashboard():
         for code, name in [
             ('applied',     'Dikirim'),
             ('reviewing',   'Direview'),
-            ('shortlisted', 'Shortlist'),
             ('interviewing','Wawancara'),
             ('accepted',    'Diterima'),
             ('rejected',    'Ditolak'),
@@ -830,35 +829,6 @@ def internships():
     )
 
 
-@bp.route('/internships/<int:id>/lifecycle', methods=['POST'])
-@admin_required
-def internship_update_lifecycle(id):
-    from flask import request, redirect, url_for, flash
-    from app.models.internship import Internship
-    from app.models.lookups import InternshipLifecycleStatus
-    from app.extensions import cache
-
-    internship = Internship.query.get_or_404(id)
-
-    status_id = request.form.get('lifecycle_status_id', type=int)
-    if not status_id:
-        flash('Status siklus tidak valid.', 'danger')
-        return redirect(url_for('admin.internships'))
-
-    new_status = InternshipLifecycleStatus.query.get(status_id)
-    if not new_status:
-        flash('Status siklus tidak ditemukan.', 'danger')
-        return redirect(url_for('admin.internships'))
-
-    internship.lifecycle_status_id = new_status.id
-    db.session.commit()
-
-    cache.delete(f"company_dashboard_stats_{internship.company_profile_id}")
-
-    flash(f'Siklus lowongan "{internship.internship_title}" berhasil diubah menjadi {new_status.status_name}.', 'success')
-    return redirect(url_for('admin.internships'))
-
-
 @bp.route('/internships/<int:id>')
 @admin_required
 def internship_detail(id):
@@ -888,19 +858,11 @@ def internship_detail(id):
         internship_id=internship.id, deleted_at=None
     ).order_by(InternshipModerationEvent.id.desc()).all()
     
-    from app.models.lookups import InternshipLifecycleStatus
-    from app.extensions import cache
-    lifecycle_statuses = cache.get('all_lifecycle_statuses')
-    if not lifecycle_statuses:
-        lifecycle_statuses = InternshipLifecycleStatus.query.all()
-        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
-
     return render_template(
         'admin/internship_detail.html',
         internship=internship,
         applicants_count=applicants_count,
-        moderation_events=moderation_events,
-        lifecycle_statuses=lifecycle_statuses
+        moderation_events=moderation_events
     )
 
 
@@ -909,12 +871,12 @@ def internship_detail(id):
 def moderate_internship(id):
     from flask import request, redirect, url_for, flash
     from app.models.internship import Internship, InternshipModerationEvent
-    from app.models.lookups import InternshipModerationStatus
+    from app.models.lookups import InternshipModerationStatus, InternshipLifecycleStatus
     from app.models.system import AdminAuditLog
     
     internship = Internship.query.filter_by(id=id, deleted_at=None).first_or_404()
     
-    action = request.form.get('action') # 'approved', 'flagged', 'hidden'
+    action = request.form.get('action') # 'approved', 'hidden'
     note = request.form.get('note', '').strip()
     
     mod_status = InternshipModerationStatus.query.filter_by(status_code=action).first()
@@ -923,6 +885,12 @@ def moderate_internship(id):
         return redirect(url_for('admin.internship_detail', id=id))
         
     internship.moderation_status_id = mod_status.id
+    
+    # When approved, auto-publish: set lifecycle to active
+    if action == 'approved':
+        active_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='active').first()
+        if active_lifecycle:
+            internship.lifecycle_status_id = active_lifecycle.id
     
     mod_event = InternshipModerationEvent(
         internship_id=internship.id,
@@ -1199,15 +1167,20 @@ def edit_tech_stack(id):
 def delete_tech_stack(id):
     from flask import jsonify
     from app.models.master import TechStackItem
+    from app.models.internship import InternshipRequiredTechStackItem
+    from app.models.student import StudentTechStackItem
+    from app.models.ai import AISkillMatchTechStackItem
 
     item = TechStackItem.query.get_or_404(id)
-    try:
-        db.session.delete(item)
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception:
-        db.session.rollback()
-        return jsonify({'error': 'Tidak dapat menghapus tech stack yang masih digunakan.'}), 400
+
+    # Cascade: hapus semua relasi yang mengacu ke tech stack ini
+    InternshipRequiredTechStackItem.query.filter_by(tech_stack_item_id=id).delete()
+    StudentTechStackItem.query.filter_by(tech_stack_item_id=id).delete()
+    AISkillMatchTechStackItem.query.filter_by(tech_stack_item_id=id).delete()
+
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 # — Locations —

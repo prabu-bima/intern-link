@@ -63,10 +63,6 @@
                                 {{ app.application_status.status_name }}
                             </span>
                         {% elif app.application_status.status_code == 'reviewing' %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                                {{ app.application_status.status_name }}
-                            </span>
-                        {% elif app.application_status.status_code == 'shortlisted' %}
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
                                 {{ app.application_status.status_name }}
                             </span>
@@ -80,10 +76,6 @@
                             </span>
                         {% elif app.application_status.status_code == 'rejected' %}
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
-                                {{ app.application_status.status_name }}
-                            </span>
-                        {% elif app.application_status.status_code == 'withdrawn' %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
                                 {{ app.application_status.status_name }}
                             </span>
                         {% else %}

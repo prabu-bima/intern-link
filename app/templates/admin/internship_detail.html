@@ -30,7 +30,6 @@
                 {% set mod_badges = {
                     'pending': 'bg-yellow-100 text-yellow-800',
                     'approved': 'bg-green-100 text-green-800',
-                    'flagged': 'bg-orange-100 text-orange-800',
                     'hidden': 'bg-red-100 text-red-800'
                 } %}
                 {% set mod_class = mod_badges.get(internship.moderation_status.status_code, 'bg-gray-100 text-gray-800') if internship.moderation_status else 'bg-gray-100 text-gray-800' %}
@@ -43,7 +42,7 @@
             <form action="{{ url_for('admin.moderate_internship', id=internship.id) }}" method="POST" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
                         <input type="radio" name="action" value="approved" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'approved' %}checked{% endif %}>
                         <span class="flex flex-1">
@@ -52,18 +51,6 @@
                                     Setujui (Approved)
                                 </span>
                                 <span class="mt-1 block text-xs text-gray-500">Lowongan akan tayang dan bisa dilamar.</span>
-                            </span>
-                        </span>
-                    </label>
-
-                    <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-gray-200 hover:border-gray-300">
-                        <input type="radio" name="action" value="flagged" class="sr-only" required {% if internship.moderation_status and internship.moderation_status.status_code == 'flagged' %}checked{% endif %}>
-                        <span class="flex flex-1">
-                            <span class="flex flex-col">
-                                <span class="block text-sm font-medium text-orange-700">
-                                    Tandai (Flagged)
-                                </span>
-                                <span class="mt-1 block text-xs text-gray-500">Lowongan tetap tayang tapi diberi peringatan.</span>
                             </span>
                         </span>
                     </label>
@@ -95,43 +82,7 @@
         </div>
     </div>
     
-    <!-- Lifecycle Control Panel -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center flex-wrap gap-4">
-            <div>
-                <h2 class="text-lg font-bold text-gray-900 font-outfit">Status Siklus</h2>
-                <p class="text-sm text-gray-500">Ubah siklus hidup lowongan ini.</p>
-            </div>
-            <div>
-                {% set lc = internship.lifecycle_status.status_code if internship.lifecycle_status else '' %}
-                {% set lc_badges = {
-                    'draft': 'bg-gray-100 text-gray-800',
-                    'active': 'bg-green-100 text-green-800',
-                    'closed': 'bg-red-100 text-red-800'
-                } %}
-                {% set lc_class = lc_badges.get(lc, 'bg-gray-100 text-gray-800') %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ lc_class }}">
-                    Status Saat Ini: {{ internship.lifecycle_status.status_name if internship.lifecycle_status else '-' }}
-                </span>
-            </div>
-        </div>
-        <div class="p-6">
-            <div class="flex flex-wrap gap-3">
-                {% for ls in lifecycle_statuses %}
-                {% if ls.id != internship.lifecycle_status_id %}
-                <form action="{{ url_for('admin.internship_update_lifecycle', id=internship.id) }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="lifecycle_status_id" value="{{ ls.id }}">
-                    <button type="submit" class="inline-flex items-center px-5 py-2.5 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                        Ubah ke {{ ls.status_name }}
-                    </button>
-                </form>
-                {% endif %}
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
+    
     <!-- Internship Profile & Details Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Info -->

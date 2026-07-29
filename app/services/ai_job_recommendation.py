@@ -10,6 +10,7 @@ from app.models import (
     StudentProfile,
     Internship,
     InternshipLifecycleStatus,
+    InternshipModerationStatus,
     AIJobRecommendationRun,
     AIJobRecommendationItem
 )
@@ -119,6 +120,10 @@ def get_active_internships_pool() -> list[Dict[str, Any]]:
 
     if active_status:
         query = query.filter(Internship.lifecycle_status_id == active_status.id)
+
+    approved_moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first()
+    if approved_moderation:
+        query = query.filter(Internship.moderation_status_id == approved_moderation.id)
 
     internships = query.limit(POOL_LIMIT).all()
 

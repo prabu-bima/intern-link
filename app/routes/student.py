@@ -3,7 +3,7 @@ from flask_login import current_user
 from app.utils.decorators import student_required
 from app.models.internship import InternshipApplication, SavedInternship, Internship, ApplicationInterview
 from app.models.system import Notification
-from app.models.lookups import ApplicationStatus, InternshipLifecycleStatus, NotificationType
+from app.models.lookups import ApplicationStatus, InternshipLifecycleStatus, InternshipModerationStatus, NotificationType
 from app.models.student import StudentCvVersion
 from app.models.master import TechnologyCategory, Location
 from app.extensions import db
@@ -136,16 +136,21 @@ def dashboard():
             
     latest_internships = []
     if active_lifecycle:
-        cache_key = f'dashboard_latest_internships_{active_lifecycle.id}'
-        latest_internships = cache.get(cache_key)
-        if not latest_internships:
-            latest_internships = Internship.query.options(
-                joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
-                joinedload(Internship.location),
-                joinedload(Internship.technology_category),
-            ).filter_by(lifecycle_status_id=active_lifecycle.id)\
-                .order_by(Internship.id.desc()).limit(5).all()
-            cache.set(cache_key, latest_internships, timeout=300)
+        approved_moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first()
+        if approved_moderation:
+            cache_key = f'dashboard_latest_internships_{active_lifecycle.id}_{approved_moderation.id}'
+            latest_internships = cache.get(cache_key)
+            if not latest_internships:
+                latest_internships = Internship.query.options(
+                    joinedload(Internship.company_profile).joinedload(CompanyProfile.company_logo),
+                    joinedload(Internship.location),
+                    joinedload(Internship.technology_category),
+                ).filter(
+                    Internship.lifecycle_status_id == active_lifecycle.id,
+                    Internship.moderation_status_id == approved_moderation.id
+                )\
+                    .order_by(Internship.id.desc()).limit(5).all()
+                cache.set(cache_key, latest_internships, timeout=300)
         
     return render_template(
         'student/dashboard.html',
@@ -1425,6 +1430,12 @@ def internships():
     )
     if active_status:
         query = query.filter(Internship.lifecycle_status_id == active_status.id)
+    
+    # Only show approved moderation status
+    approved_moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first()
+    if approved_moderation:
+        query = query.filter(Internship.moderation_status_id == approved_moderation.id)
+    
     query = query.filter(Internship.deleted_at.is_(None))
     
     # 2. Search & Filter
@@ -1486,8 +1497,12 @@ def internships():
 def toggle_save_internship(id):
     from datetime import datetime
     
-    # Verify internship exists
+    # Verify internship exists and is approved
     internship = Internship.query.get_or_404(id)
+    approved_moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first()
+    if approved_moderation and internship.moderation_status_id != approved_moderation.id:
+        flash('Lowongan tidak tersedia untuk disimpan.', 'error')
+        return redirect(url_for('student.internships'))
     profile_id = current_user.student_profile.id
     
     # Check if already saved
@@ -1645,6 +1660,10 @@ def internship_ai_match(id):
 @student_required
 def apply_internship(id):
     internship = Internship.query.get_or_404(id)
+    approved_moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first()
+    if approved_moderation and internship.moderation_status_id != approved_moderation.id:
+        flash('Lowongan tidak tersedia untuk dilamar.', 'error')
+        return redirect(url_for('student.internships'))
     profile_id = current_user.student_profile.id
     
     # 1. Check if student has a current CV
@@ -1756,8 +1775,13 @@ def applications():
     pagination = query.paginate(page=page, per_page=9, error_out=False)
     applications = pagination.items
 
-    # Get all possible statuses for the filter dropdown in correct order
-    statuses = ApplicationStatus.query.order_by(ApplicationStatus.id).all()
+    # Get statuses for filter tabs — only relevant ones in order
+    status_order = ['applied', 'reviewing', 'interviewing', 'accepted', 'rejected']
+    statuses = ApplicationStatus.query.filter(
+        ApplicationStatus.status_code.in_(status_order)
+    ).all()
+    status_map = {s.status_code: s for s in statuses}
+    statuses = [status_map[code] for code in status_order if code in status_map]
     
     return render_template(
         'student/applications.html',

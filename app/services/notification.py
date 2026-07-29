@@ -227,7 +227,7 @@ def run_job_closing_reminders(days_before: int = 3):
         int: jumlah notifikasi yang dikirim.
     """
     from app.models.internship import Internship
-    from app.models.lookups import InternshipLifecycleStatus, NotificationType
+    from app.models.lookups import InternshipLifecycleStatus, InternshipModerationStatus, NotificationType
     from app.models.system import Notification
 
     now = datetime.utcnow()
@@ -243,6 +243,10 @@ def run_job_closing_reminders(days_before: int = 3):
     )
     if active_status:
         query = query.filter(Internship.lifecycle_status_id == active_status.id)
+
+    approved_moderation = InternshipModerationStatus.query.filter_by(status_code='approved').first()
+    if approved_moderation:
+        query = query.filter(Internship.moderation_status_id == approved_moderation.id)
 
     internships = query.all()
 
