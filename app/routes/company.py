@@ -572,10 +572,10 @@ def internships():
         interview_counts = {row.internship_id: row.cnt for row in interview_counts_query}
 
     from app.models.lookups import InternshipLifecycleStatus as _ILC
-    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    lifecycle_statuses = cache.get('company_lifecycle_statuses')
     if not lifecycle_statuses:
         lifecycle_statuses = _ILC.query.filter(_ILC.status_code.notin_(['cancelled', 'rejected'])).all()
-        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+        cache.set('company_lifecycle_statuses', lifecycle_statuses, timeout=86400)
 
     return render_template(
         'company/internships.html',
@@ -613,10 +613,10 @@ def internship_edit_form(id):
     
     from app.models.lookups import InternshipLifecycleStatus as _ILC
     from app.extensions import cache
-    lifecycle_statuses = cache.get('all_lifecycle_statuses')
+    lifecycle_statuses = cache.get('company_lifecycle_statuses')
     if not lifecycle_statuses:
         lifecycle_statuses = _ILC.query.filter(_ILC.status_code.notin_(['cancelled', 'rejected'])).all()
-        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
+        cache.set('company_lifecycle_statuses', lifecycle_statuses, timeout=86400)
 
     return render_template(
         'company/internship_form.html',

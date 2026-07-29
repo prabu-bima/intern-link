@@ -23,7 +23,8 @@ def load_user(user_id):
     from sqlalchemy.orm import joinedload
     return UserAccount.query.options(
         joinedload(UserAccount.student_profile),
-        joinedload(UserAccount.company_profile)
+        joinedload(UserAccount.company_profile),
+        joinedload(UserAccount.status)
     ).filter_by(id=int(user_id)).filter(UserAccount.deleted_at.is_(None)).first()
 
 class FileAsset(db.Model):
