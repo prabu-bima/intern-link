@@ -895,8 +895,11 @@ def moderate_internship(id):
     # When rejected, set lifecycle to rejected too
     if action == 'rejected':
         rejected_lifecycle = InternshipLifecycleStatus.query.filter_by(status_code='rejected').first()
-        if rejected_lifecycle:
-            internship.lifecycle_status_id = rejected_lifecycle.id
+        if not rejected_lifecycle:
+            rejected_lifecycle = InternshipLifecycleStatus(status_code='rejected', status_name='Rejected')
+            db.session.add(rejected_lifecycle)
+            db.session.flush()
+        internship.lifecycle_status_id = rejected_lifecycle.id
     
     mod_event = InternshipModerationEvent(
         internship_id=internship.id,
@@ -919,6 +922,13 @@ def moderate_internship(id):
     )
     db.session.add(audit)
     db.session.commit()
+    
+    # Invalidate company caches by bumping version
+    from app.extensions import cache as app_cache
+    profile_id = internship.company_profile_id
+    ver = app_cache.get(f'company_cache_version_{profile_id}') or 0
+    app_cache.set(f'company_cache_version_{profile_id}', ver + 1, timeout=86400)
+    app_cache.delete(f"company_dashboard_stats_{profile_id}")
     
     flash(f'Status moderasi berhasil diubah menjadi {mod_status.status_name}.', 'success')
     return redirect(url_for('admin.internship_detail', id=id))

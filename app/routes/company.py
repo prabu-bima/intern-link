@@ -495,8 +495,9 @@ def internships():
 
     from app.extensions import cache
 
-    # Cache hasil query per perusahaan+filter+halaman (15 detik)
-    cache_key = f'company_internships_{profile.id}_{status_filter}_p{page}'
+    # Version-based cache: version di-bump setiap ada perubahan (moderasi dll.)
+    cache_version = cache.get(f'company_cache_version_{profile.id}') or 0
+    cache_key = f'company_internships_{profile.id}_{status_filter}_p{page}_v{cache_version}'
     cached_data = cache.get(cache_key)
 
     if cached_data:
