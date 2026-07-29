@@ -18,27 +18,9 @@
          utama agar teks LCP tampil cepat tanpa request ke domain eksternal. -->
     <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
 
-    <!-- Tailwind CSS — dimuat async via preload, stylesheet diterapkan setelah selesai.
-         Cegah FOUC dengan inline critical CSS minimal di bawah. -->
-    <link rel="preload" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}"></noscript>
-    <style>
-        /* ── Critical CSS (inline) ────────────────────────────────── */
-        /* Layout dasar — memastikan body, sidebar, dan header langsung
-           tertata tanpa menunggu output.css selesai di-load. */
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:Inter,system-ui,-apple-system,sans-serif;background:#f9fafb;color:#1f2937;min-height:100vh;display:flex;flex-direction:column}
-        .max-w-7xl{max-width:80rem;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem}
-        @media(min-width:640px){.max-w-7xl{padding-left:1.5rem;padding-right:1.5rem}}
-        @media(min-width:1024px){.max-w-7xl{padding-left:2rem;padding-right:2rem}}
-        .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-        .hidden{display:none}
-        .flex{display:flex}
-        .flex-col{flex-direction:column}
-        .flex-grow{flex-grow:1}
-        .w-full{width:100%}
-        .mx-auto{margin-left:auto;margin-right:auto}
-    </style>
+    <!-- Tailwind CSS — preload + stylesheet -->
+    <link rel="preload" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}" as="style">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css', v=config['CSS_VERSION']) }}">
 
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     
