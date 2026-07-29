@@ -830,35 +830,6 @@ def internships():
     )
 
 
-@bp.route('/internships/<int:id>/lifecycle', methods=['POST'])
-@admin_required
-def internship_update_lifecycle(id):
-    from flask import request, redirect, url_for, flash
-    from app.models.internship import Internship
-    from app.models.lookups import InternshipLifecycleStatus
-    from app.extensions import cache
-
-    internship = Internship.query.get_or_404(id)
-
-    status_id = request.form.get('lifecycle_status_id', type=int)
-    if not status_id:
-        flash('Status siklus tidak valid.', 'danger')
-        return redirect(url_for('admin.internships'))
-
-    new_status = InternshipLifecycleStatus.query.get(status_id)
-    if not new_status:
-        flash('Status siklus tidak ditemukan.', 'danger')
-        return redirect(url_for('admin.internships'))
-
-    internship.lifecycle_status_id = new_status.id
-    db.session.commit()
-
-    cache.delete(f"company_dashboard_stats_{internship.company_profile_id}")
-
-    flash(f'Siklus lowongan "{internship.internship_title}" berhasil diubah menjadi {new_status.status_name}.', 'success')
-    return redirect(url_for('admin.internships'))
-
-
 @bp.route('/internships/<int:id>')
 @admin_required
 def internship_detail(id):
@@ -888,19 +859,11 @@ def internship_detail(id):
         internship_id=internship.id, deleted_at=None
     ).order_by(InternshipModerationEvent.id.desc()).all()
     
-    from app.models.lookups import InternshipLifecycleStatus
-    from app.extensions import cache
-    lifecycle_statuses = cache.get('all_lifecycle_statuses')
-    if not lifecycle_statuses:
-        lifecycle_statuses = InternshipLifecycleStatus.query.all()
-        cache.set('all_lifecycle_statuses', lifecycle_statuses, timeout=86400)
-
     return render_template(
         'admin/internship_detail.html',
         internship=internship,
         applicants_count=applicants_count,
-        moderation_events=moderation_events,
-        lifecycle_statuses=lifecycle_statuses
+        moderation_events=moderation_events
     )
 
 
