@@ -125,7 +125,7 @@
                             </div>
                         </td>
 
-                        <!-- Status -->
+                        <!-- Status (inline dropdown) -->
                         <td class="py-3.5 px-2">
                             {% set status_badges = {
                             'scheduled': 'bg-sky-50 text-sky-700 border-sky-200/80',
@@ -134,32 +134,31 @@
                             'cancelled': 'bg-rose-50 text-rose-700 border-rose-200/80',
                             'no_show': 'bg-gray-100 text-gray-700 border-gray-200'
                             } %}
-                            {% set status_labels = {
-                            'scheduled': 'Terjadwal',
-                            'completed': 'Selesai',
-                            'rescheduled': 'Dijadwal Ulang',
-                            'cancelled': 'Dibatalkan',
-                            'no_show': 'Tidak Hadir'
-                            } %}
-                            <span
-                                class="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full border {{ status_badges.get(interview.interview_status.status_code, 'bg-gray-100 text-gray-700 border-gray-200') }}">
-                                {{ status_labels.get(interview.interview_status.status_code,
-                                interview.interview_status.status_name) }}
-                            </span>
+                            {% set current_code = interview.interview_status.status_code %}
+                            {% set badge_class = status_badges.get(current_code, 'bg-gray-100 text-gray-700 border-gray-200') %}
+                            <form method="POST" action="{{ url_for('company.update_interview_status', interview_id=interview.id) }}" class="status-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <select name="status"
+                                    onchange="this.form.submit()"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer appearance-none
+                                           {{ badge_class }}
+                                           focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400">
+                                    <option value="scheduled" {% if current_code == 'scheduled' %}selected{% endif %}>Terjadwal</option>
+                                    <option value="completed" {% if current_code == 'completed' %}selected{% endif %}>Selesai</option>
+                                    <option value="rescheduled" {% if current_code == 'rescheduled' %}selected{% endif %}>Dijadwal Ulang</option>
+                                    <option value="cancelled" {% if current_code == 'cancelled' %}selected{% endif %}>Dibatalkan</option>
+                                    <option value="no_show" {% if current_code == 'no_show' %}selected{% endif %}>Tidak Hadir</option>
+                                </select>
+                            </form>
                         </td>
 
                         <!-- Aksi -->
                         <td class="py-3.5 px-4 text-center text-xs font-medium">
-                            <div class="flex items-center justify-center space-x-2">
+                            <div class="flex items-center justify-center">
                                 <a href="{{ url_for('company.edit_interview', interview_id=interview.id, from='interviews') }}"
                                     class="inline-flex justify-center items-center px-4 py-1.5 border border-gray-200 text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-2xs">
                                     Edit
                                 </a>
-                                <button type="button"
-                                    onclick="openUpdateStatusModal({{ interview.id }}, '{{ interview.interview_status.status_code }}')"
-                                    class="inline-flex justify-center items-center px-4 py-1.5 border border-transparent text-xs font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 transition-colors shadow-2xs">
-                                    Update
-                                </button>
                             </div>
                         </td>
                     </tr>
@@ -215,74 +214,4 @@
     {% endif %}
 </div>
 
-<!-- Update Status Modal -->
-<div id="updateStatusModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title"
-    role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
-            onclick="closeUpdateStatusModal()"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div
-            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
-            <form id="updateStatusForm" method="POST" action="">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div>
-                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                Update Status Wawancara
-                            </h3>
-                            <div class="mt-4">
-                                <label for="interview_status"
-                                    class="block text-sm font-medium text-gray-700 mb-1">Status Baru</label>
-                                <select id="interview_status" name="status"
-                                    class="appearance-none w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm border bg-white">
-                                    <option value="scheduled">Terjadwal</option>
-                                    <option value="completed">Selesai</option>
-                                    <option value="rescheduled">Dijadwal Ulang</option>
-                                    <option value="cancelled">Dibatalkan</option>
-                                    <option value="no_show">Tidak Hadir</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                        Simpan Perubahan
-                    </button>
-                    <button type="button" onclick="closeUpdateStatusModal()"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                        Batal
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-    function openUpdateStatusModal(interviewId, currentStatus) {
-        const modal = document.getElementById('updateStatusModal');
-        const form = document.getElementById('updateStatusForm');
-        const statusSelect = document.getElementById('interview_status');
-
-        // Update form action URL dynamically
-        form.action = `/company/interviews/${interviewId}/status`;
-
-        // Set current status in select
-        statusSelect.value = currentStatus;
-
-        // Show modal
-        modal.classList.remove('hidden');
-    }
-
-    function closeUpdateStatusModal() {
-        const modal = document.getElementById('updateStatusModal');
-        modal.classList.add('hidden');
-    }
-</script>
 {% endblock %}
