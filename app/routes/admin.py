@@ -1167,15 +1167,20 @@ def edit_tech_stack(id):
 def delete_tech_stack(id):
     from flask import jsonify
     from app.models.master import TechStackItem
+    from app.models.internship import InternshipRequiredTechStackItem
+    from app.models.student import StudentTechStackItem
+    from app.models.ai import AISkillMatchTechStackItem
 
     item = TechStackItem.query.get_or_404(id)
-    try:
-        db.session.delete(item)
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception:
-        db.session.rollback()
-        return jsonify({'error': 'Tidak dapat menghapus tech stack yang masih digunakan.'}), 400
+
+    # Cascade: hapus semua relasi yang mengacu ke tech stack ini
+    InternshipRequiredTechStackItem.query.filter_by(tech_stack_item_id=id).delete()
+    StudentTechStackItem.query.filter_by(tech_stack_item_id=id).delete()
+    AISkillMatchTechStackItem.query.filter_by(tech_stack_item_id=id).delete()
+
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 # — Locations —
